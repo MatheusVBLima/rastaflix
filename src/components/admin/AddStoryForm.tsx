@@ -89,6 +89,45 @@ export function AddStoryForm() {
         setIsFetchingPreview(true);
         setPreviewMessage("Buscando imagem de preview...");
 
+        // Verificação rápida para YouTube antes de ir para o servidor
+        try {
+          const urlObj = new URL(storyUrl);
+          if (
+            urlObj.hostname.includes("youtube.com") ||
+            urlObj.hostname.includes("youtu.be")
+          ) {
+            console.log(
+              "[AddStoryForm] Detectado URL do YouTube, aplicando thumbnail diretamente"
+            );
+
+            // Extrair videoId para URLs padrão do YouTube
+            let videoId = urlObj.searchParams.get("v");
+
+            // Formato youtu.be/ID
+            if (!videoId && urlObj.hostname.includes("youtu.be")) {
+              videoId = urlObj.pathname.substring(1);
+            }
+
+            if (videoId) {
+              const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+              console.log(
+                "[AddStoryForm] Usando thumbnail do YouTube:",
+                thumbnailUrl
+              );
+              form.setValue("imageUrl", thumbnailUrl, { shouldValidate: true });
+              setPreviewMessage("Thumbnail do YouTube carregada diretamente.");
+              setIsFetchingPreview(false);
+              return; // Não continua para o Open Graph
+            }
+          }
+        } catch (e) {
+          console.error(
+            "[AddStoryForm] Erro ao tentar usar thumbnail do YouTube diretamente:",
+            e
+          );
+          // Continua para o Open Graph se falhar
+        }
+
         startTransition(async () => {
           console.log(
             "[AddStoryForm DEBUG] Dentro do startTransition. Chamando getOpenGraphData."
