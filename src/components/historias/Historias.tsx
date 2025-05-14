@@ -185,64 +185,48 @@ export function Historias({
           >
             <Card className="flex flex-col h-full overflow-hidden group pt-0">
               <div className="flex flex-col h-full">
-                {story.imageUrl && (
+                {story.url && (
                   <div className="relative w-full pt-[56.25%] overflow-hidden">
                     <Image
-                      src={story.imageUrl}
+                      src={(() => {
+                        try {
+                          // Tentar extrair ID do YouTube da URL
+                          const urlObj = new URL(story.url);
+                          if (
+                            urlObj.hostname.includes("youtube.com") ||
+                            urlObj.hostname.includes("youtu.be")
+                          ) {
+                            // Extrair videoId para URLs padrão do YouTube
+                            let videoId = urlObj.searchParams.get("v");
+
+                            // Formato youtu.be/ID
+                            if (
+                              !videoId &&
+                              urlObj.hostname.includes("youtu.be")
+                            ) {
+                              videoId = urlObj.pathname.substring(1);
+                            }
+
+                            if (videoId) {
+                              // Construir URL da thumbnail diretamente
+                              return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+                            }
+                          }
+                          // Se não conseguir extrair do YouTube, usar a URL da imagem salva
+                          return story.imageUrl || "/placeholder.png";
+                        } catch (e) {
+                          // Fallback para qualquer erro
+                          return story.imageUrl || "/placeholder.png";
+                        }
+                      })()}
                       alt={`Imagem para ${story.title}`}
                       fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       className="object-cover object-center transition-transform duration-300 ease-in-out group-hover:scale-105"
                       onError={(e) => {
-                        // Fallback para thumbnail do YouTube se a imagem falhar
+                        // Fallback para imagem padrão se a thumbnail falhar
                         const imgElement = e.currentTarget;
-                        try {
-                          // Verificar se a URL é do YouTube
-                          const storyUrl = story.url;
-                          if (
-                            storyUrl &&
-                            (storyUrl.includes("youtube.com") ||
-                              storyUrl.includes("youtu.be"))
-                          ) {
-                            console.log(
-                              "[Historias] Tentando fallback para thumbnail do YouTube"
-                            );
-
-                            // Extrair videoId
-                            let videoId;
-                            try {
-                              const urlObj = new URL(storyUrl);
-                              videoId = urlObj.searchParams.get("v"); // youtube.com?v=ID
-
-                              // Formato youtu.be/ID
-                              if (
-                                !videoId &&
-                                urlObj.hostname.includes("youtu.be")
-                              ) {
-                                videoId = urlObj.pathname.substring(1);
-                              }
-                            } catch (urlError) {
-                              console.error(
-                                "[Historias] Erro ao processar URL para fallback:",
-                                urlError
-                              );
-                            }
-
-                            if (videoId) {
-                              const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-                              console.log(
-                                "[Historias] Usando thumbnail do YouTube:",
-                                thumbnailUrl
-                              );
-                              imgElement.src = thumbnailUrl;
-                            }
-                          }
-                        } catch (fallbackError) {
-                          console.error(
-                            "[Historias] Erro no fallback para thumbnail:",
-                            fallbackError
-                          );
-                        }
+                        imgElement.src = "/placeholder.png";
                       }}
                     />
                   </div>
