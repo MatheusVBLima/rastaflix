@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import { deleteStory, getHistorias } from '@/actions/storyActions';
-import type { ActionResponse, Story } from '@/lib/types';
-import { Button } from '@/components/ui/button';
+import React, { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { deleteStory, getHistorias } from "@/actions/storyActions";
+import type { ActionResponse, Story } from "@/lib/types";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,33 +16,45 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash2Icon } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Trash2Icon } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from '@/components/ui/badge';
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function DeleteStoryForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const queryClient = useQueryClient();
 
   // Usar o useQuery que já está com o cache populado graças ao prefetch
-  const { data: historias, isLoading, error } = useQuery<Story[]>({
-    queryKey: ['historias'],
+  const {
+    data: historias,
+    isLoading,
+    error,
+  } = useQuery<Story[]>({
+    queryKey: ["historias"],
     queryFn: getHistorias,
     staleTime: Infinity, // Match the staleTime from the server
   });
 
   const handleDelete = async () => {
     if (!selectedStory) return;
-    
+
     startTransition(async () => {
       try {
         const result = await deleteStory(selectedStory.id);
@@ -52,10 +64,10 @@ export function DeleteStoryForm() {
             description: `A história "${selectedStory.title}" foi removida.`,
             position: "bottom-right",
           });
-          
+
           // Depois atualizar a UI
-          router.refresh(); 
-          await queryClient.resetQueries({ queryKey: ['historias'] });
+          router.refresh();
+          await queryClient.resetQueries({ queryKey: ["historias"] });
           setSelectedStory(null);
         } else {
           // Mostrar toast de erro
@@ -78,21 +90,73 @@ export function DeleteStoryForm() {
     });
   };
 
-  const filteredHistorias = historias?.filter(story => 
-    story.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    story.id.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredHistorias = historias?.filter(
+    (story) =>
+      story.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      story.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isLoading) {
-    return <p className="text-center py-8">Carregando histórias...</p>;
+    return (
+      <div className="space-y-6 p-4 border rounded-md mt-4">
+        <h2 className="text-xl font-semibold mb-4">Deletar História</h2>
+
+        <div className="mb-4">
+          <Skeleton className="h-5 w-32 mb-1" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+
+        <div className="rounded-md border mt-6">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[250px]">Título</TableHead>
+                <TableHead>ID</TableHead>
+                <TableHead>Tags</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <Skeleton className="h-5 w-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-28" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Skeleton className="h-5 w-12" />
+                      <Skeleton className="h-5 w-16" />
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="h-8 w-24 ml-auto" />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
-    return <p className="text-center text-destructive py-8">Erro ao carregar histórias: {(error as Error).message}</p>;
+    return (
+      <p className="text-center text-destructive py-8">
+        Erro ao carregar histórias: {(error as Error).message}
+      </p>
+    );
   }
 
   if (!historias || historias.length === 0) {
-    return <p className="text-center text-muted-foreground py-8">Nenhuma história encontrada.</p>;
+    return (
+      <p className="text-center text-muted-foreground py-8">
+        Nenhuma história encontrada.
+      </p>
+    );
   }
 
   return (
@@ -101,7 +165,7 @@ export function DeleteStoryForm() {
 
       <div className="mb-4">
         <Label htmlFor="searchTerm">Buscar história</Label>
-        <Input 
+        <Input
           id="searchTerm"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -125,19 +189,28 @@ export function DeleteStoryForm() {
               <TableRow key={story.id}>
                 <TableCell className="font-medium">{story.title}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="font-mono text-xs">{story.id}</Badge>
+                  <Badge variant="outline" className="font-mono text-xs">
+                    {story.id}
+                  </Badge>
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
-                    {story.tags && story.tags.map(tag => (
-                      <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
-                    ))}
+                    {story.tags &&
+                      story.tags.map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant="secondary"
+                          className="text-xs"
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
+                  <Button
+                    variant="destructive"
+                    size="sm"
                     onClick={() => {
                       setSelectedStory(story);
                       setIsDialogOpen(true);
@@ -158,16 +231,20 @@ export function DeleteStoryForm() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar Deleção</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja deletar a história "<strong>{selectedStory?.title}</strong>" (ID: {selectedStory?.id})?
-              Esta ação não pode ser desfeita.
+              Tem certeza que deseja deletar a história "
+              <strong>{selectedStory?.title}</strong>" (ID: {selectedStory?.id}
+              )? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setIsDialogOpen(false)} disabled={isPending}>
+            <AlertDialogCancel
+              onClick={() => setIsDialogOpen(false)}
+              disabled={isPending}
+            >
               Cancelar
             </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDelete} 
+            <AlertDialogAction
+              onClick={handleDelete}
               disabled={isPending}
               className="bg-red-500 hover:bg-red-600 text-white"
             >
@@ -178,4 +255,4 @@ export function DeleteStoryForm() {
       </AlertDialog>
     </div>
   );
-} 
+}

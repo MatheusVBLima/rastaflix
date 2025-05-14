@@ -19,7 +19,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useFormState } from "react-dom";
-import { getOpenGraphData } from "@/actions/openGraphActions";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -28,6 +27,7 @@ import { toast } from "sonner";
 // Tags será uma string no formulário, mas um array de strings no schema do servidor
 const FormSchema = ServerStorySchema.extend({
   tags: z.string().optional(), // Tags é uma string opcional no formulário, a transformação para array é feita na server action.
+  imageUrl: z.string(),
 });
 
 type FormValues = z.infer<typeof FormSchema>;
@@ -50,95 +50,86 @@ export function AddStoryForm() {
       description: "",
       tags: "", // No formulário, tags é uma string
       url: "",
-      imageUrl: "",
+      imageUrl:
+        "https://via.placeholder.com/1200x630?text=Preview+Indisponível", // Valor padrão para imageUrl
     },
   });
 
   const storyUrl = form.watch("url"); // Observar o campo URL
 
-  // Mantemos esse useEffect apenas para o debounce da preview da URL
+  // Efeito para buscar preview da URL
   useEffect(() => {
-    const handler = setTimeout(async () => {
-      if (
-        storyUrl &&
-        storyUrl.startsWith("http") &&
-        !form.getValues("imageUrl")
-      ) {
+    console.log(
+      "[AddStoryForm] useEffect para preview de URL disparado. storyUrl:",
+      storyUrl
+    );
+
+    if (storyUrl && storyUrl.startsWith("http")) {
+      console.log(
+        "[AddStoryForm] Configurando timeout para analisar a URL:",
+        storyUrl
+      );
+      const handler = setTimeout(() => {
         setIsFetchingPreview(true);
         setPreviewMessage("Buscando imagem de preview...");
-        startTransition(async () => {
-          const ogData = await getOpenGraphData(storyUrl);
-          if (ogData.success) {
-            if (ogData.imageUrl) {
-              form.setValue("imageUrl", ogData.imageUrl, {
-                shouldValidate: true,
-              });
-              setPreviewMessage("Imagem de preview carregada!");
-            } else {
-              // URL válida, mas sem og:image. Tentar fallback para YouTube thumbnail.
-              try {
-                const urlObj = new URL(storyUrl);
-                if (
-                  urlObj.hostname === "www.youtube.com" ||
-                  urlObj.hostname === "youtube.com" ||
-                  urlObj.hostname === "youtu.be"
-                ) {
-                  let videoId = urlObj.searchParams.get("v");
-                  if (!videoId && urlObj.hostname === "youtu.be") {
-                    videoId = urlObj.pathname.substring(1); // Para URLs curtas como youtu.be/VIDEO_ID
-                  }
 
-                  if (videoId) {
-                    const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-                    // Em um cenário real, seria bom adicionar uma verificação se a thumbnail existe.
-                    form.setValue("imageUrl", thumbnailUrl, {
-                      shouldValidate: true,
-                    });
-                    setPreviewMessage(
-                      "Thumbnail do YouTube carregada como preview."
-                    );
-                  } else {
-                    setPreviewMessage(
-                      "A URL é válida, mas não foi encontrada uma imagem de preview (og:image) e não foi possível extrair o ID do vídeo do YouTube."
-                    );
-                  }
-                } else {
-                  setPreviewMessage(
-                    "A URL é válida, mas não foi encontrada uma imagem de preview (og:image)."
-                  );
-                }
-              } catch (e) {
-                // Caso a URL seja inválida, o construtor new URL() falhará ou outra exceção pode ocorrer.
-                console.error(
-                  "Erro ao processar URL para thumbnail do YouTube:",
-                  e
-                );
-                setPreviewMessage(
-                  "A URL é válida, mas não foi encontrada uma imagem de preview (og:image). Ocorreu um erro ao tentar obter a thumbnail do YouTube."
-                );
-              }
+        // Abordagem direta para extrair thumbnails do YouTube
+        try {
+          const urlObj = new URL(storyUrl);
+
+          // Verificar se é uma URL do YouTube
+          if (
+            urlObj.hostname.includes("youtube.com") ||
+            urlObj.hostname.includes("youtu.be")
+          ) {
+            // Extrair videoId para URLs padrão do YouTube
+            let videoId = urlObj.searchParams.get("v");
+
+            // Formato youtu.be/ID
+            if (!videoId && urlObj.hostname.includes("youtu.be")) {
+              videoId = urlObj.pathname.substring(1);
             }
-          } else {
-            // Erro ao buscar/processar OG data
-            setPreviewMessage(
-              ogData.message ||
-                ogData.error ||
-                "Não foi possível carregar a imagem de preview."
-            );
-          }
-          setIsFetchingPreview(false);
-        });
-      } else if (!storyUrl.startsWith("http") && storyUrl !== "") {
-        setPreviewMessage("URL inválida para buscar preview.");
-      } else {
-        setPreviewMessage(null); // Limpa a mensagem se a URL for limpa ou se a imagem já estiver preenchida
-      }
-    }, 1000); // Atraso de 1 segundo
 
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [storyUrl, form]); // Executar quando storyUrl ou form mudarem
+            if (videoId) {
+              // Construir URL da thumbnail diretamente
+              const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+              console.log("[AddStoryForm] Thumbnail do YouTube:", thumbnailUrl);
+
+              // Definir a URL da thumbnail no formulário
+              form.setValue("imageUrl", thumbnailUrl, { shouldValidate: true });
+              setPreviewMessage("Thumbnail do YouTube carregada!");
+              setIsFetchingPreview(false);
+              return;
+            }
+          }
+
+          // Não é YouTube ou não conseguiu extrair videoId, usar URL de fallback
+          const fallbackUrl =
+            "https://via.placeholder.com/1200x630?text=Preview+Indisponível";
+          form.setValue("imageUrl", fallbackUrl, { shouldValidate: true });
+          setPreviewMessage("URL não é do YouTube. Usando imagem padrão.");
+        } catch (error) {
+          console.error("[AddStoryForm] Erro ao analisar URL:", error);
+          // Fallback para qualquer erro
+          const fallbackUrl =
+            "https://via.placeholder.com/1200x630?text=Preview+Indisponível";
+          form.setValue("imageUrl", fallbackUrl, { shouldValidate: true });
+          setPreviewMessage("Erro ao processar URL. Usando imagem padrão.");
+        }
+
+        setIsFetchingPreview(false);
+      }, 800);
+
+      return () => clearTimeout(handler);
+    } else {
+      // Se não tiver URL válida, usar imagem padrão
+      if (!form.getValues("imageUrl")) {
+        const defaultImageUrl =
+          "https://via.placeholder.com/1200x630?text=Preview+Indisponível";
+        form.setValue("imageUrl", defaultImageUrl, { shouldValidate: true });
+      }
+    }
+  }, [storyUrl, form]);
 
   // Efeito para reagir às mudanças de estado do formulário
   useEffect(() => {
@@ -289,38 +280,29 @@ export function AddStoryForm() {
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="imageUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>URL da Imagem (Opcional)</FormLabel>
-              <FormControl>
-                <Input
-                  type="url"
-                  placeholder="https://exemplo.com/imagem.png"
-                  {...field}
-                  disabled={isFetchingPreview}
-                />
-              </FormControl>
-              {isFetchingPreview && (
-                <FormDescription>Buscando preview...</FormDescription>
-              )}
-              {previewMessage && (
-                <FormDescription
-                  className={
-                    previewMessage.startsWith("Imagem de preview carregada!")
-                      ? "text-green-500"
-                      : "text-gray-500"
-                  }
-                >
-                  {previewMessage}
-                </FormDescription>
-              )}
-              <FormMessage />
-            </FormItem>
-          )}
+        {/* Campo da URL da Imagem - Agora oculto para o usuário, preenchido automaticamente */}
+        <input
+          type="hidden"
+          {...form.register("imageUrl")}
+          // Valor padrão para garantir que sempre tenha algo
+          defaultValue="https://via.placeholder.com/1200x630?text=Preview+Indisponível"
         />
+
+        {isFetchingPreview && (
+          <FormDescription>Buscando preview...</FormDescription>
+        )}
+        {previewMessage && (
+          <FormDescription
+            className={
+              previewMessage.startsWith("Imagem de preview carregada!") ||
+              previewMessage.startsWith("Thumbnail do YouTube")
+                ? "text-green-500"
+                : "text-gray-500"
+            }
+          >
+            {previewMessage}
+          </FormDescription>
+        )}
 
         <Button type="submit" disabled={isPending}>
           {isPending ? "Adicionando..." : "Adicionar História"}
