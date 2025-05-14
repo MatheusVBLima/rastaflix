@@ -76,15 +76,20 @@ export function AddStoryForm() {
               setPreviewMessage("Imagem de preview carregada!");
             } else {
               // URL válida, mas sem og:image. Tentar fallback para YouTube thumbnail.
+              console.log(
+                "[AddStoryForm] Tentando fallback para YouTube. storyUrl:",
+                storyUrl
+              );
               try {
                 const urlObj = new URL(storyUrl);
+                console.log("[AddStoryForm] urlObj.hostname:", urlObj.hostname);
+
                 if (
-                  urlObj.hostname === "www.youtube.com" ||
-                  urlObj.hostname === "youtube.com" ||
-                  urlObj.hostname === "youtu.be"
+                  urlObj.hostname.includes("youtube.com") ||
+                  urlObj.hostname.includes("youtu.be")
                 ) {
                   let videoId = urlObj.searchParams.get("v");
-                  if (!videoId && urlObj.hostname === "youtu.be") {
+                  if (!videoId && urlObj.hostname.includes("youtu.be")) {
                     videoId = urlObj.pathname.substring(1); // Para URLs curtas como youtu.be/VIDEO_ID
                   }
 
@@ -103,6 +108,9 @@ export function AddStoryForm() {
                     );
                   }
                 } else {
+                  console.log(
+                    "[AddStoryForm] URL não identificada como YouTube."
+                  );
                   setPreviewMessage(
                     "A URL é válida, mas não foi encontrada uma imagem de preview (og:image)."
                   );
