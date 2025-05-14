@@ -31,8 +31,8 @@ export default function Home() {
           src="/hero.png"
           alt="Foto de Gabriel 'Givaldo' Scutasu comendo açaí"
           width={900}
-          height={900}
-          className="max-h-[calc(100vh-4.375rem)] w-full object-cover dark:brightness-[0.4] dark:grayscale"
+          height={600}
+          className="max-h-[calc(100vh-5.2rem)] w-full object-cover dark:brightness-[0.4] dark:grayscale"
         />
       </div>
     </div>

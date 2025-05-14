@@ -24,9 +24,16 @@ import { Label } from "@/components/ui/label";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useQuery } from '@tanstack/react-query';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from '@/components/ui/badge';
+import { useQuery } from "@tanstack/react-query";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 // Zod schema para o formulário
 const FormSchema = EditMusicSchema;
@@ -39,35 +46,41 @@ export function EditMusicForm({}: EditMusicFormProps) {
   const [musicIdToEdit, setMusicIdToEdit] = useState<string>("");
   const [isLoadingMusic, setIsLoadingMusic] = useState<boolean>(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  
+  const [searchTerm, setSearchTerm] = useState("");
+
   const router = useRouter();
   const queryClient = useQueryClient();
-  
-  // Para edição 
+
+  // Para edição
   const [isEditPending, startEditTransition] = useTransition();
-  
+
   // Estado inicial da action
-  const initialEditState: ActionResponse = { 
-    success: false, 
-    message: "" 
+  const initialEditState: ActionResponse = {
+    success: false,
+    message: "",
   };
-  
+
   // Criar formAction para useFormState
-  const editFormAction = async (prevState: ActionResponse, formData: FormData) => {
+  const editFormAction = async (
+    prevState: ActionResponse,
+    formData: FormData
+  ) => {
     return await editMusic(formData);
   };
-  
+
   // Estado do formulário e formAction vinculada para gerenciar submissões
-  const [editState, editFormAction2] = useFormState(editFormAction, initialEditState);
-  
+  const [editState, editFormAction2] = useFormState(
+    editFormAction,
+    initialEditState
+  );
+
   // Usar o useQuery que já está com o cache populado graças ao prefetch
   const { data: musicas, isLoading } = useQuery<Music[]>({
-    queryKey: ['musicas'],
+    queryKey: ["musicas"],
     queryFn: getMusicas,
     staleTime: Infinity, // Match the staleTime from the server
   });
-  
+
   // Formulário para edição
   const form = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
@@ -80,40 +93,53 @@ export function EditMusicForm({}: EditMusicFormProps) {
     mode: "onChange",
   });
 
-  const handleLoadMusic = useCallback(async () => {
-    if (!musicIdToEdit) {
-      setLoadError("Por favor, insira um ID de música para carregar.");
-      toast.error("Erro", {
-        description: "Por favor, insira um ID de música para carregar.",
-        position: "bottom-right",
-      });
-      form.reset(); // Limpa o formulário se o ID for removido
-      return;
-    }
-    setIsLoadingMusic(true);
-    setLoadError(null);
-    form.reset(); // Limpa antes de carregar novos dados
+  const handleLoadMusic = useCallback(
+    async (idToLoad?: string) => {
+      const currentId = idToLoad || musicIdToEdit; // Usa o ID passado ou o do estado
 
-    startEditTransition(async () => {
-      const result = await getMusicById(musicIdToEdit);
-      setIsLoadingMusic(false);
-      if (result.music) {
-        form.reset({
-          id: result.music.id,
-          title: result.music.title,
-          url: result.music.url,
-          imageUrl: result.music.imageUrl || "",
-        });
-      } else {
-        const errorMsg = result.error || "Falha ao carregar música.";
-        setLoadError(errorMsg);
-        toast.error("Erro ao carregar música", {
-          description: errorMsg,
+      if (!currentId) {
+        setLoadError(
+          "Por favor, insira ou selecione um ID de música para carregar."
+        );
+        toast.error("Erro", {
+          description:
+            "Por favor, insira ou selecione um ID de música para carregar.",
           position: "bottom-right",
         });
+        form.reset({ id: "", title: "", url: "", imageUrl: "" }); // Limpa o formulário completamente
+        return;
       }
-    });
-  }, [musicIdToEdit, form]);
+      setIsLoadingMusic(true);
+      setLoadError(null);
+      // Limpa o formulário antes de carregar novos dados, exceto o ID se ele já estiver lá
+      form.reset({ id: currentId, title: "", url: "", imageUrl: "" });
+
+      startEditTransition(async () => {
+        const result = await getMusicById(currentId);
+        setIsLoadingMusic(false);
+        if (result.music) {
+          form.reset({
+            id: result.music.id,
+            title: result.music.title,
+            url: result.music.url,
+            imageUrl: result.music.imageUrl || "",
+          });
+          // Se o ID carregado for diferente do que está no input de ID, atualiza o input também
+          if (musicIdToEdit !== result.music.id) {
+            setMusicIdToEdit(result.music.id);
+          }
+        } else {
+          const errorMsg = result.error || "Falha ao carregar música.";
+          setLoadError(errorMsg);
+          toast.error("Erro ao carregar música", {
+            description: errorMsg,
+            position: "bottom-right",
+          });
+        }
+      });
+    },
+    [form, musicIdToEdit]
+  ); // musicIdToEdit permanece aqui para o caso de uso do botão "Carregar Música"
 
   useEffect(() => {
     if (editState.success) {
@@ -122,21 +148,21 @@ export function EditMusicForm({}: EditMusicFormProps) {
         description: editState.message,
         position: "bottom-right",
       });
-      
+
       // Revalidar dados
       router.refresh();
-      queryClient.resetQueries({ queryKey: ['musicas'] });
-      queryClient.resetQueries({ queryKey: ['music', musicIdToEdit] });
+      queryClient.resetQueries({ queryKey: ["musicas"] });
+      queryClient.resetQueries({ queryKey: ["music", musicIdToEdit] });
     } else if (editState?.message && !editState.success) {
       // Mostrar toast de erro se houver mensagem e não for sucesso
       toast.error("Erro ao editar música", {
         description: editState.message,
         position: "bottom-right",
       });
-      
+
       // Se houver erros de validação, mostrar cada erro em um toast separado
       if (editState?.errors) {
-        editState.errors.forEach(err => {
+        editState.errors.forEach((err) => {
           toast.error(`${err.field}: ${err.message}`, {
             position: "bottom-right",
           });
@@ -145,30 +171,34 @@ export function EditMusicForm({}: EditMusicFormProps) {
     }
   }, [editState, router, queryClient, musicIdToEdit]);
 
-  const onSubmit = useCallback((values: FormValues) => {
-    if (!values.id) {
-      // Idealmente, isso não deve acontecer se a música foi carregada
-      toast.error("Erro", {
-        description: "ID da música está faltando. Recarregue a música.",
-        position: "bottom-right",
+  const onSubmit = useCallback(
+    (values: FormValues) => {
+      if (!values.id) {
+        // Idealmente, isso não deve acontecer se a música foi carregada
+        toast.error("Erro", {
+          description: "ID da música está faltando. Recarregue a música.",
+          position: "bottom-right",
+        });
+        return;
+      }
+      startEditTransition(() => {
+        const formData = new FormData();
+        formData.append("id", values.id);
+        formData.append("title", values.title);
+        formData.append("url", values.url);
+        if (values.imageUrl) formData.append("imageUrl", values.imageUrl);
+
+        editFormAction2(formData);
       });
-      return;
-    }
-    startEditTransition(() => {
-      const formData = new FormData();
-      formData.append("id", values.id);
-      formData.append("title", values.title);
-      formData.append("url", values.url);
-      if (values.imageUrl) formData.append("imageUrl", values.imageUrl);
-      
-      editFormAction2(formData);
-    });
-  }, [editFormAction2]);
+    },
+    [editFormAction2]
+  );
 
   // Filtered musics for the table
-  const filteredMusicas = musicas?.filter(music => 
-    music.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    music.id.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredMusicas = musicas?.filter(
+    (music) =>
+      music.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      music.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -186,9 +216,9 @@ export function EditMusicForm({}: EditMusicFormProps) {
             disabled={isLoadingMusic}
             className="flex-1"
           />
-          <Button 
-            type="button" 
-            onClick={handleLoadMusic} 
+          <Button
+            type="button"
+            onClick={() => handleLoadMusic()}
             disabled={isLoadingMusic}
           >
             {isLoadingMusic ? "Carregando..." : "Carregar Música"}
@@ -206,7 +236,10 @@ export function EditMusicForm({}: EditMusicFormProps) {
 
       {form.getValues().id && (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-6 mt-6"
+          >
             <FormField
               control={form.control}
               name="id"
@@ -220,7 +253,7 @@ export function EditMusicForm({}: EditMusicFormProps) {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="title"
@@ -234,7 +267,7 @@ export function EditMusicForm({}: EditMusicFormProps) {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="url"
@@ -242,7 +275,11 @@ export function EditMusicForm({}: EditMusicFormProps) {
                 <FormItem>
                   <FormLabel>URL da Música</FormLabel>
                   <FormControl>
-                    <Input type="url" placeholder="https://exemplo.com/musica" {...field} />
+                    <Input
+                      type="url"
+                      placeholder="https://exemplo.com/musica"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -255,27 +292,32 @@ export function EditMusicForm({}: EditMusicFormProps) {
                 <FormItem>
                   <FormLabel>URL da Imagem (Opcional)</FormLabel>
                   <FormControl>
-                    <Input type="url" placeholder="https://exemplo.com/imagem.png" {...field} />
+                    <Input
+                      type="url"
+                      placeholder="https://exemplo.com/imagem.png"
+                      {...field}
+                      value={field.value || ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <Button type="submit" disabled={isEditPending || isLoadingMusic}>
               {isEditPending ? "Salvando Alterações..." : "Salvar Alterações"}
             </Button>
           </form>
         </Form>
       )}
-      
+
       {/* Tabela de músicas */}
       <div className="mt-8">
         <h3 className="text-lg font-medium mb-4">Lista de Músicas</h3>
-        
+
         <div className="mb-4">
           <Label htmlFor="searchTerm">Buscar música</Label>
-          <Input 
+          <Input
             id="searchTerm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -283,7 +325,7 @@ export function EditMusicForm({}: EditMusicFormProps) {
             className="mt-1"
           />
         </div>
-        
+
         <div className="rounded-md border">
           <Table>
             <TableHeader>
@@ -296,22 +338,28 @@ export function EditMusicForm({}: EditMusicFormProps) {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center py-4">Carregando músicas...</TableCell>
+                  <TableCell colSpan={3} className="text-center py-4">
+                    Carregando músicas...
+                  </TableCell>
                 </TableRow>
               ) : filteredMusicas && filteredMusicas.length > 0 ? (
                 filteredMusicas.map((music) => (
                   <TableRow key={music.id}>
                     <TableCell className="font-medium">{music.title}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="font-mono text-xs">{music.id}</Badge>
+                      <Badge variant="outline" className="font-mono text-xs">
+                        {music.id}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => {
+                          // Define o ID no estado (para o input)
                           setMusicIdToEdit(music.id);
-                          handleLoadMusic();
+                          // Chama handleLoadMusic com o ID da música da linha clicada
+                          handleLoadMusic(music.id);
                         }}
                       >
                         <PencilIcon className="h-4 w-4 mr-2" />
@@ -322,7 +370,9 @@ export function EditMusicForm({}: EditMusicFormProps) {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center py-4">Nenhuma música encontrada.</TableCell>
+                  <TableCell colSpan={3} className="text-center py-4">
+                    Nenhuma música encontrada.
+                  </TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -331,4 +381,4 @@ export function EditMusicForm({}: EditMusicFormProps) {
       </div>
     </div>
   );
-} 
+}

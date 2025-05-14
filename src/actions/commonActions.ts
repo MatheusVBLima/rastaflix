@@ -1,25 +1,30 @@
 "use server";
 
-import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
-import { auth, clerkClient } from '@clerk/nextjs/server';
+import { createClient } from "@supabase/supabase-js";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 
 // Helper para criar cliente Supabase em Server Actions/Server Components
 export async function getSupabaseClient() {
-  const cookieStore = await cookies();
-  return createServerClient(
+  return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet: any[]) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          );
-        },
+      global: {
+        headers: {},
+      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+      async accessToken() {
+        try {
+          const { getToken } = await auth();
+          const token = await getToken();
+          return token;
+        } catch (error) {
+          console.error("Erro ao obter token do Clerk para Supabase:", error);
+          return null;
+        }
       },
     }
   );
@@ -46,12 +51,12 @@ export async function ensureAdmin(): Promise<string> {
   if (!userId) {
     throw new Error("Usuário não autenticado.");
   }
-  
+
   const client = await clerkClient();
   const user = await client.users.getUser(userId);
-  
+
   if (user.privateMetadata?.is_admin !== true) {
     throw new Error("Acesso negado. Requer privilégios de administrador.");
   }
   return userId;
-} 
+}
