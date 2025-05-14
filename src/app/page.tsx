@@ -6,51 +6,54 @@ import { nicknames } from "@/data/nicknames";
 
 export default function Home() {
   return (
-    <main className="flex-1 bg-background min-h-screen flex flex-col">
-      {/* Em telas md e maiores, o grid ocupa a tela. Em menores, o conteúdo flui. */}
-      <section className="container mx-auto grid md:grid-cols-2 gap-8 flex-grow items-center md:py-0 py-12">
-        {/* Lado Esquerdo: Conteúdo de Texto */}
-        {/* Centralizado em telas pequenas, alinhado à esquerda em telas médias e maiores */}
-        <div className="flex flex-col gap-6 items-center md:items-start text-center md:text-left">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter">
-            Rastaflix
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-md">
-            Acompanhe a saga do nosso rastafari mineiro.
-          </p>
-          <Button asChild size="lg">
-            <Link href="/sign-in">Login (Admins)</Link>
-          </Button>
-
-          <div className="mt-6 w-full max-w-md">
-            <h2 className="text-2xl font-semibold mb-4">
-              Apelidos Carinhosos:
-            </h2>
-            <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-              {nicknames.map((nickname) => (
-                <Badge key={nickname} variant="secondary" className="text-sm">
-                  {nickname}
-                </Badge>
-              ))}
-            </div>
-          </div>
+    <div className="lg:grid lg:grid-cols-2">
+    <div className="flex items-center justify-center py-12">
+      <div className="mx-auto grid w-[350px] gap-6">
+        <h1 className="text-center text-3xl font-bold">Rastaflix</h1>
+        <p className="text-center text-lg">
+          Acompanhe as histórias do nosso querido Gabriel Scutasu
+        </p>
+        <p className="text-center text-lg">
+          Também conhecido como
+        </p>
+        <div className="flex flex-wrap gap-4 items-center justify-center">
+          <Badge variant="outline">PK</Badge>
+          <Badge variant="outline">Charles Manson</Badge>
+          <Badge variant="outline">Givaldo</Badge>
+          <Badge variant="outline">Rasta</Badge>
+          <Badge variant="outline">Ovelha</Badge>
+          <Badge variant="outline">Tempero</Badge>
+          <Badge variant="outline">Truman</Badge>
+          <Badge variant="outline">Barão Vermelho</Badge>
+          <Badge variant="outline">Rainhu</Badge>
+          <Badge variant="outline">Arame liso</Badge>
+          <Badge variant="outline">Professor maconha</Badge>
+          <Badge variant="outline">Sazon</Badge>
+          <Badge variant="outline">MVP</Badge>
+          <Badge variant="outline">Lázaro</Badge>
+          <Badge variant="outline">Geladeira de pobre</Badge>
+          <Badge variant="outline">Chapeiro</Badge>
+          <Badge variant="outline">Gonorasta</Badge>
+          <Badge variant="outline">Voyeur</Badge>
+          <Badge variant="outline">Tio Paulo</Badge>
+          <Badge variant="outline">Tributera</Badge>
+          <Badge variant="outline">Kiko</Badge>
+          <Badge variant="outline">Branco</Badge>
+          <Badge variant="outline">Múmia triste</Badge>
+          <Badge variant="outline">Dono da bola</Badge>
+          <Badge variant="outline">Noiado</Badge>  
         </div>
-
-        {/* Lado Direito: Imagem Hero */}
-        {/* Oculto em telas pequenas (abaixo de md), ocupa altura total em telas maiores */}
-        <div className="hidden md:flex md:h-screen md:sticky md:top-0 items-center justify-center">
-          <div className="relative w-full h-full">
-            <Image 
-              src="/hero.png" 
-              alt="Rastafari Mineiro Hero Image"
-              layout="fill" // Ocupa todo o espaço do contêiner pai relativo
-              objectFit="cover" // Similar ao background-size: cover
-              className="grayscale"
-              priority
-            />
-          </div>
-        </div>
-      </section>
-    </main>
+      </div>
+    </div>
+    <div className="hidden bg-muted lg:flex">
+      <Image
+        src="/hero.png"
+        alt="Givaldo"
+        width="900"
+        height="900"
+        className="max-h-[calc(100vh-4.375rem)] w-full object-cover dark:brightness-[0.4] dark:grayscale"
+      />
+    </div>
+  </div>
   );
 }

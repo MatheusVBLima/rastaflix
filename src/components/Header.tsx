@@ -3,7 +3,14 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { UserButton, SignedIn, SignedOut } from "@clerk/nextjs";
+import {
+  UserButton,
+  SignedIn,
+  SignedOut,
+  useUser,
+  ClerkLoading,
+  ClerkLoaded,
+} from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import {
   NavigationMenu,
@@ -25,14 +32,16 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Separator } from "./ui/separator";
-import { 
-  MenuIcon, 
-  BookOpen, 
-  Music, 
-  Zap, 
-  Award, 
-  Users, 
-  Gamepad
+import { Skeleton } from "./ui/skeleton";
+import {
+  MenuIcon,
+  BookOpen,
+  Music,
+  Zap,
+  Award,
+  Users,
+  Gamepad,
+  Lock,
 } from "lucide-react";
 
 const criarDescobrirComponents: {
@@ -117,47 +126,79 @@ const adminComponents: {
     description: "Gerencie os inimigos existentes.",
     icon: <Users className="h-6 w-6 text-red-600 mb-2" />,
   },
-]
-
-  
-
+];
 
 export function Header() {
+  const { user } = useUser();
+  const [isAdmin, setIsAdmin] = React.useState(false);
+
+  React.useEffect(() => {
+    if (user) {
+      const checkAdminStatus = async () => {
+        try {
+          const response = await fetch("/api/check-admin");
+          if (response.ok) {
+            const data = await response.json();
+            setIsAdmin(data.isAdmin);
+          } else {
+            setIsAdmin(false);
+          }
+        } catch (error) {
+          console.error("Erro ao verificar status de admin:", error);
+          setIsAdmin(false);
+        }
+      };
+      checkAdminStatus();
+    } else {
+      setIsAdmin(false);
+    }
+  }, [user]);
+
   return (
     <header className="py-4 px-6 border-b sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo à esquerda */}
         <div>
           <Link href="/" className="text-2xl font-bold">
-            SeuLogo
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={50}
+              height={50}
+              className="rounded-full"
+            />
           </Link>
         </div>
 
         {/* Navegação no centro com NavigationMenu */}
-        <div className="hidden md:flex">
-          <NavigationMenu>
+        <div className="hidden md:flex items-center">
+          <NavigationMenu className="mr-4">
             <NavigationMenuList>
               <NavigationMenuItem>
                 <NavigationMenuTrigger>Conta Aquela</NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] relative">
-          
                     <li className="row-span-3">
-                      <NavigationMenuLink asChild> 
+                      <NavigationMenuLink asChild>
                         <Link
-                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-br from-green-700/80 via-yellow-600/80 to-red-700/80 p-6 no-underline outline-none focus:shadow-md transition-all duration-200 hover:shadow-xl hover:scale-[1.02] relative overflow-hidden"
+                          className="flex h-full w-full select-none flex-col justify-end rounded-md p-6 no-underline outline-none focus:shadow-md transition-all duration-200 hover:shadow-xl hover:scale-[1.02] relative overflow-hidden"
                           href="/"
+                          style={{
+                            backgroundImage:
+                              "url('/Glowing Star Abstract.jpeg')",
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                          }}
                         >
-                       
-                          <div className="absolute top-0 right-0 w-32 h-32 transform translate-x-10 -translate-y-10 bg-yellow-400 opacity-15 rounded-full"></div>
-                          <div className="absolute bottom-0 left-0 w-24 h-24 transform -translate-x-8 translate-y-8 bg-green-500 opacity-15 rounded-full"></div>
-                          
-                          <div className="mb-2 mt-4 text-xl font-bold text-white">
-                            Rastaflix
+                          <div className="absolute inset-0 bg-black/25 rounded-md"></div>
+                          <div className="relative z-10">
+                            <div className="mb-2 mt-4 text-xl font-bold text-white">
+                              Rastaflix
+                            </div>
+                            <p className="text-sm leading-tight text-white/90">
+                              Sua plataforma de entretenimento e comunidade.
+                            </p>
                           </div>
-                          <p className="text-sm leading-tight text-white/90">
-                            Sua plataforma de entretenimento e comunidade.
-                          </p>
                         </Link>
                       </NavigationMenuLink>
                     </li>
@@ -167,6 +208,8 @@ export function Header() {
                         title={component.title}
                         href={component.href}
                         icon={component.icon}
+                        backgroundImage="/Sweeping Light Arc.jpeg"
+                        className="bg-cover bg-center"
                       >
                         {component.description}
                       </ListItem>
@@ -178,31 +221,13 @@ export function Header() {
                 <NavigationMenuTrigger>Universo Ovelhera</NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] relative">
-                    
-    
                     {universoOvelheraComponents.map((component) => (
                       <ListItem
                         key={component.title}
                         title={component.title}
                         href={component.href}
                         icon={component.icon}
-                      >
-                        {component.description}
-                      </ListItem>
-                    ))}
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger>Admin</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] relative">
-                      {adminComponents.map((component) => (
-                        <ListItem
-                          key={component.title}
-                          title={component.title}
-                          href={component.href}
-                          icon={component.icon}
+                        backgroundImage="/Glowing Star Abstract.jpeg"
                       >
                         {component.description}
                       </ListItem>
@@ -212,23 +237,62 @@ export function Header() {
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
+          <ClerkLoading>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-8 w-20" />
+            </div>
+          </ClerkLoading>
+          <ClerkLoaded>
+            <SignedIn>
+              {isAdmin && (
+                <NavigationMenu>
+                  <NavigationMenuList>
+                    <NavigationMenuItem>
+                      <NavigationMenuTrigger>Admin</NavigationMenuTrigger>
+                      <NavigationMenuContent>
+                        <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] relative">
+                          {adminComponents.map((component) => (
+                            <ListItem
+                              key={component.title}
+                              title={component.title}
+                              href={component.href}
+                              icon={component.icon}
+                              backgroundImage="/Glowing Star Abstract.jpeg"
+                            >
+                              {component.description}
+                            </ListItem>
+                          ))}
+                        </ul>
+                      </NavigationMenuContent>
+                    </NavigationMenuItem>
+                  </NavigationMenuList>
+                </NavigationMenu>
+              )}
+            </SignedIn>
+          </ClerkLoaded>
         </div>
 
-        {/* UserButton à direita */}
+        {/* UserButton e Tema à direita */}
         <div className="flex items-center gap-4">
           <ThemeSwitcher />
-          <SignedIn>
-            <UserButton afterSignOutUrl="/" />
-          </SignedIn>
-          <SignedOut>
-            <Button variant="outline" asChild>
-              <Link href="/sign-in">Login</Link>
-            </Button>
+          <ClerkLoading>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-8 w-8 rounded-full" />
+            </div>
+          </ClerkLoading>
+          <ClerkLoaded>
+            <SignedIn>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
+            <SignedOut>
+              <Button variant="outline" asChild size="sm">
+                <Link href="/sign-in">
+                  <Lock /> Admin Login
+                </Link>
+              </Button>
+            </SignedOut>
+          </ClerkLoaded>
 
-            <Button variant="outline" asChild>
-              <Link href="/sign-up">Sign Up</Link>
-            </Button>
-          </SignedOut>
           {/* Menu Mobile */}
           <div className="md:hidden">
             <Sheet>
@@ -242,7 +306,7 @@ export function Header() {
                 <SheetHeader>
                   <SheetTitle className="text-left">Navegação</SheetTitle>
                 </SheetHeader>
-                <nav className="flex flex-col gap-2">
+                <nav className="flex flex-col gap-2 py-4">
                   <Separator />
                   <h4 className="py-1 px-3 text-sm font-semibold text-muted-foreground tracking-wider uppercase">
                     Conta Aquela
@@ -272,50 +336,56 @@ export function Header() {
                     </SheetClose>
                   ))}
                   <Separator />
-                  <SheetClose asChild>
-                    <Link
-                      href="/admin"
-                      className="py-2 px-3 mx-2 rounded-md hover:bg-accent"
-                    >
-                      Admin
-                    </Link>
-                  </SheetClose>
-                  <Separator />
-                  <h4 className="py-1 px-3 text-sm font-semibold text-muted-foreground tracking-wider uppercase">
-                    Gerenciamento
-                  </h4>
-                  <SheetClose asChild>
-                    <Link
-                      href="/admin/historias"
-                      className="block py-2 px-3 mx-2 rounded-md hover:bg-accent"
-                    >
-                      Gerenciar Histórias
-                    </Link>
-                  </SheetClose>
-                  <SheetClose asChild>
-                    <Link
-                      href="/admin/musicas"
-                      className="block py-2 px-3 mx-2 rounded-md hover:bg-accent"
-                    >
-                      Gerenciar Músicas
-                    </Link>
-                  </SheetClose>
-                  <SheetClose asChild>
-                    <Link
-                      href="/admin/esculachos"
-                      className="block py-2 px-3 mx-2 rounded-md hover:bg-accent"
-                    >
-                      Gerenciar Esculachos
-                    </Link>
-                  </SheetClose>
-                  <SheetClose asChild>
-                    <Link
-                      href="/admin/inimigos"
-                      className="block py-2 px-3 mx-2 rounded-md hover:bg-accent"
-                    >
-                      Gerenciar Inimigos
-                    </Link>
-                  </SheetClose>
+                  <ClerkLoaded>
+                    <SignedIn>
+                      {isAdmin && (
+                        <>
+                          <SheetClose asChild>
+                            <Link
+                              href="/admin"
+                              className="block py-2 px-3 mx-2 rounded-md hover:bg-accent text-sm font-medium"
+                            >
+                              Painel Admin
+                            </Link>
+                          </SheetClose>
+                          {adminComponents.map((item) => (
+                            <SheetClose asChild key={item.href}>
+                              <Link
+                                href={item.href}
+                                className="block py-2 px-3 mx-2 rounded-md hover:bg-accent text-sm"
+                              >
+                                {item.title}
+                              </Link>
+                            </SheetClose>
+                          ))}
+                          <Separator />
+                        </>
+                      )}
+                    </SignedIn>
+                  </ClerkLoaded>
+                  <ClerkLoaded>
+                    <SignedIn>
+                      <SheetClose asChild>
+                        <Link
+                          href="/user-profile"
+                          className="block py-2 px-3 mx-2 rounded-md hover:bg-accent text-sm font-medium"
+                        >
+                          Meu Perfil
+                        </Link>
+                      </SheetClose>
+                    </SignedIn>
+                    <SignedOut>
+                      <SheetClose asChild>
+                        <Link
+                          href="/sign-in"
+                          className="block py-2 px-3 mx-2 rounded-md hover:bg-accent text-sm font-medium"
+                        >
+                          <Lock className="mr-2 h-4 w-4 inline-block" /> Admin
+                          Login
+                        </Link>
+                      </SheetClose>
+                    </SignedOut>
+                  </ClerkLoaded>
                 </nav>
               </SheetContent>
             </Sheet>
@@ -332,28 +402,55 @@ const ListItem = React.forwardRef<
     href: string;
     title: string;
     icon?: React.ReactNode;
+    backgroundImage?: string;
   }
->(({ className, title, children, href, icon, ...props }, ref) => {
-  return (
-    <li>
-      <NavigationMenuLink asChild>
-        <Link
-          href={href}
-          ref={ref}
-          className={cn(
-            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-            className
-          )}
-          {...props}
-        >
-          {icon}
-          <div className="text-sm font-medium leading-none">{title}</div>
-          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-            {children}
-          </p>
-        </Link>
-      </NavigationMenuLink>
-    </li>
-  );
-});
+>(
+  (
+    { className, title, children, href, icon, backgroundImage, ...props },
+    ref
+  ) => {
+    return (
+      <li>
+        <NavigationMenuLink asChild>
+          <Link
+            href={href}
+            ref={ref}
+            className={cn(
+              "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:shadow-lg hover:scale-[1.02]",
+              className
+            )}
+            {...props}
+            style={
+              backgroundImage
+                ? {
+                    backgroundImage: `url(${backgroundImage})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    position: "relative",
+                    color: "white",
+                  }
+                : undefined
+            }
+          >
+            {backgroundImage && (
+              <div
+                className="absolute inset-0 bg-black/30 rounded-md"
+                style={{ zIndex: 0 }}
+              ></div>
+            )}
+            <div className="relative z-10">
+              {icon}
+              <div className="text-sm font-medium leading-none mb-1 text-white">
+                {title}
+              </div>
+              <p className="line-clamp-2 text-sm leading-snug text-white/90">
+                {children}
+              </p>
+            </div>
+          </Link>
+        </NavigationMenuLink>
+      </li>
+    );
+  }
+);
 ListItem.displayName = "ListItem";
