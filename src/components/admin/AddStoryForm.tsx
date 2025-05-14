@@ -56,40 +56,69 @@ export function AddStoryForm() {
 
   const storyUrl = form.watch("url"); // Observar o campo URL
 
-  // Mantemos esse useEffect apenas para o debounce da preview da URL
+  // Efeito para buscar preview da URL
   useEffect(() => {
-    const handler = setTimeout(async () => {
-      if (
-        storyUrl &&
-        storyUrl.startsWith("http") &&
-        !form.getValues("imageUrl")
-      ) {
+    console.log(
+      "[AddStoryForm DEBUG] useEffect para preview de URL disparado. storyUrl:",
+      storyUrl
+    );
+    console.log(
+      "[AddStoryForm DEBUG] form.getValues('imageUrl') no início do useEffect:",
+      form.getValues("imageUrl")
+    );
+
+    const hasImageUrl = !!form.getValues("imageUrl");
+    console.log(
+      "[AddStoryForm DEBUG] Condições: storyUrl?",
+      !!storyUrl,
+      "startsWith http?",
+      storyUrl?.startsWith("http"),
+      "!hasImageUrl?",
+      !hasImageUrl
+    );
+
+    if (storyUrl && storyUrl.startsWith("http") && !hasImageUrl) {
+      console.log(
+        "[AddStoryForm DEBUG] Condições para buscar preview ATENDIDAS. Configurando setTimeout."
+      );
+      const handler = setTimeout(async () => {
+        console.log(
+          "[AddStoryForm DEBUG] Dentro do setTimeout. Iniciando busca de preview para:",
+          storyUrl
+        );
         setIsFetchingPreview(true);
         setPreviewMessage("Buscando imagem de preview...");
+
         startTransition(async () => {
+          console.log(
+            "[AddStoryForm DEBUG] Dentro do startTransition. Chamando getOpenGraphData."
+          );
           const ogData = await getOpenGraphData(storyUrl);
+          console.log(
+            "[AddStoryForm DEBUG] Resultado de getOpenGraphData:",
+            JSON.stringify(ogData)
+          );
 
           if (ogData.success) {
-            // A chamada para getOpenGraphData foi bem-sucedida (página acessada)
             if (ogData.imageUrl) {
-              // Encontrou uma og:image
+              console.log(
+                "[AddStoryForm DEBUG] og:image encontrada:",
+                ogData.imageUrl
+              );
               form.setValue("imageUrl", ogData.imageUrl, {
                 shouldValidate: true,
               });
               setPreviewMessage("Imagem de preview carregada!");
             } else {
-              // Não encontrou og:image, mas a chamada foi ok. Hora do fallback para YouTube.
               console.log(
-                "[AddStoryForm] og:image não encontrada (ou null). Tentando fallback para YouTube. storyUrl:",
-                storyUrl
+                "[AddStoryForm DEBUG] og:image NÃO encontrada. Tentando fallback para YouTube."
               );
               try {
                 const urlObj = new URL(storyUrl);
                 console.log(
-                  "[AddStoryForm] urlObj.hostname para fallback:",
+                  "[AddStoryForm DEBUG] Fallback YouTube - hostname:",
                   urlObj.hostname
                 );
-
                 if (
                   urlObj.hostname.includes("youtube.com") ||
                   urlObj.hostname.includes("youtu.be")
@@ -98,9 +127,12 @@ export function AddStoryForm() {
                   if (!videoId && urlObj.hostname.includes("youtu.be")) {
                     videoId = urlObj.pathname.substring(1);
                   }
-
                   if (videoId) {
                     const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+                    console.log(
+                      "[AddStoryForm DEBUG] Fallback YouTube - Thumbnail URL:",
+                      thumbnailUrl
+                    );
                     form.setValue("imageUrl", thumbnailUrl, {
                       shouldValidate: true,
                     });
@@ -109,16 +141,16 @@ export function AddStoryForm() {
                     );
                   } else {
                     console.log(
-                      "[AddStoryForm] Não foi possível extrair videoId do YouTube."
+                      "[AddStoryForm DEBUG] Fallback YouTube - videoId não encontrado."
                     );
                     setPreviewMessage(
                       ogData.message ||
-                        "Não foi possível extrair o ID do vídeo do YouTube para a thumbnail."
+                        "Não foi possível extrair o ID do vídeo do YouTube."
                     );
                   }
                 } else {
                   console.log(
-                    "[AddStoryForm] URL não é do YouTube, usando mensagem de ogData."
+                    "[AddStoryForm DEBUG] Fallback YouTube - Não é URL do YouTube."
                   );
                   setPreviewMessage(
                     ogData.message ||
@@ -127,40 +159,50 @@ export function AddStoryForm() {
                 }
               } catch (e: any) {
                 console.error(
-                  "[AddStoryForm] Erro no bloco de fallback do YouTube:",
+                  "[AddStoryForm DEBUG] Erro no bloco de fallback:",
                   e
                 );
                 setPreviewMessage(
-                  ogData.message ||
-                    "Ocorreu um erro ao tentar obter a thumbnail do YouTube."
+                  ogData.message || "Erro ao tentar obter thumbnail do YouTube."
                 );
               }
             }
           } else {
-            // A chamada para getOpenGraphData falhou (e.g., URL inacessível, erro no servidor)
             console.log(
-              "[AddStoryForm] getOpenGraphData falhou. ogData:",
-              ogData
+              "[AddStoryForm DEBUG] getOpenGraphData falhou. Mensagem:",
+              ogData.message,
+              "Erro:",
+              ogData.error
             );
             setPreviewMessage(
               ogData.message ||
                 ogData.error ||
-                "Não foi possível carregar a imagem de preview."
+                "Não foi possível carregar preview."
             );
           }
           setIsFetchingPreview(false);
         });
-      } else if (!storyUrl.startsWith("http") && storyUrl !== "") {
-        setPreviewMessage("URL inválida para buscar preview.");
-      } else {
-        setPreviewMessage(null); // Limpa a mensagem se a URL for limpa ou se a imagem já estiver preenchida
-      }
-    }, 1000); // Atraso de 1 segundo
+      }, 1000);
 
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [storyUrl, form]); // Executar quando storyUrl ou form mudarem
+      return () => {
+        console.log("[AddStoryForm DEBUG] Limpando setTimeout.");
+        clearTimeout(handler);
+      };
+    } else {
+      console.log(
+        "[AddStoryForm DEBUG] Condições para buscar preview NÃO ATENDIDAS ou URL limpa."
+      );
+      // Limpa a mensagem se a URL for inválida, limpa, ou se a imagem já estiver preenchida e não precisarmos buscar
+      if (!storyUrl || !storyUrl.startsWith("http")) {
+        setPreviewMessage(
+          storyUrl === "" ? null : "URL inválida para buscar preview."
+        );
+      } else if (hasImageUrl) {
+        // Se já tem imagem, não mostramos mensagem de busca, a menos que queiramos indicar que foi carregada
+        // setPreviewMessage("Preview já carregado ou preenchido manualmente.");
+      }
+    }
+  }, [storyUrl, form]); // Adicionamos 'form' como dependência por causa do form.getValues
 
   // Efeito para reagir às mudanças de estado do formulário
   useEffect(() => {

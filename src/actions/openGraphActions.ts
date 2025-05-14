@@ -20,41 +20,85 @@ export async function getOpenGraphData(
     };
   }
 
+  // Primeira tentativa: usar open-graph-scraper para todas as URLs
   try {
     const options = {
       url,
       timeout: 4000,
       headers: { "user-agent": "Rastaflix-Preview-Bot/1.0" },
-    }; // Timeout e user-agent para evitar problemas
+    };
     const { result, error } = await ogs(options);
 
-    if (error || !result.success) {
+    if (!error && result.success) {
+      const imageUrl =
+        result.ogImage && result.ogImage[0] ? result.ogImage[0].url : null;
+
+      if (imageUrl) {
+        // Se o Open Graph retornou uma imagem, usamos ela
+        console.log("Imagem obtida via Open Graph:", imageUrl);
+        return {
+          success: true,
+          imageUrl,
+          message: "Dados Open Graph obtidos com sucesso.",
+        };
+      }
+
+      // Se chegamos aqui, o Open Graph funcionou mas não encontrou imagem
+      // Vamos tentar o método manual para sites conhecidos
+      console.log(
+        "Open Graph não retornou imagem, tentando método manual para sites conhecidos"
+      );
+    } else {
       console.error(
         "Erro ao buscar Open Graph data:",
         result?.ogTitle,
         result?.ogDescription,
         result?.errorDetails
       );
-      return {
-        success: false,
-        error: "Não foi possível obter dados de preview da URL.",
-        message: result.error
-          ? `Detalhes: ${result.error}`
-          : "Verifique se a URL é pública e possui metadags Open Graph.",
-      };
+    }
+  } catch (e) {
+    console.error("Exceção ao tentar Open Graph:", e);
+    // Se falhar o Open Graph, continuamos para o método manual
+  }
+
+  // Segunda tentativa: métodos específicos para plataformas conhecidas
+  try {
+    const urlObj = new URL(url);
+
+    // Método específico para YouTube
+    if (
+      urlObj.hostname.includes("youtube.com") ||
+      urlObj.hostname.includes("youtu.be")
+    ) {
+      console.log("Tentando método específico para YouTube");
+
+      // Extrair videoId para URLs padrão do YouTube
+      let videoId = urlObj.searchParams.get("v");
+
+      // Lidar com URLs abreviadas do YouTube (youtu.be)
+      if (!videoId && urlObj.hostname.includes("youtu.be")) {
+        videoId = urlObj.pathname.substring(1);
+      }
+
+      if (videoId) {
+        // Construir URL da thumbnail do YouTube diretamente
+        const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+        return {
+          success: true,
+          imageUrl: thumbnailUrl,
+          message: "Thumbnail do YouTube obtida diretamente.",
+        };
+      }
     }
 
-    const imageUrl =
-      result.ogImage && result.ogImage[0] ? result.ogImage[0].url : null;
+    // Aqui poderíamos adicionar métodos para outras plataformas (Twitch, Vimeo, etc.)
 
-    // Se ogs teve sucesso em ler a página, consideramos a operação um sucesso.
-    // A ausência de imageUrl será tratada pelo cliente.
+    // Se chegamos aqui, não conseguimos obter imagem por nenhum método
     return {
-      success: true,
-      imageUrl,
-      message: imageUrl
-        ? "Dados Open Graph obtidos com sucesso."
-        : "Dados Open Graph obtidos, mas nenhuma imagem de preview (og:image) específica foi encontrada.",
+      success: true, // Ainda consideramos a operação um sucesso
+      imageUrl: null,
+      message:
+        "Não foi possível encontrar uma imagem de preview para esta URL.",
     };
   } catch (e: any) {
     console.error("Exceção em getOpenGraphData:", e);
