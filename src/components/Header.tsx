@@ -128,6 +128,13 @@ const adminComponents: {
   },
 ];
 
+/**
+ * Renders the main navigation header with responsive menus, authentication-aware UI, and dynamic admin controls.
+ *
+ * Displays categorized navigation menus, a logo, theme switcher, and user authentication controls. Admin-specific menu items are shown only for authenticated users with admin privileges, determined asynchronously. The header adapts for mobile devices with a collapsible menu.
+ *
+ * @remark Admin menu visibility is determined by fetching `/api/check-admin` whenever the user changes. If the check fails or the user is not authenticated, admin controls are hidden.
+ */
 export function Header() {
   const { user } = useUser();
   const [isAdmin, setIsAdmin] = React.useState(false);

@@ -1,6 +1,14 @@
 import { clerkClient, getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
+/**
+ * Handles GET requests to determine if the authenticated user has admin privileges.
+ *
+ * Returns a JSON response with the user's admin status. If the user is not authenticated, responds with a 401 status and `isAdmin: false`. If an error occurs during user lookup or metadata access, responds with a 500 status and `isAdmin: false`.
+ *
+ * @param request - The incoming HTTP request.
+ * @returns A JSON response indicating whether the user is an admin.
+ */
 export async function GET(request: Request) {
   const { userId } = getAuth(request as any);
 
