@@ -1,5 +1,5 @@
 import React from 'react';
-import { getHistorias, getAllTags } from './data'; 
+import { getHistorias, getAllTags } from '@/actions/storyActions'; 
 import { Historias } from '@/components/historias/Historias';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { QueryClient } from '@tanstack/react-query';
@@ -47,7 +47,7 @@ export default async function HistoriasPage() {
   
   // Buscar histórias e tags para passar para o componente
   const historias = await getHistorias();
-  const tags = getAllTags(historias);
+  const tags = await getAllTags(historias);
   const isAdmin = await verificarAdmin();
   
   // 3. Desidratar o cache

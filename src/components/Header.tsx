@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { UserButton, SignedIn, SignedOut } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import {
@@ -24,27 +25,39 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Separator } from "./ui/separator";
-import { MenuIcon } from "lucide-react";
+import { 
+  MenuIcon, 
+  BookOpen, 
+  Music, 
+  Zap, 
+  Award, 
+  Users, 
+  Gamepad
+} from "lucide-react";
 
 const criarDescobrirComponents: {
   title: string;
   href: string;
   description: string;
+  icon: React.ReactNode;
 }[] = [
   {
     title: "Histórias",
     href: "/historias",
     description: "Leia e crie contos e narrativas.",
+    icon: <BookOpen className="h-6 w-6 text-green-600 mb-2" />,
   },
   {
     title: "Músicas",
     href: "/musicas",
     description: "Descubra e compartilhe novas músicas.",
+    icon: <Music className="h-6 w-6 text-yellow-500 mb-2" />,
   },
   {
     title: "Esculachos",
     href: "/esculachos",
     description: "Momentos épicos e reviravoltas.",
+    icon: <Zap className="h-6 w-6 text-red-600 mb-2" />,
   },
 ];
 
@@ -52,23 +65,62 @@ const universoOvelheraComponents: {
   title: string;
   href: string;
   description: string;
+  icon: React.ReactNode;
 }[] = [
   {
     title: "Ovelhera DLE",
     href: "/ovelhera-dle",
     description: "Explore o universo expandido de Ovelhera.",
+    icon: <Gamepad className="h-6 w-6 text-green-600 mb-2" />,
   },
   {
     title: "Inimigos",
     href: "/inimigos",
     description: "Conheça os antagonistas e desafios.",
+    icon: <Users className="h-6 w-6 text-red-600 mb-2" />,
   },
   {
     title: "Awards",
     href: "/awards",
     description: "Celebrações e reconhecimentos da comunidade.",
+    icon: <Award className="h-6 w-6 text-yellow-500 mb-2" />,
   },
 ];
+
+const adminComponents: {
+  title: string;
+  href: string;
+  description: string;
+  icon: React.ReactNode;
+}[] = [
+  {
+    title: "Gerenciar Histórias",
+    href: "/admin/historias",
+    description: "Gerencie as histórias existentes.",
+    icon: <BookOpen className="h-6 w-6 text-green-600 mb-2" />,
+  },
+  {
+    title: "Gerenciar Músicas",
+    href: "/admin/musicas",
+    description: "Gerencie as músicas existentes.",
+    icon: <Music className="h-6 w-6 text-yellow-500 mb-2" />,
+  },
+  {
+    title: "Gerenciar Esculachos",
+    href: "/admin/esculachos",
+    description: "Gerencie os esculachos existentes.",
+    icon: <Zap className="h-6 w-6 text-red-600 mb-2" />,
+  },
+  {
+    title: "Gerenciar Inimigos",
+    href: "/admin/inimigos",
+    description: "Gerencie os inimigos existentes.",
+    icon: <Users className="h-6 w-6 text-red-600 mb-2" />,
+  },
+]
+
+  
+
 
 export function Header() {
   return (
@@ -88,17 +140,22 @@ export function Header() {
               <NavigationMenuItem>
                 <NavigationMenuTrigger>Conta Aquela</NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] relative">
+          
                     <li className="row-span-3">
-                      <NavigationMenuLink asChild>
+                      <NavigationMenuLink asChild> 
                         <Link
-                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
+                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-br from-green-700/80 via-yellow-600/80 to-red-700/80 p-6 no-underline outline-none focus:shadow-md transition-all duration-200 hover:shadow-xl hover:scale-[1.02] relative overflow-hidden"
                           href="/"
                         >
-                          <div className="mb-2 mt-4 text-lg font-medium">
+                       
+                          <div className="absolute top-0 right-0 w-32 h-32 transform translate-x-10 -translate-y-10 bg-yellow-400 opacity-15 rounded-full"></div>
+                          <div className="absolute bottom-0 left-0 w-24 h-24 transform -translate-x-8 translate-y-8 bg-green-500 opacity-15 rounded-full"></div>
+                          
+                          <div className="mb-2 mt-4 text-xl font-bold text-white">
                             Rastaflix
                           </div>
-                          <p className="text-sm leading-tight text-muted-foreground">
+                          <p className="text-sm leading-tight text-white/90">
                             Sua plataforma de entretenimento e comunidade.
                           </p>
                         </Link>
@@ -109,6 +166,7 @@ export function Header() {
                         key={component.title}
                         title={component.title}
                         href={component.href}
+                        icon={component.icon}
                       >
                         {component.description}
                       </ListItem>
@@ -119,12 +177,15 @@ export function Header() {
               <NavigationMenuItem>
                 <NavigationMenuTrigger>Universo Ovelhera</NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] relative">
+                    
+    
                     {universoOvelheraComponents.map((component) => (
                       <ListItem
                         key={component.title}
                         title={component.title}
                         href={component.href}
+                        icon={component.icon}
                       >
                         {component.description}
                       </ListItem>
@@ -133,11 +194,21 @@ export function Header() {
                 </NavigationMenuContent>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link href="/admin" legacyBehavior passHref>
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    Admin
-                  </NavigationMenuLink>
-                </Link>
+                <NavigationMenuTrigger>Admin</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] relative">
+                      {adminComponents.map((component) => (
+                        <ListItem
+                          key={component.title}
+                          title={component.title}
+                          href={component.href}
+                          icon={component.icon}
+                      >
+                        {component.description}
+                      </ListItem>
+                    ))}
+                  </ul>
+                </NavigationMenuContent>
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
@@ -209,6 +280,42 @@ export function Header() {
                       Admin
                     </Link>
                   </SheetClose>
+                  <Separator />
+                  <h4 className="py-1 px-3 text-sm font-semibold text-muted-foreground tracking-wider uppercase">
+                    Gerenciamento
+                  </h4>
+                  <SheetClose asChild>
+                    <Link
+                      href="/admin/historias"
+                      className="block py-2 px-3 mx-2 rounded-md hover:bg-accent"
+                    >
+                      Gerenciar Histórias
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link
+                      href="/admin/musicas"
+                      className="block py-2 px-3 mx-2 rounded-md hover:bg-accent"
+                    >
+                      Gerenciar Músicas
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link
+                      href="/admin/esculachos"
+                      className="block py-2 px-3 mx-2 rounded-md hover:bg-accent"
+                    >
+                      Gerenciar Esculachos
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link
+                      href="/admin/inimigos"
+                      className="block py-2 px-3 mx-2 rounded-md hover:bg-accent"
+                    >
+                      Gerenciar Inimigos
+                    </Link>
+                  </SheetClose>
                 </nav>
               </SheetContent>
             </Sheet>
@@ -224,8 +331,9 @@ const ListItem = React.forwardRef<
   Omit<React.ComponentPropsWithoutRef<typeof Link>, "href"> & {
     href: string;
     title: string;
+    icon?: React.ReactNode;
   }
->(({ className, title, children, href, ...props }, ref) => {
+>(({ className, title, children, href, icon, ...props }, ref) => {
   return (
     <li>
       <NavigationMenuLink asChild>
@@ -238,6 +346,7 @@ const ListItem = React.forwardRef<
           )}
           {...props}
         >
+          {icon}
           <div className="text-sm font-medium leading-none">{title}</div>
           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
             {children}

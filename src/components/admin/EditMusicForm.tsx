@@ -4,21 +4,19 @@ import React, { useState, useTransition, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { editStory, getStoryById, getHistorias } from "@/actions/storyActions";
-import type { Story, ActionResponse } from "@/lib/types";
-import { EditStorySchema as ServerEditStorySchema } from "@/lib/types";
+import { editMusic, getMusicById, getMusicas } from "@/actions/musicActions";
+import type { Music, ActionResponse } from "@/lib/types";
+import { EditMusicSchema } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useFormState } from "react-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal, PencilIcon } from "lucide-react";
@@ -30,102 +28,108 @@ import { useQuery } from '@tanstack/react-query';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 
-// O EditStorySchema já inclui 'id'. Para o formulário, tags será uma string.
-const FormSchema = ServerEditStorySchema.extend({
-  tags: z.string().optional(), 
-});
+// Zod schema para o formulário
+const FormSchema = EditMusicSchema;
 
 type FormValues = z.infer<typeof FormSchema>;
 
-interface EditStoryFormProps {
-  // No futuro, poderíamos passar uma lista de histórias para um select
-  // ou integrar com uma lista clicável.
-  // Por enquanto, um input para ID para buscar a história.
-}
+interface EditMusicFormProps {}
 
-export function EditStoryForm({}: EditStoryFormProps) {
-  const [storyIdToEdit, setStoryIdToEdit] = useState<string>("");
-  const [isLoadingStory, setIsLoadingStory] = useState(false);
+export function EditMusicForm({}: EditMusicFormProps) {
+  const [musicIdToEdit, setMusicIdToEdit] = useState<string>("");
+  const [isLoadingMusic, setIsLoadingMusic] = useState<boolean>(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const queryClient = useQueryClient();
-  const router = useRouter();
   
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  
+  // Para edição 
   const [isEditPending, startEditTransition] = useTransition();
-  const editInitialState: ActionResponse = { success: false, message: "" };
-  const [editState, editFormAction] = useFormState(editStory, editInitialState);
+  
+  // Estado inicial da action
+  const initialEditState: ActionResponse = { 
+    success: false, 
+    message: "" 
+  };
+  
+  // Criar formAction para useFormState
+  const editFormAction = async (prevState: ActionResponse, formData: FormData) => {
+    return await editMusic(formData);
+  };
+  
+  // Estado do formulário e formAction vinculada para gerenciar submissões
+  const [editState, editFormAction2] = useFormState(editFormAction, initialEditState);
   
   // Usar o useQuery que já está com o cache populado graças ao prefetch
-  const { data: historias, isLoading } = useQuery<Story[]>({
-    queryKey: ['historias'],
-    queryFn: getHistorias,
+  const { data: musicas, isLoading } = useQuery<Music[]>({
+    queryKey: ['musicas'],
+    queryFn: getMusicas,
     staleTime: Infinity, // Match the staleTime from the server
   });
-
+  
+  // Formulário para edição
   const form = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      id: "", // ID será preenchido ao carregar a história
+      id: "",
       title: "",
-      description: "",
-      tags: "",
       url: "",
       imageUrl: "",
     },
+    mode: "onChange",
   });
 
-  const handleLoadStory = useCallback(async () => {
-    if (!storyIdToEdit) {
-      setLoadError("Por favor, insira um ID de história para carregar.");
+  const handleLoadMusic = useCallback(async () => {
+    if (!musicIdToEdit) {
+      setLoadError("Por favor, insira um ID de música para carregar.");
       toast.error("Erro", {
-        description: "Por favor, insira um ID de história para carregar.",
+        description: "Por favor, insira um ID de música para carregar.",
         position: "bottom-right",
       });
       form.reset(); // Limpa o formulário se o ID for removido
       return;
     }
-    setIsLoadingStory(true);
+    setIsLoadingMusic(true);
     setLoadError(null);
     form.reset(); // Limpa antes de carregar novos dados
 
     startEditTransition(async () => {
-      const result = await getStoryById(storyIdToEdit);
-      setIsLoadingStory(false);
-      if (result.story) {
+      const result = await getMusicById(musicIdToEdit);
+      setIsLoadingMusic(false);
+      if (result.music) {
         form.reset({
-          id: result.story.id,
-          title: result.story.title,
-          description: result.story.description || "",
-          tags: result.story.tags?.join(", ") || "", // Converter array para string
-          url: result.story.url,
-          imageUrl: result.story.imageUrl || "",
+          id: result.music.id,
+          title: result.music.title,
+          url: result.music.url,
+          imageUrl: result.music.imageUrl || "",
         });
       } else {
-        const errorMsg = result.error || "Falha ao carregar história.";
+        const errorMsg = result.error || "Falha ao carregar música.";
         setLoadError(errorMsg);
-        toast.error("Erro ao carregar história", {
+        toast.error("Erro ao carregar música", {
           description: errorMsg,
           position: "bottom-right",
         });
       }
     });
-  }, [storyIdToEdit, form]);
+  }, [musicIdToEdit, form]);
 
   useEffect(() => {
     if (editState.success) {
       // Mostrar toast de sucesso
-      toast.success("História atualizada com sucesso!", {
+      toast.success("Música atualizada com sucesso!", {
         description: editState.message,
         position: "bottom-right",
       });
       
       // Revalidar dados
       router.refresh();
-      queryClient.resetQueries({ queryKey: ['historias'] });
-      queryClient.resetQueries({ queryKey: ['story', storyIdToEdit] });
+      queryClient.resetQueries({ queryKey: ['musicas'] });
+      queryClient.resetQueries({ queryKey: ['music', musicIdToEdit] });
     } else if (editState?.message && !editState.success) {
       // Mostrar toast de erro se houver mensagem e não for sucesso
-      toast.error("Erro ao editar história", {
+      toast.error("Erro ao editar música", {
         description: editState.message,
         position: "bottom-right",
       });
@@ -139,13 +143,13 @@ export function EditStoryForm({}: EditStoryFormProps) {
         });
       }
     }
-  }, [editState, router, queryClient, storyIdToEdit]);
+  }, [editState, router, queryClient, musicIdToEdit]);
 
   const onSubmit = useCallback((values: FormValues) => {
     if (!values.id) {
-      // Idealmente, isso não deve acontecer se a história foi carregada
+      // Idealmente, isso não deve acontecer se a música foi carregada
       toast.error("Erro", {
-        description: "ID da história está faltando. Recarregue a história.",
+        description: "ID da música está faltando. Recarregue a música.",
         position: "bottom-right",
       });
       return;
@@ -154,97 +158,91 @@ export function EditStoryForm({}: EditStoryFormProps) {
       const formData = new FormData();
       formData.append("id", values.id);
       formData.append("title", values.title);
-      if (values.description) formData.append("description", values.description);
-      if (values.tags) formData.append("tags", values.tags);
       formData.append("url", values.url);
       if (values.imageUrl) formData.append("imageUrl", values.imageUrl);
       
-      editFormAction(formData);
+      editFormAction2(formData);
     });
-  }, [editFormAction]);
+  }, [editFormAction2]);
 
-  // Filtered stories for the table
-  const filteredHistorias = historias?.filter(story => 
-    story.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    story.id.toLowerCase().includes(searchTerm.toLowerCase())
+  // Filtered musics for the table
+  const filteredMusicas = musicas?.filter(music => 
+    music.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    music.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="space-y-6 p-4 border rounded-md mt-4">
-      <h2 className="text-xl font-semibold mb-4">Editar História Existente</h2>
-      
-      <div className="flex gap-2 items-end">
-        <div className="flex-grow">
-          <Label htmlFor="storyIdInput">ID da História para Editar</Label>
-          <Input 
-            id="storyIdInput"
-            placeholder="Cole o ID da história aqui"
-            value={storyIdToEdit}
-            onChange={(e) => setStoryIdToEdit(e.target.value)}
-            className="mt-1"
+      <h2 className="text-xl font-semibold mb-4">Editar Música Existente</h2>
+
+      <div className="space-y-2">
+        <Label htmlFor="musicIdToEdit">ID da Música para Editar</Label>
+        <div className="flex gap-2">
+          <Input
+            id="musicIdToEdit"
+            value={musicIdToEdit}
+            onChange={(e) => setMusicIdToEdit(e.target.value)}
+            placeholder="Digite o ID da música"
+            disabled={isLoadingMusic}
+            className="flex-1"
           />
+          <Button 
+            type="button" 
+            onClick={handleLoadMusic} 
+            disabled={isLoadingMusic}
+          >
+            {isLoadingMusic ? "Carregando..." : "Carregar Música"}
+          </Button>
         </div>
-        <Button onClick={handleLoadStory} disabled={isLoadingStory || isEditPending || !storyIdToEdit}>
-          {isLoadingStory ? "Carregando..." : "Carregar História"}
-        </Button>
       </div>
 
-      {form.getValues("id") && (
+      {loadError && (
+        <Alert variant="destructive">
+          <Terminal className="h-4 w-4" />
+          <AlertTitle>Erro</AlertTitle>
+          <AlertDescription>{loadError}</AlertDescription>
+        </Alert>
+      )}
+
+      {form.getValues().id && (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6">
             <FormField
               control={form.control}
               name="id"
-              render={({ field }) => <Input type="hidden" {...field} />} // Campo ID oculto
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ID da Música</FormLabel>
+                  <FormControl>
+                    <Input {...field} disabled />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
+            
             <FormField
               control={form.control}
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Título</FormLabel>
+                  <FormLabel>Nome da Música</FormLabel>
                   <FormControl>
-                    <Input placeholder="Título da história" {...field} />
+                    <Input placeholder="Nome da música" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição (Opcional)</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Uma breve descrição da história" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="tags"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tags (Opcional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="js, react, nextjs (separadas por vírgula)" {...field} />
-                  </FormControl>
-                  <FormDescription>Separe as tags por vírgula.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            
             <FormField
               control={form.control}
               name="url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>URL da História</FormLabel>
+                  <FormLabel>URL da Música</FormLabel>
                   <FormControl>
-                    <Input type="url" placeholder="https://exemplo.com/historia" {...field} />
+                    <Input type="url" placeholder="https://exemplo.com/musica" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -264,24 +262,24 @@ export function EditStoryForm({}: EditStoryFormProps) {
               )}
             />
             
-            <Button type="submit" disabled={isEditPending || isLoadingStory}>
+            <Button type="submit" disabled={isEditPending || isLoadingMusic}>
               {isEditPending ? "Salvando Alterações..." : "Salvar Alterações"}
             </Button>
           </form>
         </Form>
       )}
       
-      {/* Tabela de histórias */}
+      {/* Tabela de músicas */}
       <div className="mt-8">
-        <h3 className="text-lg font-medium mb-4">Lista de Histórias</h3>
+        <h3 className="text-lg font-medium mb-4">Lista de Músicas</h3>
         
         <div className="mb-4">
-          <Label htmlFor="searchTerm">Buscar história</Label>
+          <Label htmlFor="searchTerm">Buscar música</Label>
           <Input 
             id="searchTerm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Digite o título ou ID da história"
+            placeholder="Digite o título ou ID da música"
             className="mt-1"
           />
         </div>
@@ -292,36 +290,28 @@ export function EditStoryForm({}: EditStoryFormProps) {
               <TableRow>
                 <TableHead className="w-[250px]">Título</TableHead>
                 <TableHead>ID</TableHead>
-                <TableHead>Tags</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-4">Carregando histórias...</TableCell>
+                  <TableCell colSpan={3} className="text-center py-4">Carregando músicas...</TableCell>
                 </TableRow>
-              ) : filteredHistorias && filteredHistorias.length > 0 ? (
-                filteredHistorias.map((story) => (
-                  <TableRow key={story.id}>
-                    <TableCell className="font-medium">{story.title}</TableCell>
+              ) : filteredMusicas && filteredMusicas.length > 0 ? (
+                filteredMusicas.map((music) => (
+                  <TableRow key={music.id}>
+                    <TableCell className="font-medium">{music.title}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="font-mono text-xs">{story.id}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {story.tags && story.tags.map(tag => (
-                          <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
-                        ))}
-                      </div>
+                      <Badge variant="outline" className="font-mono text-xs">{music.id}</Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <Button 
                         variant="outline" 
                         size="sm" 
                         onClick={() => {
-                          setStoryIdToEdit(story.id);
-                          handleLoadStory();
+                          setMusicIdToEdit(music.id);
+                          handleLoadMusic();
                         }}
                       >
                         <PencilIcon className="h-4 w-4 mr-2" />
@@ -332,7 +322,7 @@ export function EditStoryForm({}: EditStoryFormProps) {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-4">Nenhuma história encontrada.</TableCell>
+                  <TableCell colSpan={3} className="text-center py-4">Nenhuma música encontrada.</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -341,7 +331,4 @@ export function EditStoryForm({}: EditStoryFormProps) {
       </div>
     </div>
   );
-}
-
-// Será necessário importar Label de seus componentes UI, se não estiver global
-// import { Label } from "@/components/ui/label"; 
+} 

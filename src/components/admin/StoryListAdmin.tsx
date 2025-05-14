@@ -1,19 +1,32 @@
+"use client";
+
 import React from 'react';
-import { getHistorias } from '@/app/historias/data'; // Ajuste o caminho se necessário
+import { useQuery } from '@tanstack/react-query';
 import { Story } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-// Importar o botão de deletar
 import { DeleteStoryButton } from './DeleteStoryButton'; 
+import { getHistorias } from '@/actions/storyActions';
 
 interface StoryListAdminProps {
-  // No futuro, podemos adicionar props para funcionalidades de edição/seleção
   showDeleteButton?: boolean;
-  // onSelectStoryForEdit?: (storyId: string) => void; // Exemplo para futura edição
 }
 
-export async function StoryListAdmin({ showDeleteButton = true }: StoryListAdminProps) {
-  const historias = await getHistorias();
+export function StoryListAdmin({ showDeleteButton = true }: StoryListAdminProps) {
+  // Usar o useQuery que já está com o cache populado graças ao prefetch
+  const { data: historias, isLoading, error } = useQuery<Story[]>({
+    queryKey: ['historias'],
+    queryFn: getHistorias,
+    staleTime: Infinity, // Match the staleTime from the server
+  });
+
+  if (isLoading) {
+    return <p className="text-center py-8">Carregando histórias...</p>;
+  }
+
+  if (error) {
+    return <p className="text-center text-destructive py-8">Erro ao carregar histórias: {(error as Error).message}</p>;
+  }
 
   if (!historias || historias.length === 0) {
     return <p className="text-center text-muted-foreground py-8">Nenhuma história encontrada.</p>;
@@ -40,7 +53,7 @@ export async function StoryListAdmin({ showDeleteButton = true }: StoryListAdmin
               </TableCell>
               <TableCell>
                 <div className="flex flex-wrap gap-1">
-                  {story.tags.map(tag => (
+                  {story.tags && story.tags.map(tag => (
                     <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
                   ))}
                 </div>

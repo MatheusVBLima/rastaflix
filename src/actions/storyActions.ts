@@ -1,64 +1,46 @@
 "use server";
 
 import { z } from "zod";
-import { createServerClient } from "@supabase/ssr"; // Usaremos este para Supabase
-import { cookies } from "next/headers";
-import { auth, clerkClient } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { StorySchema, ActionResponse, Story, EditStorySchema } from "@/lib/types"; // Importar Story diretamente
+import { StorySchema, ActionResponse, Story, EditStorySchema } from "@/lib/types";
+import { getSupabaseClient, ensureAdmin } from './commonActions';
 
-// Esquema de Validação para Nova História - REMOVIDO, importado de types.ts
-// export const StorySchema = z.object({ ... });
+// --- GET STORIES ---
+export async function getHistorias(): Promise<Story[]> {
+  console.log("Buscando histórias do Supabase...");
+  const supabase = await getSupabaseClient();
+  
+  const { data, error } = await supabase
+    .from('historias')
+    .select('id, title, description, tags, url, image_url, created_at')
+    .order('created_at', { ascending: false });
 
-// Helper para criar cliente Supabase em Server Actions/Server Components
-async function createSupabaseServerClient() {
-  const cookieStore = await cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-}
-// Se você for usar a service_role key para operações de admin (bypass RLS):
-// import { createClient } from '@supabase/supabase-js';
-// const supabaseAdmin = createClient(
-//   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-//   process.env.SUPABASE_SERVICE_ROLE_KEY!
-// );
+  if (error) {
+    console.error('Erro ao buscar histórias do Supabase:', error);
+    return []; // Retorna array vazio em caso de erro
+  }
 
-
-// Função para verificar se o usuário é admin
-async function ensureAdmin() {
-  const authResult = await auth();
-  const userId = authResult.userId;
-
-  if (!userId) {
-    throw new Error("Usuário não autenticado.");
+  if (!data) {
+    return [];
   }
   
-  const client = await clerkClient();
-  const user = await client.users.getUser(userId);
-  
-  if (user.privateMetadata?.is_admin !== true) {
-    throw new Error("Acesso negado. Requer privilégios de administrador.");
-  }
-  return userId;
+  // Mapear os dados para a interface Story
+  return data.map(story => ({
+    ...story,
+    description: story.description || "", // Garantir que description seja string
+    tags: story.tags || [], // Garantir que tags seja array
+    imageUrl: story.image_url, // Mapeamento direto
+  }));
 }
 
-// ActionResponse Interface - REMOVIDA, importada de types.ts
-// export interface ActionResponse { ... }
+// Função para obter todas as tags únicas das histórias
+export async function getAllTags(historias: Story[]): Promise<string[]> {
+  const allTags = new Set<string>();
+  historias.forEach(story => {
+    story.tags.forEach(tag => allTags.add(tag));
+  });
+  return Array.from(allTags).sort();
+}
 
 // --- ADD STORY ---
 export async function addStory(
@@ -93,7 +75,7 @@ export async function addStory(
     };
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getSupabaseClient();
 
   const { data, error } = await supabase
     .from("historias")
@@ -126,9 +108,6 @@ export async function addStory(
 }
 
 // --- EDIT STORY ---
-// REMOVER EditStorySchema daqui - foi movido para src/lib/types.ts
-// export const EditStorySchema = StorySchema.extend({ ... });
-
 export async function editStory(
   prevState: ActionResponse | undefined,
   formData: FormData
@@ -161,7 +140,7 @@ export async function editStory(
     };
   }
   
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getSupabaseClient();
   const { error } = await supabase
     .from("historias")
     .update({
@@ -184,7 +163,6 @@ export async function editStory(
   return { success: true, message: "História atualizada com sucesso!" };
 }
 
-
 // --- DELETE STORY ---
 export async function deleteStory(
   storyId: string
@@ -199,20 +177,20 @@ export async function deleteStory(
     return { success: false, message: "ID da história não fornecido." };
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getSupabaseClient();
   const { error } = await supabase
     .from("historias")
     .delete()
-    .eq("id", storyId);
+    .match({ id: storyId });
 
   if (error) {
-    return { success: false, message: `Erro ao deletar história: ${error.message}` };
+    return { success: false, message: `Erro ao excluir história: ${error.message}` };
   }
 
   revalidatePath("/historias");
-  revalidatePath("/admin");
+  revalidatePath("/admin/historias");
   
-  return { success: true, message: "História deletada com sucesso!" };
+  return { success: true, message: "História excluída com sucesso!" };
 }
 
 // --- GET STORY BY ID ---
@@ -221,50 +199,35 @@ export async function getStoryById(storyId: string): Promise<{ story: Story | nu
     return { story: null, error: "ID da história não fornecido." };
   }
 
-  // Não é estritamente necessário verificar admin para um GET simples se a página já é protegida,
-  // mas pode ser uma camada extra se esta action for chamada de contextos não protegidos.
-  // Por simplicidade, vamos assumir que a proteção da rota/página é suficiente para um GET.
-  // Se for para uma action que modifica dados, ensureAdmin() é crucial.
-  
-  // A autenticação básica ainda é uma boa ideia para garantir que apenas usuários logados possam chamar.
-  const authResult = await auth();
-  if (!authResult.userId) {
-    return { story: null, error: "Usuário não autenticado." };
-  }
-  
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await getSupabaseClient();
     const { data, error } = await supabase
       .from("historias")
-      .select("id, title, description, tags, url, image_url, created_at")
+      .select("*")
       .eq("id", storyId)
-      .single(); // Esperamos apenas um resultado
+      .single();
 
     if (error) {
-      console.error("Supabase error fetching story by ID:", error);
-      return { story: null, error: `Erro ao buscar história: ${error.message}` };
+      return { story: null, error: error.message };
     }
 
     if (!data) {
       return { story: null, error: "História não encontrada." };
     }
 
-    // Mapear para a interface Story
-    const storyData: Story = {
+    // Converter para o formato do tipo Story
+    const story: Story = {
       id: data.id,
       title: data.title,
       description: data.description || "",
       tags: data.tags || [],
       url: data.url,
-      imageUrl: data.image_url || undefined, // Mapear image_url e garantir que seja undefined se null/vazio
-      created_at: data.created_at
+      imageUrl: data.image_url,
+      created_at: data.created_at,
     };
-    
-    return { story: storyData };
 
-  } catch (e: any) {
-    console.error("Exception in getStoryById:", e);
-    return { story: null, error: "Ocorreu um erro inesperado ao buscar a história." };
+    return { story };
+  } catch (error: any) {
+    return { story: null, error: `Erro ao buscar história: ${error.message}` };
   }
-}
-
+} 

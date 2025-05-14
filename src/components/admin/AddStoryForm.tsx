@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { StorySchema as ServerStorySchema, ActionResponse } from "@/lib/types";
-import { addStory } from "@/actions/storiesActions";
+import { addStory } from "@/actions/storyActions";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -90,7 +90,7 @@ export function AddStoryForm() {
       // Mostrar toast de sucesso
       toast.success("História adicionada com sucesso!", {
         description: state.message,
-        position: "top-center",
+        position: "bottom-right",
       });
       
       // Limpar form
@@ -104,14 +104,14 @@ export function AddStoryForm() {
       // Mostrar toast de erro
       toast.error("Erro ao adicionar história", {
         description: state.message,
-        position: "top-center",
+        position: "bottom-right",
       });
       
       // Se houver erros de validação, mostrar cada erro em um toast
       if (state.errors) {
         state.errors.forEach(err => {
           toast.error(`${err.field}: ${err.message}`, {
-            position: "top-center",
+            position: "bottom-right",
           });
         });
       }

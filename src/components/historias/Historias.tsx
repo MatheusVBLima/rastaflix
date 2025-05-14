@@ -149,34 +149,34 @@ export function Historias({ initialHistorias, initialTags, isAdmin }: HistoriasP
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredHistorias.map((story: Story) => (
-          <Card key={story.id} className="flex flex-col overflow-hidden group pt-0">
-            <Link href={story.url} target="_blank" rel="noopener noreferrer" className="block">
+          <Card key={story.id} className="flex flex-col h-full overflow-hidden group pt-0">
+            <div className="flex flex-col h-full">
               {story.imageUrl && (
-                <div className="relative w-full h-48 overflow-hidden">
+                <div className="relative w-full pt-[56.25%] overflow-hidden">
                   <Image
                     src={story.imageUrl}
                     alt={`Imagem para ${story.title}`}
-                    layout="fill"
-                    objectFit="cover"
-                    className="transition-transform duration-300 ease-in-out group-hover:scale-105"
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-cover object-center transition-transform duration-300 ease-in-out group-hover:scale-105"
                   />
                 </div>
               )}
-              <CardHeader className={cn(story.imageUrl ? 'pt-4 pb-4 px-6' : 'p-6')}>
-                <div className="flex justify-between items-start">
-                  <CardTitle className="hover:text-primary transition-colors flex-grow">
-                    {story.title}
-                  </CardTitle>
+              
+              <div className="flex flex-col flex-grow p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <Link href={story.url} target="_blank" rel="noopener noreferrer" className="block">
+                    <h3 className="text-lg font-semibold hover:text-primary transition-colors line-clamp-2">
+                      {story.title}
+                    </h3>
+                  </Link>
+                  
                   {isAdmin && (
                     <Button 
                       variant="ghost" 
                       size="icon"
-                      onClick={(e) => { 
-                        e.preventDefault(); // Prevenir navegação do Link pai
-                        e.stopPropagation(); // Prevenir outros eventos
-                        handleCopyId(story.id); 
-                      }}
-                      className="ml-2 shrink-0" // Margem para separar do título
+                      onClick={(e) => handleCopyId(story.id)}
+                      className="ml-2 shrink-0 h-8 w-8" 
                       title="Copiar ID da História"
                     >
                       {copiedId === story.id ? (
@@ -187,27 +187,28 @@ export function Historias({ initialHistorias, initialTags, isAdmin }: HistoriasP
                     </Button>
                   )}
                 </div>
-                <CardDescription className="h-10 overflow-hidden text-ellipsis mt-1">
-                  {story.description}
-                </CardDescription>
-              </CardHeader>
-            </Link>
-            <CardContent className="flex-grow">
-              <div className="flex flex-wrap gap-2 mt-2">
-                {story.tags.map((tag: string) => (
-                  <Badge key={tag} variant="secondary" className="text-xs">
-                    {tag}
-                  </Badge>
-                ))}
+                
+                {story.description && (
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                    {story.description}
+                  </p>
+                )}
+                
+                <div className="flex flex-wrap gap-1.5 mt-auto mb-4">
+                  {story.tags.map((tag: string) => (
+                    <Badge key={tag} variant="secondary" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+                
+                <Button asChild variant="outline" className="w-full mt-auto">
+                  <Link href={story.url} target="_blank" rel="noopener noreferrer">
+                    Ver História
+                  </Link>
+                </Button>
               </div>
-            </CardContent>
-            <CardFooter>
-              <Button asChild variant="outline" className="w-full">
-                <Link href={story.url} target="_blank" rel="noopener noreferrer">
-                  Ler História
-                </Link>
-              </Button>
-            </CardFooter>
+            </div>
           </Card>
         ))}
       </div>
