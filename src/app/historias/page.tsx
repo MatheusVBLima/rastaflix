@@ -1,9 +1,10 @@
-import React from 'react';
-import { getHistorias, getAllTags } from '@/actions/storyActions'; 
-import { Historias } from '@/components/historias/Historias';
-import { auth, clerkClient } from '@clerk/nextjs/server';
-import { QueryClient } from '@tanstack/react-query';
-import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
+import React from "react";
+import { getHistorias, getAllTags } from "@/actions/storyActions";
+import { Historias } from "@/components/historias/Historias";
+import { auth, clerkClient } from "@clerk/nextjs/server";
+import { QueryClient } from "@tanstack/react-query";
+import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
+import { Story } from "@/lib/types";
 
 async function verificarAdmin(): Promise<boolean> {
   const authState = await auth();
@@ -26,11 +27,11 @@ export default async function HistoriasPage() {
       },
     },
   });
-  
-  const queryKey = ['historias'];
+
+  const queryKey = ["historias"];
   console.log(`🔄 Iniciando prefetch de ${queryKey[0]} no servidor...`);
   const startTime = Date.now();
-  
+
   try {
     // 2. Pré-buscar os dados
     await queryClient.prefetchQuery({
@@ -40,23 +41,29 @@ export default async function HistoriasPage() {
         return historias;
       },
     });
-    console.log(`✅ Prefetch de ${queryKey[0]} concluído em ${Date.now() - startTime}ms`);
+    console.log(
+      `✅ Prefetch de ${queryKey[0]} concluído em ${Date.now() - startTime}ms`
+    );
   } catch (error) {
     console.error(`❌ Erro no prefetch de ${queryKey[0]}:`, error);
   }
-  
-  // Buscar histórias e tags para passar para o componente
-  const historias = await getHistorias();
-  const tags = await getAllTags(historias);
+
+  // Obter do cache já preenchido
+  const historias = queryClient.getQueryData<Story[]>(queryKey) ?? [];
+  const tags = await getAllTags(historias); // getAllTags pode precisar dos dados das histórias
   const isAdmin = await verificarAdmin();
-  
+
   // 3. Desidratar o cache
   const dehydratedState = dehydrate(queryClient);
-  
+
   // 4. Renderizar o Client Component dentro do HydrationBoundary
   return (
     <HydrationBoundary state={dehydratedState}>
-      <Historias initialHistorias={historias} initialTags={tags} isAdmin={isAdmin} />
+      <Historias
+        initialHistorias={historias}
+        initialTags={tags}
+        isAdmin={isAdmin}
+      />
     </HydrationBoundary>
   );
 }

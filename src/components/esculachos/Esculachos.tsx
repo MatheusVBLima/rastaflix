@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Esculacho } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, PlayCircle, Square } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface EsculachosProps {
   initialEsculachos: Esculacho[];
@@ -28,7 +30,6 @@ interface EsculachosProps {
 
 export function Esculachos({ initialEsculachos }: EsculachosProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [esculachos, setEsculachos] = useState<Esculacho[]>(initialEsculachos);
   const [availableVoices, setAvailableVoices] = useState<
     SpeechSynthesisVoice[]
   >([]);
@@ -40,27 +41,48 @@ export function Esculachos({ initialEsculachos }: EsculachosProps) {
   );
   const [isLoadingVoices, setIsLoadingVoices] = useState(true);
 
-  // Carregar vozes disponíveis
+  async function fetchEsculachosClientSide(): Promise<Esculacho[]> {
+    console.log(
+      "[Esculachos.tsx] fetchEsculachosClientSide chamada, retornando initialEsculachos"
+    );
+    return initialEsculachos;
+  }
+
+  const {
+    data: esculachos,
+    isLoading,
+    error,
+  } = useQuery<Esculacho[], Error>({
+    queryKey: ["esculachos"],
+    queryFn: fetchEsculachosClientSide,
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+
   useEffect(() => {
     const loadVoices = () => {
       const voices = window.speechSynthesis.getVoices();
       if (voices.length > 0) {
         setAvailableVoices(voices);
-        setSelectedVoiceURI(voices[0]?.voiceURI); // Seleciona a primeira voz por padrão
+        setSelectedVoiceURI(voices[0]?.voiceURI);
         setIsLoadingVoices(false);
       }
     };
-
-    loadVoices(); // Tenta carregar imediatamente
-    window.speechSynthesis.onvoiceschanged = loadVoices; // E quando a lista mudar
-
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
     return () => {
-      window.speechSynthesis.onvoiceschanged = null; // Limpa o listener
-      window.speechSynthesis.cancel(); // Para qualquer fala ao desmontar
+      window.speechSynthesis.onvoiceschanged = null;
+      window.speechSynthesis.cancel();
     };
   }, []);
 
   const filteredEsculachos = useMemo(() => {
+    if (!esculachos) {
+      return [];
+    }
     if (!searchTerm) {
       return esculachos;
     }
@@ -77,42 +99,32 @@ export function Esculachos({ initialEsculachos }: EsculachosProps) {
     );
   }, [searchTerm, esculachos]);
 
-  useEffect(() => {
-    // Atualiza a lista de esculachos se initialEsculachos mudar (ex: após revalidação)
-    setEsculachos(initialEsculachos);
-  }, [initialEsculachos]);
-
   const handleSpeak = (esculacho: Esculacho) => {
     if (speakingEsculachoId === esculacho.id) {
       window.speechSynthesis.cancel();
       setSpeakingEsculachoId(null);
       return;
     }
-
-    window.speechSynthesis.cancel(); // Cancela qualquer fala anterior
+    window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(esculacho.conteudo);
     const selectedVoice = availableVoices.find(
       (v) => v.voiceURI === selectedVoiceURI
     );
-
     if (selectedVoice) {
       utterance.voice = selectedVoice;
     }
-
-    utterance.onstart = () => {
-      setSpeakingEsculachoId(esculacho.id);
-    };
-    utterance.onend = () => {
-      setSpeakingEsculachoId(null);
-    };
+    utterance.onstart = () => setSpeakingEsculachoId(esculacho.id);
+    utterance.onend = () => setSpeakingEsculachoId(null);
     utterance.onerror = () => {
       setSpeakingEsculachoId(null);
       console.error("Erro ao tentar reproduzir o áudio do esculacho.");
-      // Adicionar um toast de erro aqui seria uma boa ideia
     };
-
     window.speechSynthesis.speak(utterance);
   };
+
+  if (error) {
+    return <p>Erro ao carregar esculachos: {error.message}</p>;
+  }
 
   return (
     <div className="space-y-6">
@@ -123,9 +135,14 @@ export function Esculachos({ initialEsculachos }: EsculachosProps) {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
+          disabled={isLoading}
         />
         {availableVoices.length > 0 && (
-          <Select value={selectedVoiceURI} onValueChange={setSelectedVoiceURI}>
+          <Select
+            value={selectedVoiceURI}
+            onValueChange={setSelectedVoiceURI}
+            disabled={isLoadingVoices || isLoading}
+          >
             <SelectTrigger className="w-full sm:w-[280px]">
               <SelectValue
                 placeholder={
@@ -150,62 +167,85 @@ export function Esculachos({ initialEsculachos }: EsculachosProps) {
         )}
       </div>
 
-      {filteredEsculachos.length === 0 && !searchTerm && (
+      {!isLoading && filteredEsculachos.length === 0 && !searchTerm && (
         <p className="text-center text-gray-500 dark:text-gray-400">
           Nenhum esculacho encontrado.
         </p>
       )}
-      {filteredEsculachos.length === 0 && searchTerm && (
+      {!isLoading && filteredEsculachos.length === 0 && searchTerm && (
         <p className="text-center text-gray-500 dark:text-gray-400">
           Nenhum esculacho encontrado para &quot;{searchTerm}&quot;.
         </p>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredEsculachos.map((esculacho) => (
-          <Card key={esculacho.id} className="flex flex-col">
-            <CardHeader>
-              <CardTitle>{esculacho.titulo}</CardTitle>
-              {esculacho.descricao && (
-                <CardDescription className="italic">
-                  {esculacho.descricao}
-                </CardDescription>
-              )}
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <p className="text-sm whitespace-pre-wrap">
-                {esculacho.conteudo}
-              </p>
-            </CardContent>
-            <CardFooter className="flex flex-col items-start gap-2 pt-4">
-              <div className="flex flex-wrap gap-2">
-                {esculacho.autor && (
-                  <Badge variant="outline">Autor: {esculacho.autor}</Badge>
+      {isLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Card
+              key={`skeleton-${index}`}
+              className="flex flex-col h-full overflow-hidden"
+            >
+              <Skeleton className="h-20 w-full" />
+              <CardContent className="flex-grow p-4">
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-5/6 mb-2" />
+                <Skeleton className="h-4 w-2/3" />
+              </CardContent>
+              <CardFooter className="p-4 pt-0 mt-auto">
+                <Skeleton className="h-10 w-full" />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {!isLoading && esculachos && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredEsculachos.map((esculacho) => (
+            <Card key={esculacho.id} className="flex flex-col">
+              <CardHeader>
+                <CardTitle>{esculacho.titulo}</CardTitle>
+                {esculacho.descricao && (
+                  <CardDescription className="italic">
+                    {esculacho.descricao}
+                  </CardDescription>
                 )}
-              </div>
-              <Button
-                onClick={() => handleSpeak(esculacho)}
-                className="w-full mt-2"
-                variant={
-                  speakingEsculachoId === esculacho.id
-                    ? "destructive"
-                    : "default"
-                }
-              >
-                {speakingEsculachoId === esculacho.id ? (
-                  <>
-                    <Square className="mr-2 h-4 w-4" /> Parar
-                  </>
-                ) : (
-                  <>
-                    <PlayCircle className="mr-2 h-4 w-4" /> Ouvir Esculacho
-                  </>
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-sm whitespace-pre-wrap">
+                  {esculacho.conteudo}
+                </p>
+              </CardContent>
+              <CardFooter className="flex flex-col items-start gap-2 pt-4">
+                <div className="flex flex-wrap gap-2">
+                  {esculacho.autor && (
+                    <Badge variant="outline">Autor: {esculacho.autor}</Badge>
+                  )}
+                </div>
+                <Button
+                  onClick={() => handleSpeak(esculacho)}
+                  className="w-full mt-2"
+                  variant={
+                    speakingEsculachoId === esculacho.id
+                      ? "destructive"
+                      : "default"
+                  }
+                >
+                  {speakingEsculachoId === esculacho.id ? (
+                    <>
+                      <Square className="mr-2 h-4 w-4" /> Parar
+                    </>
+                  ) : (
+                    <>
+                      <PlayCircle className="mr-2 h-4 w-4" /> Ouvir Esculacho
+                    </>
+                  )}
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

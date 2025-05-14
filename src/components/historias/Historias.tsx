@@ -234,14 +234,12 @@ export function Historias({
                     ))}
                   </div>
 
-                  <Button asChild variant="outline" className="w-full mt-auto">
-                    <Link
-                      href={story.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Ver História
-                    </Link>
+                  <Button
+                    variant="outline"
+                    className="w-full mt-auto"
+                    tabIndex={-1}
+                  >
+                    Ver História
                   </Button>
                 </div>
               </div>

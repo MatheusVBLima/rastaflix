@@ -10,6 +10,7 @@ import { Music } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ClipboardCopyIcon, CheckIcon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface MusicasProps {
   initialMusicas: Music[];
@@ -80,7 +81,36 @@ export function Musicas({ initialMusicas, isAdmin }: MusicasProps) {
   };
 
   if (isLoading && !initialMusicas?.length) {
-    return <p>Carregando músicas...</p>;
+    return (
+      <div className="container mx-auto py-8 px-4 md:px-6">
+        <div className="mb-8 flex flex-col md:flex-row gap-4 items-center">
+          <Input
+            type="text"
+            placeholder="Pesquisar por nome..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-sm"
+            disabled
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Card
+              key={`skeleton-${index}`}
+              className="flex flex-col h-full overflow-hidden"
+            >
+              <Skeleton className="relative w-full pt-[56.25%]" />
+              <CardContent className="p-4 flex-grow">
+                <Skeleton className="h-6 w-3/4 mb-2" />
+              </CardContent>
+              <CardFooter className="p-4 pt-0 mt-auto">
+                <Skeleton className="h-10 w-full" />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (error) {
@@ -156,14 +186,8 @@ export function Musicas({ initialMusicas, isAdmin }: MusicasProps) {
                 </CardContent>
 
                 <CardFooter className="p-4 pt-0 mt-auto">
-                  <Button asChild variant="outline" className="w-full">
-                    <Link
-                      href={music.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Ouvir Música
-                    </Link>
+                  <Button variant="outline" className="w-full" tabIndex={-1}>
+                    Ouvir Música
                   </Button>
                 </CardFooter>
               </div>
