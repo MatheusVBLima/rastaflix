@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   try {
     const client = await clerkClient();
     const user = await client.users.getUser(userId);
-    const isAdmin = user.privateMetadata?.is_admin === true;
+    const isAdmin = user?.privateMetadata?.is_admin === true;
     return NextResponse.json({ isAdmin });
   } catch (error) {
     console.error("Erro ao buscar metadados do usuário:", error);
