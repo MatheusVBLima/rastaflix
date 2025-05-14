@@ -71,3 +71,36 @@ export interface ActionResponse {
 export interface StoryActionResponse extends ActionResponse {
   story?: Story;
 }
+
+// Tipos e Schemas para Esculachos
+
+export interface Esculacho {
+  id: string;
+  titulo: string;
+  descricao?: string | null;
+  conteudo: string;
+  autor?: string | null;
+  created_at: string;
+}
+
+export const EsculachoSchema = z.object({
+  titulo: z.string().min(1, { message: "Título é obrigatório." }),
+  conteudo: z.string().min(1, { message: "Conteúdo é obrigatório." }),
+  // Para campos opcionais que podem ser string ou não enviados (undefined) e também aceitar null do banco:
+  descricao: z.string().nullable().optional().or(z.literal("")),
+  autor: z.string().nullable().optional().or(z.literal("")),
+});
+
+export type EsculachoFormData = z.infer<typeof EsculachoSchema>;
+
+export const EditEsculachoSchema = EsculachoSchema.extend({
+  id: z.string().uuid({
+    message: "ID do esculacho é obrigatório e deve ser um UUID válido.",
+  }),
+});
+
+// Se você precisar de um tipo específico para os dados do formulário de edição
+// que inclua o ID, mas talvez não outros campos que o schema base tem:
+// export type EditEsculachoFormData = z.infer<typeof EditEsculachoSchema>;
+// Mas geralmente, o formulário de edição preencherá os campos do EsculachoSchema
+// e o ID será gerenciado separadamente ou incluído no schema de validação final.
