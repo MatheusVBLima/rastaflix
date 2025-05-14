@@ -5,7 +5,10 @@ export const StorySchema = z.object({
   id: z.string().optional(), // ID é opcional quando criamos, mas obrigatório para edição
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres" }),
   description: z.string().optional(),
-  tags: z.string().optional(), // Na UI, tags são string separada por vírgulas
+  tags: z.union([
+    z.string(), // Aceita string (formato do frontend)
+    z.array(z.string()) // Aceita array (formato do backend)
+  ]).optional(), // Na UI, tags são string separada por vírgulas, no backend é array
   url: z.string().url({ message: "URL inválida" }),
   imageUrl: z.string().url({ message: "URL da imagem inválida" }).optional(),
   created_at: z.string().datetime().optional(), 
