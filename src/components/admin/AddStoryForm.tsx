@@ -68,21 +68,27 @@ export function AddStoryForm() {
         setPreviewMessage("Buscando imagem de preview...");
         startTransition(async () => {
           const ogData = await getOpenGraphData(storyUrl);
+
           if (ogData.success) {
+            // A chamada para getOpenGraphData foi bem-sucedida (página acessada)
             if (ogData.imageUrl) {
+              // Encontrou uma og:image
               form.setValue("imageUrl", ogData.imageUrl, {
                 shouldValidate: true,
               });
               setPreviewMessage("Imagem de preview carregada!");
             } else {
-              // URL válida, mas sem og:image. Tentar fallback para YouTube thumbnail.
+              // Não encontrou og:image, mas a chamada foi ok. Hora do fallback para YouTube.
               console.log(
-                "[AddStoryForm] Tentando fallback para YouTube. storyUrl:",
+                "[AddStoryForm] og:image não encontrada (ou null). Tentando fallback para YouTube. storyUrl:",
                 storyUrl
               );
               try {
                 const urlObj = new URL(storyUrl);
-                console.log("[AddStoryForm] urlObj.hostname:", urlObj.hostname);
+                console.log(
+                  "[AddStoryForm] urlObj.hostname para fallback:",
+                  urlObj.hostname
+                );
 
                 if (
                   urlObj.hostname.includes("youtube.com") ||
@@ -90,12 +96,11 @@ export function AddStoryForm() {
                 ) {
                   let videoId = urlObj.searchParams.get("v");
                   if (!videoId && urlObj.hostname.includes("youtu.be")) {
-                    videoId = urlObj.pathname.substring(1); // Para URLs curtas como youtu.be/VIDEO_ID
+                    videoId = urlObj.pathname.substring(1);
                   }
 
                   if (videoId) {
                     const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-                    // Em um cenário real, seria bom adicionar uma verificação se a thumbnail existe.
                     form.setValue("imageUrl", thumbnailUrl, {
                       shouldValidate: true,
                     });
@@ -103,31 +108,40 @@ export function AddStoryForm() {
                       "Thumbnail do YouTube carregada como preview."
                     );
                   } else {
+                    console.log(
+                      "[AddStoryForm] Não foi possível extrair videoId do YouTube."
+                    );
                     setPreviewMessage(
-                      "A URL é válida, mas não foi encontrada uma imagem de preview (og:image) e não foi possível extrair o ID do vídeo do YouTube."
+                      ogData.message ||
+                        "Não foi possível extrair o ID do vídeo do YouTube para a thumbnail."
                     );
                   }
                 } else {
                   console.log(
-                    "[AddStoryForm] URL não identificada como YouTube."
+                    "[AddStoryForm] URL não é do YouTube, usando mensagem de ogData."
                   );
                   setPreviewMessage(
-                    "A URL é válida, mas não foi encontrada uma imagem de preview (og:image)."
+                    ogData.message ||
+                      "Nenhuma imagem de preview encontrada e não é uma URL do YouTube."
                   );
                 }
-              } catch (e) {
-                // Caso a URL seja inválida, o construtor new URL() falhará ou outra exceção pode ocorrer.
+              } catch (e: any) {
                 console.error(
-                  "Erro ao processar URL para thumbnail do YouTube:",
+                  "[AddStoryForm] Erro no bloco de fallback do YouTube:",
                   e
                 );
                 setPreviewMessage(
-                  "A URL é válida, mas não foi encontrada uma imagem de preview (og:image). Ocorreu um erro ao tentar obter a thumbnail do YouTube."
+                  ogData.message ||
+                    "Ocorreu um erro ao tentar obter a thumbnail do YouTube."
                 );
               }
             }
           } else {
-            // Erro ao buscar/processar OG data
+            // A chamada para getOpenGraphData falhou (e.g., URL inacessível, erro no servidor)
+            console.log(
+              "[AddStoryForm] getOpenGraphData falhou. ogData:",
+              ogData
+            );
             setPreviewMessage(
               ogData.message ||
                 ogData.error ||
