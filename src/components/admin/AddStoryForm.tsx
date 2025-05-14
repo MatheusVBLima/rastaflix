@@ -38,7 +38,7 @@ export function AddStoryForm() {
   const [previewMessage, setPreviewMessage] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const router = useRouter();
-  
+
   // Adaptando para useFormState
   const initialState: ActionResponse = { success: false, message: "" };
   const [state, formAction] = useFormState(addStory, initialState);
@@ -59,16 +59,72 @@ export function AddStoryForm() {
   // Mantemos esse useEffect apenas para o debounce da preview da URL
   useEffect(() => {
     const handler = setTimeout(async () => {
-      if (storyUrl && storyUrl.startsWith("http") && !form.getValues("imageUrl")) {
+      if (
+        storyUrl &&
+        storyUrl.startsWith("http") &&
+        !form.getValues("imageUrl")
+      ) {
         setIsFetchingPreview(true);
         setPreviewMessage("Buscando imagem de preview...");
         startTransition(async () => {
           const ogData = await getOpenGraphData(storyUrl);
-          if (ogData.success && ogData.imageUrl) {
-            form.setValue("imageUrl", ogData.imageUrl, { shouldValidate: true });
-            setPreviewMessage("Imagem de preview carregada!");
+          if (ogData.success) {
+            if (ogData.imageUrl) {
+              form.setValue("imageUrl", ogData.imageUrl, {
+                shouldValidate: true,
+              });
+              setPreviewMessage("Imagem de preview carregada!");
+            } else {
+              // URL válida, mas sem og:image. Tentar fallback para YouTube thumbnail.
+              try {
+                const urlObj = new URL(storyUrl);
+                if (
+                  urlObj.hostname === "www.youtube.com" ||
+                  urlObj.hostname === "youtube.com" ||
+                  urlObj.hostname === "youtu.be"
+                ) {
+                  let videoId = urlObj.searchParams.get("v");
+                  if (!videoId && urlObj.hostname === "youtu.be") {
+                    videoId = urlObj.pathname.substring(1); // Para URLs curtas como youtu.be/VIDEO_ID
+                  }
+
+                  if (videoId) {
+                    const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+                    // Em um cenário real, seria bom adicionar uma verificação se a thumbnail existe.
+                    form.setValue("imageUrl", thumbnailUrl, {
+                      shouldValidate: true,
+                    });
+                    setPreviewMessage(
+                      "Thumbnail do YouTube carregada como preview."
+                    );
+                  } else {
+                    setPreviewMessage(
+                      "A URL é válida, mas não foi encontrada uma imagem de preview (og:image) e não foi possível extrair o ID do vídeo do YouTube."
+                    );
+                  }
+                } else {
+                  setPreviewMessage(
+                    "A URL é válida, mas não foi encontrada uma imagem de preview (og:image)."
+                  );
+                }
+              } catch (e) {
+                // Caso a URL seja inválida, o construtor new URL() falhará ou outra exceção pode ocorrer.
+                console.error(
+                  "Erro ao processar URL para thumbnail do YouTube:",
+                  e
+                );
+                setPreviewMessage(
+                  "A URL é válida, mas não foi encontrada uma imagem de preview (og:image). Ocorreu um erro ao tentar obter a thumbnail do YouTube."
+                );
+              }
+            }
           } else {
-            setPreviewMessage(ogData.message || ogData.error || "Não foi possível carregar a imagem de preview.");
+            // Erro ao buscar/processar OG data
+            setPreviewMessage(
+              ogData.message ||
+                ogData.error ||
+                "Não foi possível carregar a imagem de preview."
+            );
           }
           setIsFetchingPreview(false);
         });
@@ -92,24 +148,24 @@ export function AddStoryForm() {
         description: state.message,
         position: "bottom-right",
       });
-      
+
       // Limpar form
       form.reset();
       setPreviewMessage(null);
-      
+
       // Revalidar dados
       router.refresh();
-      queryClient.resetQueries({ queryKey: ['historias'] });
+      queryClient.resetQueries({ queryKey: ["historias"] });
     } else if (state?.message && !state.success) {
       // Mostrar toast de erro
       toast.error("Erro ao adicionar história", {
         description: state.message,
         position: "bottom-right",
       });
-      
+
       // Se houver erros de validação, mostrar cada erro em um toast
       if (state.errors) {
-        state.errors.forEach(err => {
+        state.errors.forEach((err) => {
           toast.error(`${err.field}: ${err.message}`, {
             position: "bottom-right",
           });
@@ -118,33 +174,40 @@ export function AddStoryForm() {
     }
   }, [state, form, router, queryClient]);
 
-  const onSubmit = useCallback((values: FormValues) => {
-    startTransition(() => {
-      // FormData é esperado pela server action
-      const formData = new FormData();
-      formData.append("title", values.title);
-      if (values.description) formData.append("description", values.description);
-      
-      // values.tags já é uma string (ou undefined) devido ao FormSchema cliente.
-      if (values.tags) {
-        formData.append("tags", values.tags);
-      }
-      
-      formData.append("url", values.url);
+  const onSubmit = useCallback(
+    (values: FormValues) => {
+      startTransition(() => {
+        // FormData é esperado pela server action
+        const formData = new FormData();
+        formData.append("title", values.title);
+        if (values.description)
+          formData.append("description", values.description);
 
-      if (typeof values.imageUrl === 'string') {
-        formData.append("imageUrl", values.imageUrl);
-      }
-      
-      formAction(formData);
-    });
-  }, [formAction]);
+        // values.tags já é uma string (ou undefined) devido ao FormSchema cliente.
+        if (values.tags) {
+          formData.append("tags", values.tags);
+        }
+
+        formData.append("url", values.url);
+
+        if (typeof values.imageUrl === "string") {
+          formData.append("imageUrl", values.imageUrl);
+        }
+
+        formAction(formData);
+      });
+    },
+    [formAction]
+  );
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-4 border rounded-md mt-4">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-6 p-4 border rounded-md mt-4"
+      >
         <h2 className="text-xl font-semibold mb-4">Adicionar Nova História</h2>
-        
+
         <FormField
           control={form.control}
           name="title"
@@ -166,7 +229,10 @@ export function AddStoryForm() {
             <FormItem>
               <FormLabel>Descrição (Opcional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Uma breve descrição da história" {...field} />
+                <Textarea
+                  placeholder="Uma breve descrição da história"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -189,19 +255,17 @@ export function AddStoryForm() {
                     Se StorySchema.tags fosse z.string(), seria mais direto.
                     A transformação acontece no Zod. A action espera a string.
                 */}
-                <Input 
-                  placeholder="js, react, nextjs (separadas por vírgula)" 
+                <Input
+                  placeholder="js, react, nextjs (separadas por vírgula)"
                   {...field}
                   // Assegura que o valor passado para o input seja uma string.
                   // O `field` para `tags` (que é `string().optional()` no FormSchema antes da transformação)
                   // deve ser uma string.
-                  value={field.value || ""} 
+                  value={field.value || ""}
                   onChange={(e) => field.onChange(e.target.value)}
                 />
               </FormControl>
-              <FormDescription>
-                Separe as tags por vírgula.
-              </FormDescription>
+              <FormDescription>Separe as tags por vírgula.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -214,7 +278,11 @@ export function AddStoryForm() {
             <FormItem>
               <FormLabel>URL da História</FormLabel>
               <FormControl>
-                <Input type="url" placeholder="https://exemplo.com/historia" {...field} />
+                <Input
+                  type="url"
+                  placeholder="https://exemplo.com/historia"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -228,19 +296,36 @@ export function AddStoryForm() {
             <FormItem>
               <FormLabel>URL da Imagem (Opcional)</FormLabel>
               <FormControl>
-                <Input type="url" placeholder="https://exemplo.com/imagem.png" {...field} disabled={isFetchingPreview} />
+                <Input
+                  type="url"
+                  placeholder="https://exemplo.com/imagem.png"
+                  {...field}
+                  disabled={isFetchingPreview}
+                />
               </FormControl>
-              {isFetchingPreview && <FormDescription>Buscando preview...</FormDescription>}
-              {previewMessage && <FormDescription className={previewMessage.startsWith("Imagem de preview carregada!") ? "text-green-500" : "text-gray-500"}>{previewMessage}</FormDescription>}
+              {isFetchingPreview && (
+                <FormDescription>Buscando preview...</FormDescription>
+              )}
+              {previewMessage && (
+                <FormDescription
+                  className={
+                    previewMessage.startsWith("Imagem de preview carregada!")
+                      ? "text-green-500"
+                      : "text-gray-500"
+                  }
+                >
+                  {previewMessage}
+                </FormDescription>
+              )}
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         <Button type="submit" disabled={isPending}>
           {isPending ? "Adicionando..." : "Adicionar História"}
         </Button>
       </form>
     </Form>
   );
-} 
+}
