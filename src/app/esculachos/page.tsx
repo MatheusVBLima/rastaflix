@@ -45,8 +45,8 @@ export default async function EsculachosPage() {
     );
   }
 
-  // Buscar esculachos para renderizar
-  const esculachos: Esculacho[] = await getEsculachos(); // getEsculachos retorna Esculacho[] diretamente
+  // Obter do cache já preenchido, como sugerido
+  const esculachos = queryClient.getQueryData<Esculacho[]>(queryKey) ?? [];
 
   // 3. Desidratar o cache
   const dehydratedState = dehydrate(queryClient);
