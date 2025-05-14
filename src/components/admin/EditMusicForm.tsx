@@ -34,6 +34,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Zod schema para o formulário
 const FormSchema = EditMusicSchema;
@@ -92,6 +93,46 @@ export function EditMusicForm({}: EditMusicFormProps) {
     },
     mode: "onChange",
   });
+
+  // Observar mudanças na URL para atualizar automaticamente a imagem
+  const currentUrlValue = form.watch("url");
+
+  // Efeito para atualizar a URL da imagem quando a URL da música mudar
+  useEffect(() => {
+    if (currentUrlValue && currentUrlValue.startsWith("http")) {
+      try {
+        const urlObj = new URL(currentUrlValue);
+
+        // Verificar se é uma URL do YouTube
+        if (
+          urlObj.hostname.includes("youtube.com") ||
+          urlObj.hostname.includes("youtu.be")
+        ) {
+          // Extrair videoId para URLs padrão do YouTube
+          let videoId = urlObj.searchParams.get("v");
+
+          // Formato youtu.be/ID
+          if (!videoId && urlObj.hostname.includes("youtu.be")) {
+            videoId = urlObj.pathname.substring(1);
+          }
+
+          if (videoId) {
+            // Construir URL da thumbnail diretamente
+            const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+            console.log(
+              "[EditMusicForm] Thumbnail do YouTube atualizada:",
+              thumbnailUrl
+            );
+
+            // Definir a URL da thumbnail no formulário
+            form.setValue("imageUrl", thumbnailUrl, { shouldValidate: true });
+          }
+        }
+      } catch (error) {
+        console.error("[EditMusicForm] Erro ao analisar URL:", error);
+      }
+    }
+  }, [currentUrlValue, form]);
 
   const handleLoadMusic = useCallback(
     async (idToLoad?: string) => {
@@ -201,6 +242,45 @@ export function EditMusicForm({}: EditMusicFormProps) {
       music.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Rendered UI when loading data
+  const renderLoadingState = () => (
+    <div className="mt-8">
+      <h3 className="text-lg font-medium mb-4">Lista de Músicas</h3>
+
+      <div className="mb-4">
+        <Skeleton className="h-5 w-32 mb-1" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[250px]">Título</TableHead>
+              <TableHead>ID</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 5 }).map((_, index) => (
+              <TableRow key={index}>
+                <TableCell>
+                  <Skeleton className="h-5 w-full" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-5 w-28" />
+                </TableCell>
+                <TableCell className="text-right">
+                  <Skeleton className="h-8 w-24 ml-auto" />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6 p-4 border rounded-md mt-4">
       <h2 className="text-xl font-semibold mb-4">Editar Música Existente</h2>
@@ -285,24 +365,26 @@ export function EditMusicForm({}: EditMusicFormProps) {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="imageUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>URL da Imagem (Opcional)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="url"
-                      placeholder="https://exemplo.com/imagem.png"
-                      {...field}
-                      value={field.value || ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+
+            {/* Campo da URL da Imagem - Agora oculto para o usuário */}
+            <input
+              type="hidden"
+              {...form.register("imageUrl")}
+              value={form.getValues("imageUrl") || ""}
             />
+
+            {form.getValues("imageUrl") && (
+              <div className="mt-2">
+                <p className="text-sm text-muted-foreground">
+                  Preview da Imagem:
+                </p>
+                <img
+                  src={form.getValues("imageUrl") || ""}
+                  alt="Preview da música"
+                  className="rounded-md border max-h-40 w-auto"
+                />
+              </div>
+            )}
 
             <Button type="submit" disabled={isEditPending || isLoadingMusic}>
               {isEditPending ? "Salvando Alterações..." : "Salvar Alterações"}
@@ -311,74 +393,74 @@ export function EditMusicForm({}: EditMusicFormProps) {
         </Form>
       )}
 
-      {/* Tabela de músicas */}
-      <div className="mt-8">
-        <h3 className="text-lg font-medium mb-4">Lista de Músicas</h3>
+      {/* Tabela de músicas - mostrar skeleton durante carregamento */}
+      {isLoading ? (
+        renderLoadingState()
+      ) : (
+        <div className="mt-8">
+          <h3 className="text-lg font-medium mb-4">Lista de Músicas</h3>
 
-        <div className="mb-4">
-          <Label htmlFor="searchTerm">Buscar música</Label>
-          <Input
-            id="searchTerm"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Digite o título ou ID da música"
-            className="mt-1"
-          />
-        </div>
+          <div className="mb-4">
+            <Label htmlFor="searchTerm">Buscar música</Label>
+            <Input
+              id="searchTerm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Digite o título ou ID da música"
+              className="mt-1"
+            />
+          </div>
 
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[250px]">Título</TableHead>
-                <TableHead>ID</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center py-4">
-                    Carregando músicas...
-                  </TableCell>
+                  <TableHead className="w-[250px]">Título</TableHead>
+                  <TableHead>ID</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
-              ) : filteredMusicas && filteredMusicas.length > 0 ? (
-                filteredMusicas.map((music) => (
-                  <TableRow key={music.id}>
-                    <TableCell className="font-medium">{music.title}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="font-mono text-xs">
-                        {music.id}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          // Define o ID no estado (para o input)
-                          setMusicIdToEdit(music.id);
-                          // Chama handleLoadMusic com o ID da música da linha clicada
-                          handleLoadMusic(music.id);
-                        }}
-                      >
-                        <PencilIcon className="h-4 w-4 mr-2" />
-                        Editar
-                      </Button>
+              </TableHeader>
+              <TableBody>
+                {filteredMusicas && filteredMusicas.length > 0 ? (
+                  filteredMusicas.map((music) => (
+                    <TableRow key={music.id}>
+                      <TableCell className="font-medium">
+                        {music.title}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-mono text-xs">
+                          {music.id}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            // Define o ID no estado (para o input)
+                            setMusicIdToEdit(music.id);
+                            // Chama handleLoadMusic com o ID da música da linha clicada
+                            handleLoadMusic(music.id);
+                          }}
+                        >
+                          <PencilIcon className="h-4 w-4 mr-2" />
+                          Editar
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center py-4">
+                      Nenhuma música encontrada.
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center py-4">
-                    Nenhuma música encontrada.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

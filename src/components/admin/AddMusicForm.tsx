@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MusicSchema, MusicFormData } from "@/lib/types";
 import { addMusic } from "@/actions/musicActions";
-import { getOpenGraphData } from "@/actions/openGraphActions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,31 +38,63 @@ export default function AddMusicForm() {
 
   // Efeito para buscar preview da URL
   useEffect(() => {
-    if (
-      currentUrlValue &&
-      (currentUrlValue.startsWith("https://www.youtube.com") ||
-        currentUrlValue.startsWith("https://youtu.be"))
-    ) {
-      const timer = setTimeout(async () => {
+    if (currentUrlValue && currentUrlValue.startsWith("http")) {
+      const timer = setTimeout(() => {
         setIsFetchingPreview(true);
         setPreviewError(null);
         form.setValue("imageUrl", ""); // Limpa a imagem antiga enquanto busca uma nova
+
         try {
-          const ogData = await getOpenGraphData(currentUrlValue);
-          if (ogData.success && ogData.imageUrl) {
-            form.setValue("imageUrl", ogData.imageUrl, {
-              shouldValidate: true,
-            });
-          } else {
-            setPreviewError(
-              ogData.message || "Não foi possível buscar a imagem de preview."
-            );
+          const urlObj = new URL(currentUrlValue);
+
+          // Verificar se é uma URL do YouTube
+          if (
+            urlObj.hostname.includes("youtube.com") ||
+            urlObj.hostname.includes("youtu.be")
+          ) {
+            // Extrair videoId para URLs padrão do YouTube
+            let videoId = urlObj.searchParams.get("v");
+
+            // Formato youtu.be/ID
+            if (!videoId && urlObj.hostname.includes("youtu.be")) {
+              videoId = urlObj.pathname.substring(1);
+            }
+
+            if (videoId) {
+              // Construir URL da thumbnail diretamente
+              const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+              console.log("[AddMusicForm] Thumbnail do YouTube:", thumbnailUrl);
+
+              // Definir a URL da thumbnail no formulário
+              form.setValue("imageUrl", thumbnailUrl, { shouldValidate: true });
+              setIsFetchingPreview(false);
+              return;
+            }
           }
+
+          // Não é YouTube ou não conseguiu extrair videoId
+          setPreviewError(
+            "URL não é do YouTube ou não foi possível extrair a thumbnail."
+          );
+          // Definir uma imagem padrão
+          form.setValue(
+            "imageUrl",
+            "https://via.placeholder.com/1200x630?text=Preview+Indisponível",
+            { shouldValidate: true }
+          );
         } catch (error) {
-          setPreviewError("Erro ao buscar preview da imagem.");
+          console.error("[AddMusicForm] Erro ao analisar URL:", error);
+          setPreviewError("Erro ao processar URL.");
+          // Fallback para qualquer erro
+          form.setValue(
+            "imageUrl",
+            "https://via.placeholder.com/1200x630?text=Preview+Indisponível",
+            { shouldValidate: true }
+          );
         }
+
         setIsFetchingPreview(false);
-      }, 1000); // Debounce de 1 segundo
+      }, 800);
 
       return () => clearTimeout(timer);
     }
@@ -129,40 +160,25 @@ export default function AddMusicForm() {
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="imageUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>URL da Imagem (Opcional)</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="Será preenchido automaticamente se for link do YouTube"
-                  {...field}
-                  value={field.value || ""}
-                  disabled={isFetchingPreview}
-                />
-              </FormControl>
+        {/* Campo da URL da Imagem - Agora oculto para o usuário, preenchido automaticamente */}
+        <input type="hidden" {...form.register("imageUrl")} />
 
-              {previewError && (
-                <p className="text-sm text-red-500 mt-1">{previewError}</p>
-              )}
-              <FormMessage />
-              {currentImageUrlValue && !isFetchingPreview && !previewError && (
-                <div className="mt-2">
-                  <p className="text-sm text-muted-foreground">
-                    Preview da Imagem:
-                  </p>
-                  <img
-                    src={currentImageUrlValue}
-                    alt="Preview da música"
-                    className="rounded-md border max-h-40 w-auto"
-                  />
-                </div>
-              )}
-            </FormItem>
-          )}
-        />
+        {isFetchingPreview && (
+          <p className="text-sm text-muted-foreground">Buscando preview...</p>
+        )}
+        {previewError && (
+          <p className="text-sm text-red-500 mt-1">{previewError}</p>
+        )}
+        {currentImageUrlValue && !isFetchingPreview && !previewError && (
+          <div className="mt-2">
+            <p className="text-sm text-muted-foreground">Preview da Imagem:</p>
+            <img
+              src={currentImageUrlValue}
+              alt="Preview da música"
+              className="rounded-md border max-h-40 w-auto"
+            />
+          </div>
+        )}
 
         <Button type="submit" disabled={isPending || isFetchingPreview}>
           {isPending || isFetchingPreview ? (

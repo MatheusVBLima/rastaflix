@@ -149,14 +149,49 @@ export function Musicas({ initialMusicas, isAdmin }: MusicasProps) {
               className="flex flex-col h-full overflow-hidden group pt-0"
             >
               <div className="flex flex-col h-full">
-                {music.imageUrl && (
+                {music.url && (
                   <div className="relative w-full pt-[56.25%] overflow-hidden">
                     <Image
-                      src={music.imageUrl}
+                      src={(() => {
+                        try {
+                          // Tentar extrair ID do YouTube da URL
+                          const urlObj = new URL(music.url);
+                          if (
+                            urlObj.hostname.includes("youtube.com") ||
+                            urlObj.hostname.includes("youtu.be")
+                          ) {
+                            // Extrair videoId para URLs padrão do YouTube
+                            let videoId = urlObj.searchParams.get("v");
+
+                            // Formato youtu.be/ID
+                            if (
+                              !videoId &&
+                              urlObj.hostname.includes("youtu.be")
+                            ) {
+                              videoId = urlObj.pathname.substring(1);
+                            }
+
+                            if (videoId) {
+                              // Construir URL da thumbnail diretamente
+                              return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+                            }
+                          }
+                          // Se não conseguir extrair do YouTube, usar a URL da imagem salva
+                          return music.imageUrl || "/placeholder.png";
+                        } catch (e) {
+                          // Fallback para qualquer erro
+                          return music.imageUrl || "/placeholder.png";
+                        }
+                      })()}
                       alt={`Imagem para ${music.title}`}
                       fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       className="object-cover object-center transition-transform duration-300 ease-in-out group-hover:scale-105"
+                      onError={(e) => {
+                        // Fallback para imagem padrão se a thumbnail falhar
+                        const imgElement = e.currentTarget;
+                        imgElement.src = "/placeholder.png";
+                      }}
                     />
                   </div>
                 )}
