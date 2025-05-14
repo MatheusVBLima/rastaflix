@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useTransition, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { MusicSchema, ActionResponse } from "@/lib/types";
+import { MusicSchema, MusicFormData } from "@/lib/types";
 import { addMusic } from "@/actions/musicActions";
+import { getOpenGraphData } from "@/actions/openGraphActions";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -15,105 +16,88 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { useFormState } from "react-dom";
-import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
-// Esquema Zod para o formulário do cliente
-const FormSchema = MusicSchema;
-
-type FormValues = z.infer<typeof FormSchema>;
-
-export function AddMusicForm() {
+export default function AddMusicForm() {
   const [isPending, startTransition] = useTransition();
-  const router = useRouter();
-  const queryClient = useQueryClient();
-
-  // Para feedback visual enquanto verifica preview
   const [isFetchingPreview, setIsFetchingPreview] = useState(false);
-  const [previewMessage, setPreviewMessage] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
 
-  // Estado inicial da action
-  const initialState: ActionResponse = { 
-    success: false, 
-    message: ""
-  };
-
-  // Criar formAction para useFormState
-  const formAction = async (prevState: ActionResponse, formData: FormData) => {
-    return await addMusic(formData);
-  };
-
-  // Estado do formulário e formAction vinculada para gerenciar submissões
-  const [state, formAction2] = useFormState(formAction, initialState);
-
-  // Configurar formulário com validação Zod
-  const form = useForm<FormValues>({
-    resolver: zodResolver(FormSchema),
+  const form = useForm<MusicFormData>({
+    resolver: zodResolver(MusicSchema),
     defaultValues: {
       title: "",
       url: "",
       imageUrl: "",
     },
-    mode: "onChange",
   });
 
-  // Efeito para reagir às mudanças de estado do formulário
+  const currentUrlValue = form.watch("url");
+  const currentImageUrlValue = form.watch("imageUrl");
+
+  // Efeito para buscar preview da URL
   useEffect(() => {
-    if (state.success) {
-      // Mostrar toast de sucesso
-      toast.success("Música adicionada com sucesso!", {
-        description: state.message,
-        position: "bottom-right",
-      });
-      
-      // Limpar form
-      form.reset();
-      setPreviewMessage(null);
-      
-      // Revalidar dados
-      router.refresh();
-      queryClient.resetQueries({ queryKey: ['musicas'] });
-    } else if (state?.message && !state.success) {
-      // Mostrar toast de erro
-      toast.error("Erro ao adicionar música", {
-        description: state.message,
-        position: "bottom-right",
-      });
-      
-      // Se houver erros de validação, mostrar cada erro em um toast
-      if (state.errors) {
-        state.errors.forEach(err => {
-          toast.error(`${err.field}: ${err.message}`, {
-            position: "bottom-right",
-          });
+    if (
+      currentUrlValue &&
+      (currentUrlValue.startsWith("https://www.youtube.com") ||
+        currentUrlValue.startsWith("https://youtu.be"))
+    ) {
+      const timer = setTimeout(async () => {
+        setIsFetchingPreview(true);
+        setPreviewError(null);
+        form.setValue("imageUrl", ""); // Limpa a imagem antiga enquanto busca uma nova
+        try {
+          const ogData = await getOpenGraphData(currentUrlValue);
+          if (ogData.success && ogData.imageUrl) {
+            form.setValue("imageUrl", ogData.imageUrl, {
+              shouldValidate: true,
+            });
+          } else {
+            setPreviewError(
+              ogData.message || "Não foi possível buscar a imagem de preview."
+            );
+          }
+        } catch (error) {
+          setPreviewError("Erro ao buscar preview da imagem.");
+        }
+        setIsFetchingPreview(false);
+      }, 1000); // Debounce de 1 segundo
+
+      return () => clearTimeout(timer);
+    }
+  }, [currentUrlValue, form]);
+
+  const onSubmit = async (data: MusicFormData) => {
+    startTransition(async () => {
+      const formDataToSubmit = new FormData();
+      formDataToSubmit.append("title", data.title);
+      formDataToSubmit.append("url", data.url);
+      formDataToSubmit.append("imageUrl", data.imageUrl || "");
+
+      const result = await addMusic(formDataToSubmit);
+      if (result.success) {
+        toast.success(result.message || "Música adicionada com sucesso!");
+        form.reset(); // Limpa o formulário
+        setPreviewError(null);
+      } else {
+        toast.error(result.message || "Erro ao adicionar música.", {
+          description: result.errors
+            ?.map((err) => `${err.field}: ${err.message}`)
+            .join("\n"),
         });
       }
-    }
-  }, [state, form, router, queryClient]);
-
-  const onSubmit = useCallback((values: FormValues) => {
-    startTransition(() => {
-      // FormData é esperado pela server action
-      const formData = new FormData();
-      formData.append("title", values.title);
-      formData.append("url", values.url);
-
-      if (typeof values.imageUrl === 'string') {
-        formData.append("imageUrl", values.imageUrl);
-      }
-      
-      formAction2(formData);
     });
-  }, [formAction2]);
+  };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-4 border rounded-md mt-4">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-6 p-4 border rounded-md mt-4"
+      >
         <h2 className="text-xl font-semibold mb-4">Adicionar Nova Música</h2>
-        
         <FormField
           control={form.control}
           name="title"
@@ -133,9 +117,12 @@ export function AddMusicForm() {
           name="url"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>URL da Música</FormLabel>
+              <FormLabel>URL da Música (YouTube)</FormLabel>
               <FormControl>
-                <Input type="url" placeholder="https://exemplo.com/musica" {...field} />
+                <Input
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -149,17 +136,45 @@ export function AddMusicForm() {
             <FormItem>
               <FormLabel>URL da Imagem (Opcional)</FormLabel>
               <FormControl>
-                <Input type="url" placeholder="https://exemplo.com/imagem.png" {...field} />
+                <Input
+                  placeholder="Será preenchido automaticamente se for link do YouTube"
+                  {...field}
+                  value={field.value || ""}
+                  disabled={isFetchingPreview}
+                />
               </FormControl>
+
+              {previewError && (
+                <p className="text-sm text-red-500 mt-1">{previewError}</p>
+              )}
               <FormMessage />
+              {currentImageUrlValue && !isFetchingPreview && !previewError && (
+                <div className="mt-2">
+                  <p className="text-sm text-muted-foreground">
+                    Preview da Imagem:
+                  </p>
+                  <img
+                    src={currentImageUrlValue}
+                    alt="Preview da música"
+                    className="rounded-md border max-h-40 w-auto"
+                  />
+                </div>
+              )}
             </FormItem>
           )}
         />
-        
-        <Button type="submit" disabled={isPending}>
-          {isPending ? "Adicionando..." : "Adicionar Música"}
+
+        <Button type="submit" disabled={isPending || isFetchingPreview}>
+          {isPending || isFetchingPreview ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+              {isFetchingPreview ? "Buscando Imagem..." : "Adicionando..."}
+            </>
+          ) : (
+            "Adicionar Música"
+          )}
         </Button>
       </form>
     </Form>
   );
-} 
+}

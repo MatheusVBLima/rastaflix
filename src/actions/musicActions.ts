@@ -1,30 +1,35 @@
 "use server";
 
-import { MusicSchema, EditMusicSchema, ActionResponse, Music } from '@/lib/types';
-import { z } from 'zod';
-import { revalidatePath } from 'next/cache';
-import { getSupabaseClient, verificarAdmin } from './commonActions';
+import {
+  MusicSchema,
+  EditMusicSchema,
+  ActionResponse,
+  Music,
+} from "@/lib/types";
+import { z } from "zod";
+import { revalidatePath } from "next/cache";
+import { getSupabaseClient, verificarAdmin } from "./commonActions";
 
 export async function getMusicas(): Promise<Music[]> {
   console.log("Buscando músicas do Supabase...");
   const supabase = await getSupabaseClient();
-  
+
   const { data, error } = await supabase
-    .from('musicas')
-    .select('id, title, url, image_url, created_at')
-    .order('created_at', { ascending: false });
+    .from("musicas")
+    .select("id, title, url, image_url, created_at")
+    .order("created_at", { ascending: false });
 
   if (error) {
-    console.error('Erro ao buscar músicas do Supabase:', error);
+    console.error("Erro ao buscar músicas do Supabase:", error);
     return []; // Retorna array vazio em caso de erro
   }
 
   if (!data) {
     return [];
   }
-  
+
   // Mapear os dados para a interface Music
-  return data.map(music => ({
+  return data.map((music) => ({
     ...music,
     imageUrl: music.image_url, // Mapeamento direto
     id: music.id || "",
@@ -33,7 +38,9 @@ export async function getMusicas(): Promise<Music[]> {
   }));
 }
 
-export async function getMusicById(id: string): Promise<{ music?: Music, error?: string }> {
+export async function getMusicById(
+  id: string
+): Promise<{ music?: Music; error?: string }> {
   if (!id) {
     return { error: "ID da música não fornecido" };
   }
@@ -41,9 +48,9 @@ export async function getMusicById(id: string): Promise<{ music?: Music, error?:
   try {
     const supabase = await getSupabaseClient();
     const { data, error } = await supabase
-      .from('musicas')
-      .select('id, title, url, image_url, created_at')
-      .eq('id', id)
+      .from("musicas")
+      .select("id, title, url, image_url, created_at")
+      .eq("id", id)
       .single();
 
     if (error) {
@@ -78,29 +85,25 @@ export async function addMusic(formData: FormData): Promise<ActionResponse> {
     };
   }
 
-  // Extração e validação de campos
   const rawData = {
-    title: formData.get('title') as string,
-    url: formData.get('url') as string,
-    imageUrl: formData.get('imageUrl') as string,
+    title: formData.get("title") as string,
+    url: formData.get("url") as string,
+    imageUrl: formData.get("imageUrl") as string | null,
   };
 
   try {
-    // Validação com Zod
+    // A validação e inserção usarão imageUrl como vier do formulário
     const validatedData = MusicSchema.parse(rawData);
-    
-    // Conexão com o Supabase
+
     const supabase = await getSupabaseClient();
-    
-    // Inserção na tabela musicas
     const { data, error } = await supabase
-      .from('musicas')
+      .from("musicas")
       .insert([
         {
           title: validatedData.title,
           url: validatedData.url,
-          image_url: validatedData.imageUrl,
-        }
+          image_url: validatedData.imageUrl, // Usar a imagem do formulário
+        },
       ])
       .select();
 
@@ -112,30 +115,25 @@ export async function addMusic(formData: FormData): Promise<ActionResponse> {
       };
     }
 
-    // Usar revalidatePath para limpar o cache da página de músicas
-    revalidatePath('/musicas');
-    revalidatePath('/admin/musicas');
-    
+    revalidatePath("/musicas");
+    revalidatePath("/admin/musicas");
+
     return {
       success: true,
       message: `Música "${validatedData.title}" adicionada com sucesso!`,
     };
   } catch (error) {
-    // Tratando erros de validação do Zod
     if (error instanceof z.ZodError) {
-      const fieldErrors = error.errors.map(err => ({
-        field: err.path.join('.'),
+      const fieldErrors = error.errors.map((err) => ({
+        field: err.path.join("."),
         message: err.message,
       }));
-      
       return {
         success: false,
         message: "Erro de validação nos dados da música.",
         errors: fieldErrors,
       };
     }
-    
-    // Outros erros
     console.error("Erro ao adicionar música:", error);
     return {
       success: false,
@@ -153,30 +151,25 @@ export async function editMusic(formData: FormData): Promise<ActionResponse> {
     };
   }
 
-  // Extração de campos
   const rawData = {
-    id: formData.get('id') as string,
-    title: formData.get('title') as string,
-    url: formData.get('url') as string,
-    imageUrl: formData.get('imageUrl') as string,
+    id: formData.get("id") as string,
+    title: formData.get("title") as string,
+    url: formData.get("url") as string,
+    imageUrl: formData.get("imageUrl") as string | null,
   };
 
   try {
-    // Validação com Zod (usando EditMusicSchema que exige id)
     const validatedData = EditMusicSchema.parse(rawData);
-    
-    // Conexão com o Supabase
+
     const supabase = await getSupabaseClient();
-    
-    // Atualização na tabela musicas
     const { error } = await supabase
-      .from('musicas')
+      .from("musicas")
       .update({
         title: validatedData.title,
         url: validatedData.url,
-        image_url: validatedData.imageUrl,
+        image_url: validatedData.imageUrl, // Usar a imagem do formulário
       })
-      .eq('id', validatedData.id);
+      .eq("id", validatedData.id);
 
     if (error) {
       console.error("Erro Supabase:", error);
@@ -186,30 +179,25 @@ export async function editMusic(formData: FormData): Promise<ActionResponse> {
       };
     }
 
-    // Limpar cache
-    revalidatePath('/musicas');
-    revalidatePath('/admin/musicas');
-    
+    revalidatePath("/musicas");
+    revalidatePath("/admin/musicas");
+
     return {
       success: true,
       message: `Música "${validatedData.title}" atualizada com sucesso!`,
     };
   } catch (error) {
-    // Tratando erros de validação do Zod
     if (error instanceof z.ZodError) {
-      const fieldErrors = error.errors.map(err => ({
-        field: err.path.join('.'),
+      const fieldErrors = error.errors.map((err) => ({
+        field: err.path.join("."),
         message: err.message,
       }));
-      
       return {
         success: false,
         message: "Erro de validação nos dados da música.",
         errors: fieldErrors,
       };
     }
-    
-    // Outros erros
     console.error("Erro ao editar música:", error);
     return {
       success: false,
@@ -236,10 +224,7 @@ export async function deleteMusic(id: string): Promise<ActionResponse> {
 
   try {
     const supabase = await getSupabaseClient();
-    const { error } = await supabase
-      .from('musicas')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from("musicas").delete().eq("id", id);
 
     if (error) {
       return {
@@ -249,8 +234,8 @@ export async function deleteMusic(id: string): Promise<ActionResponse> {
     }
 
     // Limpar cache
-    revalidatePath('/musicas');
-    revalidatePath('/admin/musicas');
+    revalidatePath("/musicas");
+    revalidatePath("/admin/musicas");
 
     return {
       success: true,
@@ -263,4 +248,4 @@ export async function deleteMusic(id: string): Promise<ActionResponse> {
       message: "Erro ao excluir música. Tente novamente mais tarde.",
     };
   }
-} 
+}

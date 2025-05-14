@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import { deleteMusic, getMusicas } from '@/actions/musicActions';
-import type { ActionResponse, Music } from '@/lib/types';
-import { Button } from '@/components/ui/button';
+import React, { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { deleteMusic, getMusicas } from "@/actions/musicActions";
+import type { ActionResponse, Music } from "@/lib/types";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,33 +16,45 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash2Icon } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Trash2Icon } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from '@/components/ui/badge';
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function DeleteMusicForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMusic, setSelectedMusic] = useState<Music | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const queryClient = useQueryClient();
 
   // Usar o useQuery que já está com o cache populado graças ao prefetch
-  const { data: musicas, isLoading, error } = useQuery<Music[]>({
-    queryKey: ['musicas'],
+  const {
+    data: musicas,
+    isLoading,
+    error,
+  } = useQuery<Music[]>({
+    queryKey: ["musicas"],
     queryFn: getMusicas,
     staleTime: Infinity, // Match the staleTime from the server
   });
 
   const handleDelete = async () => {
     if (!selectedMusic) return;
-    
+
     startTransition(async () => {
       try {
         const result = await deleteMusic(selectedMusic.id);
@@ -52,10 +64,10 @@ export function DeleteMusicForm() {
             description: `A música "${selectedMusic.title}" foi removida.`,
             position: "bottom-right",
           });
-          
+
           // Depois atualizar a UI
-          router.refresh(); 
-          await queryClient.resetQueries({ queryKey: ['musicas'] });
+          router.refresh();
+          await queryClient.resetQueries({ queryKey: ["musicas"] });
           setSelectedMusic(null);
         } else {
           // Mostrar toast de erro
@@ -78,21 +90,18 @@ export function DeleteMusicForm() {
     });
   };
 
-  const filteredMusicas = musicas?.filter(music => 
-    music.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    music.id.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredMusicas = musicas?.filter(
+    (music) =>
+      music.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      music.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (isLoading) {
-    return <p className="text-center py-8">Carregando músicas...</p>;
-  }
-
   if (error) {
-    return <p className="text-center text-destructive py-8">Erro ao carregar músicas: {(error as Error).message}</p>;
-  }
-
-  if (!musicas || musicas.length === 0) {
-    return <p className="text-center text-muted-foreground py-8">Nenhuma música encontrada.</p>;
+    return (
+      <p className="text-center text-destructive py-8">
+        Erro ao carregar músicas: {(error as Error).message}
+      </p>
+    );
   }
 
   return (
@@ -101,7 +110,7 @@ export function DeleteMusicForm() {
 
       <div className="mb-4">
         <Label htmlFor="searchTerm">Buscar música</Label>
-        <Input 
+        <Input
           id="searchTerm"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -120,27 +129,65 @@ export function DeleteMusicForm() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredMusicas?.map((music: Music) => (
-              <TableRow key={music.id}>
-                <TableCell className="font-medium">{music.title}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="font-mono text-xs">{music.id}</Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    onClick={() => {
-                      setSelectedMusic(music);
-                      setIsDialogOpen(true);
-                    }}
-                  >
-                    <Trash2Icon className="h-4 w-4 mr-2" />
-                    Deletar
-                  </Button>
+            {isLoading ? (
+              <>
+                {[...Array(3)].map((_, i) => (
+                  <TableRow key={`skeleton-row-${i}`}>
+                    <TableCell className="font-medium">
+                      <Skeleton className="h-5 w-4/5" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-3/5" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Skeleton className="h-8 w-20 ml-auto" />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </>
+            ) : error ? (
+              <TableRow>
+                <TableCell
+                  colSpan={3}
+                  className="text-center text-destructive py-8"
+                >
+                  Erro ao carregar músicas: {(error as Error).message}
                 </TableCell>
               </TableRow>
-            ))}
+            ) : filteredMusicas && filteredMusicas.length > 0 ? (
+              filteredMusicas.map((music: Music) => (
+                <TableRow key={music.id}>
+                  <TableCell className="font-medium">{music.title}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="font-mono text-xs">
+                      {music.id}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedMusic(music);
+                        setIsDialogOpen(true);
+                      }}
+                    >
+                      <Trash2Icon className="h-4 w-4 mr-2" />
+                      Deletar
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={3}
+                  className="text-center py-4 text-muted-foreground"
+                >
+                  Nenhuma música encontrada.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
@@ -150,16 +197,20 @@ export function DeleteMusicForm() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar Deleção</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja deletar a música "<strong>{selectedMusic?.title}</strong>" (ID: {selectedMusic?.id})?
-              Esta ação não pode ser desfeita.
+              Tem certeza que deseja deletar a música "
+              <strong>{selectedMusic?.title}</strong>" (ID: {selectedMusic?.id}
+              )? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setIsDialogOpen(false)} disabled={isPending}>
+            <AlertDialogCancel
+              onClick={() => setIsDialogOpen(false)}
+              disabled={isPending}
+            >
               Cancelar
             </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDelete} 
+            <AlertDialogAction
+              onClick={handleDelete}
               disabled={isPending}
               className="bg-red-500 hover:bg-red-600 text-white"
             >
@@ -170,4 +221,4 @@ export function DeleteMusicForm() {
       </AlertDialog>
     </div>
   );
-} 
+}
