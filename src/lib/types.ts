@@ -104,3 +104,46 @@ export const EditEsculachoSchema = EsculachoSchema.extend({
 // export type EditEsculachoFormData = z.infer<typeof EditEsculachoSchema>;
 // Mas geralmente, o formulário de edição preencherá os campos do EsculachoSchema
 // e o ID será gerenciado separadamente ou incluído no schema de validação final.
+
+// Tipos e Schemas para Inimigos
+export const InimigoStatusSchema = z.enum(["pendente", "vingado"], {
+  errorMap: (issue, ctx) => {
+    if (issue.code === z.ZodIssueCode.invalid_enum_value) {
+      return { message: "Status inválido. Use 'pendente' ou 'vingado'." };
+    }
+    return { message: ctx.defaultError };
+  },
+});
+
+export interface Inimigo {
+  id: string;
+  nome: string;
+  status: z.infer<typeof InimigoStatusSchema>; // "pendente" | "vingado"
+  created_at: string;
+  user_id?: string | null; // Adicionado conforme a tabela SQL
+}
+
+export const InimigoSchema = z.object({
+  nome: z.string().min(1, { message: "Nome é obrigatório." }),
+  status: InimigoStatusSchema,
+});
+
+export type InimigoFormData = z.infer<typeof InimigoSchema>;
+
+export const EditInimigoSchema = InimigoSchema.extend({
+  // Para edição, o ID geralmente vem separado ou não faz parte da validação do formData em si,
+  // mas sim da lógica da action. Se quiser validar o ID no schema de edição, adicione:
+  // id: z.string().uuid({ message: "ID do inimigo é obrigatório e deve ser um UUID válido." }),
+});
+
+// Interface específica para respostas de actions de Inimigo que podem retornar o objeto Inimigo
+export interface InimigoActionResponse extends ActionResponse {
+  data?: Inimigo; // Ou Inimigo[] se a action puder retornar múltiplos
+}
+
+// export interface ActionResult {
+//   success: boolean;
+//   message?: string;
+//   errors?: Record<string, string[]> | { _form?: string[] } | null;
+//   data?: any;
+// }
