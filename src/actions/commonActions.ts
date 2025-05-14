@@ -32,13 +32,22 @@ export async function getSupabaseClient() {
 
 // Verificação de administrador
 export async function verificarAdmin(): Promise<boolean> {
+  console.log("Verificando status de admin...");
   const authState = await auth();
-  if (!authState.userId) return false;
+  if (!authState.userId) {
+    console.log("Usuário não logado.");
+    return false;
+  }
+  console.log(`Usuário ID: ${authState.userId}`);
   try {
     const client = await clerkClient();
     const user = await client.users.getUser(authState.userId);
-    return user.privateMetadata?.is_admin === true;
-  } catch {
+    console.log("Metadados privados do usuário:", user.privateMetadata);
+    const isAdmin = user.privateMetadata?.is_admin === true;
+    console.log(`É admin? ${isAdmin}`);
+    return isAdmin;
+  } catch (error) {
+    console.error("Erro ao verificar admin:", error);
     return false;
   }
 }

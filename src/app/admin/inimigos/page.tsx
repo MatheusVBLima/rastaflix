@@ -1,36 +1,102 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React from "react";
+import {
+  HydrationBoundary,
+  QueryClient,
+  dehydrate,
+} from "@tanstack/react-query";
+import AddInimigoForm from "@/components/admin/AddInimigoForm";
+import { EditInimigoForm } from "@/components/admin/EditInimigoForm";
+import { DeleteInimigoForm } from "@/components/admin/DeleteInimigoForm";
+import { getInimigos } from "@/actions/inimigoActions";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
-async function verificarAdminServerPage(): Promise<boolean> {
-  const authState = await auth();
-  if (!authState.userId) return false;
+export default async function AdminInimigosPage() {
+  console.log("Acessando AdminInimigosPage...");
+
+  const authResult = await auth();
+  if (!authResult.userId) {
+    console.log(
+      "AdminInimigosPage: Usuário não logado (authResult.userId é nulo). Redirecionando para /"
+    );
+    redirect("/");
+  }
+  console.log(`AdminInimigosPage: User ID: ${authResult.userId}`);
+
+  let isUserAdmin = false;
   try {
     const client = await clerkClient();
-    const user = await client.users.getUser(authState.userId);
-    return user.privateMetadata?.is_admin === true;
-  } catch { return false; }
-}
-
-export default async function AdminInimigosPage() {
-  // Verificação de autenticação e permissão de admin
-  const isAdmin = await verificarAdminServerPage();
-  if (!isAdmin) {
-    redirect("/"); // Ou para uma página de "acesso negado"
+    const user = await client.users.getUser(authResult.userId);
+    console.log("AdminInimigosPage: Metadados privados:", user.privateMetadata);
+    isUserAdmin = user.privateMetadata?.is_admin === true;
+    console.log(`AdminInimigosPage: É admin? ${isUserAdmin}`);
+  } catch (error) {
+    console.error(
+      "AdminInimigosPage: Erro ao buscar usuário ou metadados:",
+      error
+    );
+    // Em um cenário de produção, você pode querer redirecionar para uma página de erro
+    // ou retornar um componente de erro aqui, dependendo da gravidade.
+    // Por ora, se falhar em obter o usuário, assumimos que não é admin.
+    isUserAdmin = false;
   }
 
-  return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">Gerenciamento de Inimigos</h1>
-      
-      <div className="bg-muted/50 p-10 rounded-lg text-center">
-        <h2 className="text-xl mb-4">Em desenvolvimento</h2>
-        <p className="text-muted-foreground">
-          O módulo de gerenciamento de inimigos ainda está em desenvolvimento.
-          <br />
-          Em breve você poderá adicionar, editar e excluir inimigos.
-        </p>
-      </div>
-    </div>
+  if (!isUserAdmin) {
+    console.log(
+      "AdminInimigosPage: Usuário não é admin. Redirecionando para /"
+    );
+    redirect("/");
+  }
+
+  console.log(
+    "AdminInimigosPage: Usuário é admin, prosseguindo com renderização e prefetch."
   );
-} 
+
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 5 * 60 * 1000, // 5 minutos
+      },
+    },
+  });
+
+  try {
+    await queryClient.prefetchQuery({
+      queryKey: ["inimigos"],
+      queryFn: getInimigos,
+    });
+    console.log(
+      "Dados de inimigos pré-buscados para /admin/inimigos (Server Component)"
+    );
+  } catch (error) {
+    console.error(
+      "Erro ao pré-buscar dados de inimigos (Server Component):",
+      error
+    );
+  }
+
+  const dehydratedState = dehydrate(queryClient);
+
+  return (
+    <HydrationBoundary state={dehydratedState}>
+      <div className="container mx-auto py-10">
+        <h1 className="text-3xl font-bold mb-8">Gerenciar Inimigos</h1>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-1 p-6 bg-card rounded-lg shadow">
+            <AddInimigoForm />
+          </div>
+          <div className="md:col-span-2 p-6 bg-card rounded-lg shadow">
+            <h2 className="text-2xl font-semibold mb-6">
+              Editar/Excluir Inimigos
+            </h2>
+            <EditInimigoForm />
+            <div className="mt-8">
+              <DeleteInimigoForm />
+            </div>
+          </div>
+        </div>
+      </div>
+    </HydrationBoundary>
+  );
+}
