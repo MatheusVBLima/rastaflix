@@ -169,7 +169,7 @@ export function Header() {
           <Link href="/" className="text-2xl font-bold">
             <Image
               src="/logo.png"
-              alt="Logo"
+              alt="Logotipo Rastaflix"
               width={50}
               height={50}
               className="rounded-full"
@@ -426,9 +426,9 @@ const ListItem = React.forwardRef<
               "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:shadow-lg hover:scale-[1.02]",
               className
             )}
-            {...props}
-            style={
-              backgroundImage
+            style={{
+              ...(props as { style?: React.CSSProperties }).style,
+              ...(backgroundImage
                 ? {
                     backgroundImage: `url(${backgroundImage})`,
                     backgroundSize: "cover",
@@ -436,8 +436,9 @@ const ListItem = React.forwardRef<
                     position: "relative",
                     color: "white",
                   }
-                : undefined
-            }
+                : {}),
+            }}
+            {...props}
           >
             {backgroundImage && (
               <div
