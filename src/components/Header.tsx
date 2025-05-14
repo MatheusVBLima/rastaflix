@@ -138,9 +138,11 @@ const adminComponents: {
 export function Header() {
   const { user } = useUser();
   const [isAdmin, setIsAdmin] = React.useState(false);
+  const [isCheckingAdmin, setIsCheckingAdmin] = React.useState(false);
 
   React.useEffect(() => {
     if (user) {
+      setIsCheckingAdmin(true);
       const checkAdminStatus = async () => {
         try {
           const response = await fetch("/api/check-admin");
@@ -150,14 +152,17 @@ export function Header() {
           } else {
             setIsAdmin(false);
           }
+          setIsCheckingAdmin(false);
         } catch (error) {
           console.error("Erro ao verificar status de admin:", error);
           setIsAdmin(false);
+          setIsCheckingAdmin(false);
         }
       };
       checkAdminStatus();
     } else {
       setIsAdmin(false);
+      setIsCheckingAdmin(false);
     }
   }, [user]);
 
@@ -245,13 +250,14 @@ export function Header() {
             </NavigationMenuList>
           </NavigationMenu>
           <ClerkLoading>
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-8 w-20" />
-            </div>
+            <Skeleton className="h-8 w-20" />
           </ClerkLoading>
-          <ClerkLoaded>
-            <SignedIn>
-              {isAdmin && (
+
+          <SignedIn>
+            {isCheckingAdmin ? (
+              <Skeleton className="h-8 w-20" />
+            ) : isAdmin ? (
+              <ClerkLoaded>
                 <NavigationMenu>
                   <NavigationMenuList>
                     <NavigationMenuItem>
@@ -274,31 +280,32 @@ export function Header() {
                     </NavigationMenuItem>
                   </NavigationMenuList>
                 </NavigationMenu>
-              )}
-            </SignedIn>
-          </ClerkLoaded>
+              </ClerkLoaded>
+            ) : null}
+          </SignedIn>
         </div>
 
         {/* UserButton e Tema à direita */}
         <div className="flex items-center gap-4">
           <ThemeSwitcher />
           <ClerkLoading>
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-8 w-8 rounded-full" />
-            </div>
+            <Skeleton className="h-8 w-8 rounded-full" />
           </ClerkLoading>
-          <ClerkLoaded>
-            <SignedIn>
+
+          <SignedIn>
+            <ClerkLoaded>
               <UserButton afterSignOutUrl="/" />
-            </SignedIn>
-            <SignedOut>
+            </ClerkLoaded>
+          </SignedIn>
+          <SignedOut>
+            <ClerkLoaded>
               <Button variant="outline" asChild size="sm">
                 <Link href="/sign-in">
                   <Lock /> Admin Login
                 </Link>
               </Button>
-            </SignedOut>
-          </ClerkLoaded>
+            </ClerkLoaded>
+          </SignedOut>
 
           {/* Menu Mobile */}
           <div className="md:hidden">
