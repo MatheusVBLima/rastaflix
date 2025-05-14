@@ -4,6 +4,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { nicknames } from "@/data/nicknames";
 
+/**
+ * Renders the homepage with a centered introduction and a list of nicknames for Gabriel Scutasu, alongside a hero image on large screens.
+ *
+ * Displays a two-column layout on large screens: the left column features the title, descriptive text, and a static set of nickname badges; the right column shows a themed image, visible only on large screens.
+ */
 export default function Home() {
   return (
     <div className="lg:grid lg:grid-cols-2">
