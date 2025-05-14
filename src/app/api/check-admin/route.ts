@@ -24,10 +24,14 @@ export async function GET(request: Request) {
     const user = await client.users.getUser(userId);
     const isAdmin = user?.privateMetadata?.is_admin === true;
     return NextResponse.json({ isAdmin });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Erro ao buscar metadados do usuário:", error);
+    const errorMessage =
+      error instanceof Error
+        ? `Erro ao verificar permissões: ${error.message}`
+        : "Erro ao verificar permissões";
     return NextResponse.json(
-      { isAdmin: false, error: "Erro ao verificar permissões" },
+      { isAdmin: false, error: errorMessage },
       { status: 500 }
     );
   }
