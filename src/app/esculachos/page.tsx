@@ -53,9 +53,7 @@ export default async function EsculachosPage() {
 
   return (
     <HydrationBoundary state={dehydratedState}>
-      <div className="container mx-auto py-10 min-h-screen">
-        <Esculachos initialEsculachos={esculachos} />
-      </div>
+      <Esculachos initialEsculachos={esculachos} />
     </HydrationBoundary>
   );
 }

@@ -53,19 +53,19 @@ const criarDescobrirComponents: {
   {
     title: "Histórias",
     href: "/historias",
-    description: "Leia e crie contos e narrativas.",
+    description: "Histórias que o dog tenta esconder",
     icon: <BookOpen className="h-6 w-6 text-green-600 mb-2" />,
   },
   {
     title: "Músicas",
     href: "/musicas",
-    description: "Descubra e compartilhe novas músicas.",
+    description: "Descubra e compartilhe novas músicas",
     icon: <Music className="h-6 w-6 text-yellow-500 mb-2" />,
   },
   {
     title: "Esculachos",
     href: "/esculachos",
-    description: "Momentos épicos e reviravoltas.",
+    description: "Momentos épicos da live",
     icon: <Zap className="h-6 w-6 text-red-600 mb-2" />,
   },
 ];
@@ -79,20 +79,14 @@ const universoOvelheraComponents: {
   {
     title: "Ovelhera DLE",
     href: "/ovelhera-dle",
-    description: "Explore o universo expandido de Ovelhera.",
+    description: "Diga qual a história de acordo com os emojis",
     icon: <Gamepad className="h-6 w-6 text-green-600 mb-2" />,
   },
   {
     title: "Inimigos",
     href: "/inimigos",
-    description: "Conheça os antagonistas e desafios.",
+    description: "Conheça os antagonistas dessa jornada rastafari",
     icon: <Users className="h-6 w-6 text-red-600 mb-2" />,
-  },
-  {
-    title: "Awards",
-    href: "/awards",
-    description: "Celebrações e reconhecimentos da comunidade.",
-    icon: <Award className="h-6 w-6 text-yellow-500 mb-2" />,
   },
 ];
 
@@ -188,8 +182,8 @@ export function Header() {
             <NavigationMenuList>
               <NavigationMenuItem>
                 <NavigationMenuTrigger>Conta Aquela</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] relative">
+                <NavigationMenuContent className="bg-background/40">
+                  <ul className="grid w-[400px] gap-2 p-1 md:w-[500px] md:grid-cols-2 lg:w-[600px] relative">
                     <li className="row-span-3">
                       <NavigationMenuLink asChild>
                         <Link
@@ -231,8 +225,8 @@ export function Header() {
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <NavigationMenuTrigger>Universo Ovelhera</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] relative">
+                <NavigationMenuContent className="bg-background/40">
+                  <ul className="grid w-[400px] gap-2 p-1 md:w-[500px] md:grid-cols-2 lg:w-[600px] relative">
                     {universoOvelheraComponents.map((component) => (
                       <ListItem
                         key={component.title}
@@ -262,8 +256,8 @@ export function Header() {
                   <NavigationMenuList>
                     <NavigationMenuItem>
                       <NavigationMenuTrigger>Admin</NavigationMenuTrigger>
-                      <NavigationMenuContent>
-                        <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] relative">
+                      <NavigationMenuContent className="bg-background/40">
+                        <ul className="grid w-[400px] gap-2 p-1 md:w-[500px] md:grid-cols-2 lg:w-[600px] relative">
                           {adminComponents.map((component) => (
                             <ListItem
                               key={component.title}
@@ -430,7 +424,7 @@ const ListItem = React.forwardRef<
             href={href}
             ref={ref}
             className={cn(
-              "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:shadow-lg hover:scale-[1.02]",
+              "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:shadow-lg hover:scale-[1.02] bg-card",
               className
             )}
             style={{
@@ -441,26 +435,20 @@ const ListItem = React.forwardRef<
                     backgroundSize: "cover",
                     backgroundPosition: "center",
                     position: "relative",
-                    color: "white",
                   }
                 : {}),
             }}
             {...props}
           >
             {backgroundImage && (
-              <div
-                className="absolute inset-0 bg-black/30 rounded-md"
-                style={{ zIndex: 0 }}
-              ></div>
+              <div className="absolute inset-0" style={{ zIndex: 0 }}></div>
             )}
             <div className="relative z-10">
               {icon}
-              <div className="text-sm font-medium leading-none mb-1 text-white">
+              <div className="text-sm font-medium leading-none mb-1">
                 {title}
               </div>
-              <p className="line-clamp-2 text-sm leading-snug text-white/90">
-                {children}
-              </p>
+              <p className="line-clamp-2 text-sm leading-snug">{children}</p>
             </div>
           </Link>
         </NavigationMenuLink>
