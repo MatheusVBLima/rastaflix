@@ -38,6 +38,9 @@ export default async function InimigosPage() {
     // Envolve o componente cliente com HydrationBoundary e passa o estado desidratado
     <HydrationBoundary state={dehydratedState}>
       <div className="container mx-auto py-10 min-h-screen">
+        <h1 className="text-2xl font-bold text-center mb-6">
+          Mural de Inimigos
+        </h1>
         <Inimigos />
       </div>
     </HydrationBoundary>

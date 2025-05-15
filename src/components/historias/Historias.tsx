@@ -237,22 +237,6 @@ export function Historias({
                     <h3 className="text-lg font-semibold hover:text-primary transition-colors line-clamp-2">
                       {story.title}
                     </h3>
-
-                    {isAdmin && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => handleCopyId(story.id)}
-                        className="ml-2 shrink-0 h-8 w-8"
-                        title="Copiar ID da História"
-                      >
-                        {copiedId === story.id ? (
-                          <CheckIcon className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <ClipboardCopyIcon className="h-4 w-4" />
-                        )}
-                      </Button>
-                    )}
                   </div>
 
                   {story.description && (
