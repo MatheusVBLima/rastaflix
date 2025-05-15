@@ -9,16 +9,7 @@ export const historias = [
     emojis: ["🐑", "🪨", "🫷🏽", "🗣️", "💔"],
     iframe: "https://www.youtube.com/embed/wip0zrP7-j4?si=tn8RnOHuxvbP2Vmg",
   },
-  {
-    id: 10,
-    palavrasChave: [
-      ["tempero", "mineiro"],
-      ["saga", "tempero"],
-      ["historia", "tempero"],
-    ],
-    emojis: ["🧂", "👩", "💔", "😂", "👫"],
-    iframe: "https://www.youtube.com/embed/5xjvVA79TAQ?si=L8lGlRe8GLXdb6fH",
-  },
+
   {
     id: 2,
     palavrasChave: [
@@ -42,7 +33,7 @@ export const historias = [
     iframe: "https://www.youtube.com/embed/GTV-qMwhamQ?si=VfPjC223ALnNg1hg",
   },
   {
-    id: 3,
+    id: 2,
     palavrasChave: [
       ["galo", "trans"],
       ["galo", "transgênero"],
@@ -53,7 +44,7 @@ export const historias = [
     iframe: "https://youtube.com/embed/U9nbyWqU2kE?si=DB84Rc4_SAw8E4mq",
   },
   {
-    id: 4,
+    id: 3,
     palavrasChave: [
       ["tio", "diabo"],
       ["tio", "apanhando"],
@@ -66,7 +57,7 @@ export const historias = [
     iframe: "https://www.youtube.com/embed/IZ8fK110yL4?si=zsdW3wW_38FxRhTB",
   },
   {
-    id: 5,
+    id: 4,
 
     palavrasChave: [
       ["mulher", "cobra"],
@@ -75,52 +66,31 @@ export const historias = [
     emojis: ["🐍", "👉", "👩", "👨", "🦁"],
     iframe: "https://www.youtube.com/embed/NpSYELRF7kM?si=30lsUtESlP4jbnZp",
   },
-  /* {
-      id: 6,
-      nome: 'tio atirador russo',
-      emojis: ['', '🔫', '👨‍🦳', '', '👨‍🦱'],
-      iframe: 'https://www.youtube.com/embed/5xjvVA79TAQ?si=L8lGlRe8GLXdb6fH',
-    }, */
+
   {
-    id: 7,
-    palavrasChave: [["sofel", "parafuso"]],
-    emojis: ["👨🏾‍🦲", "🔧", "🔨", "👨🏾‍🔬", "🔩"],
-    iframe: "https://www.youtube.com/embed/5xjvVA79TAQ?si=L8lGlRe8GLXdb6fH",
-  },
-  {
-    id: 8,
-    palavrasChave: [
-      ["bateu", "porta"],
-      ["punheta", "porta"],
-      ["historia", "porta"],
-    ],
-    emojis: ["🥵", "🤒", "🍆", "💦", "🚪"],
-    iframe: "https://www.youtube.com/embed/60U5zlujtO0?si=ue-EnlAkckTOK1NB",
-  },
-  {
-    id: 9,
+    id: 5,
     palavrasChave: [["mulher", "carro"]],
     emojis: ["👱🏻‍♀️", "👉", "🚗", "🗣️", "🐑"],
     iframe: "https://www.youtube.com/embed/12GLZ4NWDAk?si=DgFDEfWgzc_8gHcj",
   },
+
   {
-    id: 11,
-    palavrasChave: [
-      ["ovelha", "gravida"],
-      ["ovelha", "paulinhax"],
-      ["ovelha", "mulher", "gd"],
-      ["ovelha", "paulinha"],
-    ],
-    emojis: ["🤰", "🤬", "🐑", "👁️", "💑"],
-    iframe: "https://www.youtube.com/embed/AHjUW0vhf5g?si=4uKZsilQffD_D5AF",
-  },
-  {
-    id: 12,
+    id: 6,
     palavrasChave: [
       ["egua", "gostosa"],
       ["mae", "gostosa"],
     ],
     emojis: ["🐎", "🤤", "❤️", "🍆", "🔦"],
     iframe: "https://www.youtube.com/embed/kCcbgeovHOw?si=t9P13JDoUj--5N4p",
+  },
+  {
+    id: 7,
+    palavrasChave: [
+      ["tempero", "mineiro"],
+      ["saga", "tempero"],
+      ["historia", "tempero"],
+    ],
+    emojis: ["🧂", "👩", "💔", "😂", "👫"],
+    iframe: "https://www.youtube.com/embed/5xjvVA79TAQ?si=L8lGlRe8GLXdb6fH",
   },
 ];
