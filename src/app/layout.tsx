@@ -50,6 +50,7 @@ export default function RootLayout({
                 "vercel",
                 "cosmic",
                 "tangerine",
+                "maconha",
               ]}
             >
               <div className="flex flex-col min-h-screen">

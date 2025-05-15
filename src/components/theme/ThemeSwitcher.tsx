@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Bot, Coffee, Moon, Star, Sun, Sunset } from "lucide-react";
+import { Bot, Coffee, Leaf, Moon, Star, Sun, Sunset } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,8 @@ export function ThemeSwitcher() {
         return <Bot className="h-[1.2rem] w-[1.2rem]" />;
       case "tangerine":
         return <Sunset className="h-[1.2rem] w-[1.2rem]" />;
-
+      case "maconha":
+        return <Leaf className="h-[1.2rem] w-[1.2rem]" />;
       default:
         return <Sun className="h-[1.2rem] w-[1.2rem]" />;
     }
@@ -59,6 +60,9 @@ export function ThemeSwitcher() {
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme("tangerine")}>
           Tangerine
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("maconha")}>
+          Maconha
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

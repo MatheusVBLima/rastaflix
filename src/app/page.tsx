@@ -32,7 +32,7 @@ export default function Home() {
           alt="Foto de Gabriel 'Givaldo' Scutasu comendo açaí"
           width={900}
           height={600}
-          className="max-h-[calc(100vh-5.2rem)] w-full object-cover dark:brightness-[0.4] dark:grayscale"
+          className="max-h-[calc(100vh-5.2rem)] w-full object-cover brightness-[0.4] grayscale"
         />
       </div>
     </div>
