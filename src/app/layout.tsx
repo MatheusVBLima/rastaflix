@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { ClerkProvider } from '@clerk/nextjs'
+import { ClerkProvider } from "@clerk/nextjs";
 import { Header } from "@/components/Header";
-import { ThemeProvider } from "@/components/provider/ThemeProvider"
+import { ThemeProvider } from "@/components/provider/ThemeProvider";
 import Providers from "@/components/provider/Providers";
 import { Toaster } from "@/components/ui/sonner";
- 
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -27,19 +27,26 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        > 
+        >
           <Providers>
             <ThemeProvider
               attribute="class"
               defaultTheme="system"
               enableSystem
               disableTransitionOnChange
+              themes={[
+                "light",
+                "dark",
+                "system",
+                "vercel",
+                "cosmic",
+                "tangerine",
+              ]}
             >
               <div className="flex flex-col min-h-screen">
                 <Header />
