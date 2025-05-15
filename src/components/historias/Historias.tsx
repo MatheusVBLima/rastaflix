@@ -263,15 +263,14 @@ export function Historias({
 
                   <div className="flex flex-wrap gap-1.5 mt-auto mb-4">
                     {story.tags.map((tag: string) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
+                      <Badge key={tag} variant="outline" className="text-xs">
                         {tag}
                       </Badge>
                     ))}
                   </div>
 
                   <Button
-                    variant="outline"
-                    className="w-full mt-auto"
+                    className="w-full mt-auto cursor-pointer"
                     tabIndex={-1}
                   >
                     Ver História

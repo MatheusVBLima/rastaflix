@@ -1,6 +1,9 @@
+import { DLE } from "@/components/dle/DLE";
 
 export default function page() {
   return (
-    <div>ovelhera-dle</div>
-  )
+    <div className="container mx-auto py-10 min-h-screen">
+      <DLE />
+    </div>
+  );
 }
