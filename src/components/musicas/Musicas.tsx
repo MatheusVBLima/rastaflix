@@ -119,13 +119,13 @@ export function Musicas({ initialMusicas, isAdmin }: MusicasProps) {
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">
-      <div className="mb-8 flex flex-col md:flex-row gap-4 items-center">
+      <div className="mb-8 flex flex-col md:flex-row gap-4 items-start">
         <Input
           type="text"
           placeholder="Pesquisar por nome..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
+          className="max-w-sm w-full"
         />
       </div>
 

@@ -127,7 +127,7 @@ export function Esculachos({ initialEsculachos }: EsculachosProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto py-8 px-4 md:px-6 space-y-6">
       <div className="flex flex-col sm:flex-row gap-4">
         <Input
           type="text"

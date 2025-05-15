@@ -15,6 +15,9 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { Clock, Skull } from "lucide-react";
 
 export function Inimigos() {
   const {
@@ -27,9 +30,25 @@ export function Inimigos() {
     queryFn: getInimigos,
   });
 
+  const isMobile = useMediaQuery("(max-width: 767px)");
+
   if (isLoading) {
+    if (isMobile) {
+      return (
+        <div className="space-y-4 max-w-2xl mx-auto">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Card key={index}>
+              <CardContent className="p-4 flex flex-col space-y-2 sm:flex-row sm:justify-between sm:items-center sm:space-y-0">
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-6 w-20 mt-2 sm:mt-0" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      );
+    }
     return (
-      <div className="border rounded-md p-4">
+      <div className="border rounded-md p-4 max-w-2xl mx-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -56,7 +75,7 @@ export function Inimigos() {
 
   if (isError) {
     return (
-      <Alert variant="destructive">
+      <Alert variant="destructive" className="max-w-2xl mx-auto">
         <AlertTitle>Erro ao Carregar Inimigos</AlertTitle>
         <AlertDescription>
           Não foi possível buscar a lista de inimigos. Detalhes:{" "}
@@ -68,13 +87,35 @@ export function Inimigos() {
 
   if (!inimigos || inimigos.length === 0) {
     return (
-      <Alert>
+      <Alert className="max-w-2xl mx-auto">
         <AlertTitle>Mural de Inimigos Vazio</AlertTitle>
         <AlertDescription>
           Nenhum inimigo foi adicionado à lista ainda. Ou talvez todos já foram
           perdoados?
         </AlertDescription>
       </Alert>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <div className="space-y-4 max-w-2xl mx-auto px-4 md:px-6">
+        {inimigos.map((inimigo) => (
+          <Card key={inimigo.id}>
+            <CardContent className="p-4 flex flex-col space-y-2 sm:flex-row sm:justify-between sm:items-center sm:space-y-0">
+              <div className="font-medium">{inimigo.nome}</div>
+              <Badge
+                variant={inimigo.status === "vingado" ? "vingado" : "pendente"}
+                className="font-medium px-3 py-1 whitespace-nowrap self-start sm:self-auto min-w-[100px]"
+              >
+                {inimigo.status == "vingado" ? <Skull /> : <Clock />}
+                {inimigo.status.charAt(0).toUpperCase() +
+                  inimigo.status.slice(1)}
+              </Badge>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     );
   }
 
@@ -98,10 +139,12 @@ export function Inimigos() {
               <TableCell className="text-right py-3">
                 <Badge
                   variant={
-                    inimigo.status === "vingado" ? "default" : "destructive"
+                    inimigo.status === "vingado" ? "vingado" : "pendente"
                   }
-                  className="text-xs font-medium px-2.5 py-1 whitespace-nowrap"
+                  className="font-medium px-3 py-1 whitespace-nowrap min-w-[100px]"
                 >
+                  {inimigo.status == "vingado" ? <Skull /> : <Clock />}
+
                   {inimigo.status.charAt(0).toUpperCase() +
                     inimigo.status.slice(1)}
                 </Badge>
