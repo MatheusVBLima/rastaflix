@@ -160,13 +160,16 @@ export function EditStoryForm({}: EditStoryFormProps) {
     // Evitar carregar com string vazia ou quando já estiver carregando
     if (storyIdToEdit && !isLoadingStory) {
       console.log(
-        "[EditStoryForm] storyIdToEdit mudou para:",
-        storyIdToEdit,
-        "- carregando história automaticamente"
+        "[EditStoryForm] storyIdToEdit mudou (" +
+          storyIdToEdit +
+          "), e não está carregando. Disparando handleLoadStory via useEffect."
       );
       handleLoadStory(storyIdToEdit);
     }
-  }, [storyIdToEdit, isLoadingStory, handleLoadStory]);
+    // A dependência em handleLoadStory (que por sua vez depende de storyIdToEdit) garante que
+    // este efeito reaja a mudanças no ID. Não incluir isLoadingStory nas dependências
+    // previne o loop onde o fim de um carregamento (isLoadingStory -> false) re-dispara este efeito.
+  }, [storyIdToEdit, handleLoadStory]); // Alterado de [storyIdToEdit, isLoadingStory, handleLoadStory]
 
   // Efeito para atualizar a URL da imagem quando a URL da história mudar
   useEffect(() => {
