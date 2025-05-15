@@ -93,4 +93,21 @@ export const historias = [
     emojis: ["🧂", "👩", "💔", "😂", "👫"],
     iframe: "https://www.youtube.com/embed/5xjvVA79TAQ?si=L8lGlRe8GLXdb6fH",
   },
+  {
+    id: 8,
+    palavrasChave: [["avô", "ilha"]],
+    emojis: ["🏝️", "🇷🇴", "👴🏻", "🛩️", "💰"],
+    iframe: "https://www.youtube.com/embed/WvxedUpQlZQ?si=YAU3FWeHj5t0UADV",
+  },
+  {
+    id: 9,
+    palavrasChave: [
+      ["virgi", "ovelha"],
+      ["virgem", "ovelha"],
+      ["cara", "virgem"],
+      ["cara", "virgi"],
+    ],
+    emojis: ["♍", "👨‍🦲", "🏋️", "🆘", "🤬"],
+    iframe: "https://www.youtube.com/embed/dd7_b-iwpEU?si=VN_uQH1rmVdYxTaq",
+  },
 ];
