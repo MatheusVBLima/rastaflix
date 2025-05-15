@@ -208,8 +208,8 @@ export function Historias({
                             }
 
                             if (videoId) {
-                              // Construir URL da thumbnail diretamente
-                              return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+                              // Construir URL da thumbnail diretamente usando hqdefault.jpg para maior confiabilidade
+                              return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
                             }
                           }
                           // Se não conseguir extrair do YouTube, usar a URL da imagem salva

@@ -191,8 +191,8 @@ export function EditStoryForm({}: EditStoryFormProps) {
           }
 
           if (videoId) {
-            // Construir URL da thumbnail diretamente
-            const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+            // Construir URL da thumbnail diretamente usando hqdefault.jpg
+            const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
             console.log(
               "[EditStoryForm] Thumbnail do YouTube atualizada:",
               thumbnailUrl
