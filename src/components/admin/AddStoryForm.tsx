@@ -289,20 +289,24 @@ export function AddStoryForm() {
         />
 
         {isFetchingPreview && (
-          <FormDescription>Buscando preview...</FormDescription>
+          <p className="text-sm text-muted-foreground">Buscando preview...</p>
         )}
-        {previewMessage && (
-          <FormDescription
-            className={
-              previewMessage.startsWith("Imagem de preview carregada!") ||
-              previewMessage.startsWith("Thumbnail do YouTube")
-                ? "text-green-500"
-                : "text-gray-500"
-            }
-          >
-            {previewMessage}
-          </FormDescription>
-        )}
+
+        {form.getValues("imageUrl") &&
+          !isFetchingPreview &&
+          form.getValues("imageUrl") !==
+            "https://via.placeholder.com/1200x630?text=Preview+Indisponível" && (
+            <div className="mt-2">
+              <p className="text-sm text-muted-foreground">
+                Preview da Imagem:
+              </p>
+              <img
+                src={form.getValues("imageUrl")}
+                alt="Preview da história"
+                className="rounded-md border max-h-40 w-auto"
+              />
+            </div>
+          )}
 
         <Button type="submit" disabled={isPending}>
           {isPending ? "Adicionando..." : "Adicionar História"}
