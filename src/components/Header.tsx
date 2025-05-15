@@ -281,26 +281,6 @@ export function Header() {
 
         {/* UserButton e Tema à direita */}
         <div className="flex items-center gap-4">
-          <ThemeSwitcher />
-          <ClerkLoading>
-            <Skeleton className="h-8 w-8 rounded-full" />
-          </ClerkLoading>
-
-          <SignedIn>
-            <ClerkLoaded>
-              <UserButton afterSignOutUrl="/" />
-            </ClerkLoaded>
-          </SignedIn>
-          <SignedOut>
-            <ClerkLoaded>
-              <Button variant="outline" asChild size="sm">
-                <Link href="/sign-in">
-                  <Lock /> Admin Login
-                </Link>
-              </Button>
-            </ClerkLoaded>
-          </SignedOut>
-
           {/* Menu Mobile */}
           <div className="md:hidden">
             <Sheet>
@@ -398,6 +378,25 @@ export function Header() {
               </SheetContent>
             </Sheet>
           </div>
+          <ThemeSwitcher />
+          <ClerkLoading>
+            <Skeleton className="h-8 w-8 rounded-full" />
+          </ClerkLoading>
+
+          <SignedIn>
+            <ClerkLoaded>
+              <UserButton afterSignOutUrl="/" />
+            </ClerkLoaded>
+          </SignedIn>
+          <SignedOut>
+            <ClerkLoaded>
+              <Button variant="outline" asChild size="sm">
+                <Link href="/sign-in">
+                  <Lock /> Admin Login
+                </Link>
+              </Button>
+            </ClerkLoaded>
+          </SignedOut>
         </div>
       </div>
     </header>

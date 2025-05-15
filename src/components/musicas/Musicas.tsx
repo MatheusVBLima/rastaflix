@@ -201,27 +201,11 @@ export function Musicas({ initialMusicas, isAdmin }: MusicasProps) {
                     <h3 className="text-lg font-semibold hover:text-primary transition-colors line-clamp-2">
                       {music.title}
                     </h3>
-
-                    {isAdmin && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => handleCopyId(music.id)}
-                        className="ml-2 shrink-0 h-8 w-8"
-                        title="Copiar ID da Música"
-                      >
-                        {copiedId === music.id ? (
-                          <CheckIcon className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <ClipboardCopyIcon className="h-4 w-4" />
-                        )}
-                      </Button>
-                    )}
                   </div>
                 </CardContent>
 
                 <CardFooter className="p-4 pt-0 mt-auto">
-                  <Button variant="outline" className="w-full" tabIndex={-1}>
+                  <Button className="w-full" tabIndex={-1}>
                     Ouvir Música
                   </Button>
                 </CardFooter>
