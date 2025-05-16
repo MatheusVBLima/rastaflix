@@ -166,9 +166,7 @@ export function AddStoryForm() {
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>
-                Título <span className="text-destructive">*</span>
-              </FormLabel>
+              <FormLabel>Título</FormLabel>
               <FormControl>
                 <Input placeholder="Título da história" {...field} />
               </FormControl>
@@ -182,9 +180,7 @@ export function AddStoryForm() {
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>
-                Descrição <span className="text-destructive">*</span>
-              </FormLabel>
+              <FormLabel>Descrição</FormLabel>
               <FormControl>
                 <Textarea
                   placeholder="Uma breve descrição da história"
@@ -201,9 +197,7 @@ export function AddStoryForm() {
           name="tags"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>
-                Tags <span className="text-destructive">*</span>
-              </FormLabel>
+              <FormLabel>Tags</FormLabel>
               <FormControl>
                 <Input
                   placeholder="js, react, nextjs (separadas por vírgula)"
@@ -221,9 +215,7 @@ export function AddStoryForm() {
           name="url"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>
-                URL da História <span className="text-destructive">*</span>
-              </FormLabel>
+              <FormLabel>URL da História</FormLabel>
               <FormControl>
                 <Input
                   type="url"
