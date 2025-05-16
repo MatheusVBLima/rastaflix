@@ -32,6 +32,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export function DeleteMusicForm() {
   const router = useRouter();
@@ -39,6 +47,8 @@ export function DeleteMusicForm() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMusic, setSelectedMusic] = useState<Music | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const queryClient = useQueryClient();
 
   // Usar o useQuery que já está com o cache populado graças ao prefetch
@@ -51,6 +61,27 @@ export function DeleteMusicForm() {
     queryFn: getMusicas,
     staleTime: Infinity, // Match the staleTime from the server
   });
+
+  // Lógica de paginação
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+
+  const filteredMusicas = musicas?.filter(
+    (music) =>
+      music.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      music.id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const currentItems = filteredMusicas?.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+  const totalPages = filteredMusicas
+    ? Math.ceil(filteredMusicas.length / itemsPerPage)
+    : 0;
+
+  // Função para mudar de página
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   const handleDelete = async () => {
     if (!selectedMusic) return;
@@ -89,12 +120,6 @@ export function DeleteMusicForm() {
       }
     });
   };
-
-  const filteredMusicas = musicas?.filter(
-    (music) =>
-      music.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      music.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   if (error) {
     return (
@@ -154,8 +179,8 @@ export function DeleteMusicForm() {
                   Erro ao carregar músicas: {(error as Error).message}
                 </TableCell>
               </TableRow>
-            ) : filteredMusicas && filteredMusicas.length > 0 ? (
-              filteredMusicas.map((music: Music) => (
+            ) : currentItems && currentItems.length > 0 ? (
+              currentItems.map((music: Music) => (
                 <TableRow key={music.id}>
                   <TableCell className="font-medium">{music.title}</TableCell>
                   <TableCell>
@@ -191,6 +216,47 @@ export function DeleteMusicForm() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Paginação */}
+      {totalPages > 1 && (
+        <Pagination className="mt-4">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => paginate(Math.max(1, currentPage - 1))}
+                className={
+                  currentPage === 1
+                    ? "pointer-events-none opacity-50"
+                    : "cursor-pointer"
+                }
+              />
+            </PaginationItem>
+
+            {Array.from({ length: totalPages }).map((_, index) => (
+              <PaginationItem key={index}>
+                <PaginationLink
+                  isActive={currentPage === index + 1}
+                  onClick={() => paginate(index + 1)}
+                  className="cursor-pointer"
+                >
+                  {index + 1}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+
+            <PaginationItem>
+              <PaginationNext
+                onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
+                className={
+                  currentPage === totalPages
+                    ? "pointer-events-none opacity-50"
+                    : "cursor-pointer"
+                }
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
 
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <AlertDialogContent>

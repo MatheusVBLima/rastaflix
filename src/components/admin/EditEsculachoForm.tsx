@@ -39,6 +39,14 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton"; // Adicionado para loading da tabela
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 // Zod schema para o formulário de edição
 const FormSchema = EditEsculachoSchema;
@@ -49,6 +57,8 @@ export function EditEsculachoForm() {
   const [isLoadingEsculacho, setIsLoadingEsculacho] = useState<boolean>(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -170,13 +180,17 @@ export function EditEsculachoForm() {
         formData.append("id", values.id);
         formData.append("titulo", values.titulo);
         formData.append("conteudo", values.conteudo);
-        if (values.descricao) formData.append("descricao", values.descricao);
-        if (values.autor) formData.append("autor", values.autor);
+        formData.append("descricao", values.descricao);
+        formData.append("autor", values.autor);
         dispatchEditFormAction(formData);
       });
     },
     [dispatchEditFormAction]
   );
+
+  // Lógica de paginação
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
 
   const filteredEsculachos = esculachos?.filter(
     (item) =>
@@ -185,6 +199,17 @@ export function EditEsculachoForm() {
       (item.autor &&
         item.autor.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const currentItems = filteredEsculachos?.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+  const totalPages = filteredEsculachos
+    ? Math.ceil(filteredEsculachos.length / itemsPerPage)
+    : 0;
+
+  // Função para mudar de página
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   return (
     <div className="space-y-6 p-4 border rounded-md mt-4">
@@ -271,13 +296,11 @@ export function EditEsculachoForm() {
               name="descricao"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrição (Opcional)</FormLabel>
+                  <FormLabel>
+                    Descrição <span className="text-destructive">*</span>
+                  </FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Descrição breve"
-                      {...field}
-                      value={field.value || ""}
-                    />
+                    <Input placeholder="Descrição breve" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -288,13 +311,11 @@ export function EditEsculachoForm() {
               name="autor"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Autor (Opcional)</FormLabel>
+                  <FormLabel>
+                    Autor <span className="text-destructive">*</span>
+                  </FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Nome do autor"
-                      {...field}
-                      value={field.value || ""}
-                    />
+                    <Input placeholder="Nome do autor" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -359,8 +380,8 @@ export function EditEsculachoForm() {
                     Erro ao carregar esculachos: {(listError as Error).message}
                   </TableCell>
                 </TableRow>
-              ) : filteredEsculachos && filteredEsculachos.length > 0 ? (
-                filteredEsculachos.map((item) => (
+              ) : currentItems && currentItems.length > 0 ? (
+                currentItems.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.titulo}</TableCell>
                     <TableCell>{item.autor || "-"}</TableCell>
@@ -396,6 +417,49 @@ export function EditEsculachoForm() {
             </TableBody>
           </Table>
         </div>
+
+        {/* Paginação */}
+        {totalPages > 1 && (
+          <Pagination className="mt-4">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => paginate(Math.max(1, currentPage - 1))}
+                  className={
+                    currentPage === 1
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
+                />
+              </PaginationItem>
+
+              {Array.from({ length: totalPages }).map((_, index) => (
+                <PaginationItem key={index}>
+                  <PaginationLink
+                    isActive={currentPage === index + 1}
+                    onClick={() => paginate(index + 1)}
+                    className="cursor-pointer"
+                  >
+                    {index + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() =>
+                    paginate(Math.min(totalPages, currentPage + 1))
+                  }
+                  className={
+                    currentPage === totalPages
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
       </div>
     </div>
   );

@@ -26,9 +26,9 @@ export default function AddEsculachoForm() {
     resolver: zodResolver(EsculachoSchema),
     defaultValues: {
       titulo: "",
-      descricao: "", // Opcional, pode ser string vazia
+      descricao: "", // Agora obrigatório, string vazia como inicial
       conteudo: "",
-      autor: "", // Opcional, pode ser string vazia
+      autor: "", // Agora obrigatório, string vazia como inicial
     },
   });
 
@@ -37,9 +37,8 @@ export default function AddEsculachoForm() {
       const formDataToSubmit = new FormData();
       formDataToSubmit.append("titulo", data.titulo);
       formDataToSubmit.append("conteudo", data.conteudo);
-      // Apenas adiciona se tiver valor, para alinhar com `optional().nullable()`
-      if (data.descricao) formDataToSubmit.append("descricao", data.descricao);
-      if (data.autor) formDataToSubmit.append("autor", data.autor);
+      formDataToSubmit.append("descricao", data.descricao); // Sempre adiciona, pois é obrigatório
+      formDataToSubmit.append("autor", data.autor); // Sempre adiciona, pois é obrigatório
 
       const result = await addEsculacho(formDataToSubmit);
       if (result.success) {
@@ -99,13 +98,9 @@ export default function AddEsculachoForm() {
           name="descricao"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Descrição (Opcional)</FormLabel>
+              <FormLabel>Descrição</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="Descrição breve ou subtítulo"
-                  {...field}
-                  value={field.value || ""}
-                />
+                <Input placeholder="Descrição breve ou subtítulo" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -117,20 +112,16 @@ export default function AddEsculachoForm() {
           name="autor"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Autor (Opcional)</FormLabel>
+              <FormLabel>Autor</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="Nome do autor ou fonte"
-                  {...field}
-                  value={field.value || ""}
-                />
+                <Input placeholder="Nome do autor ou fonte" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <Button type="submit" disabled={isPending} className="w-full">
+        <Button type="submit" disabled={isPending}>
           {isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adicionando...

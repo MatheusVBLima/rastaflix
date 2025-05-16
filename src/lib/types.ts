@@ -6,13 +6,21 @@ export const StorySchema = z.object({
   title: z
     .string()
     .min(3, { message: "O título deve ter pelo menos 3 caracteres" }),
-  description: z.string().optional(),
+  description: z.string().min(1, { message: "A descrição é obrigatória" }),
   tags: z
     .union([
-      z.string(), // Aceita string (formato do frontend)
-      z.array(z.string()), // Aceita array (formato do backend)
+      z.string().min(1, { message: "As tags são obrigatórias" }),
+      z.array(z.string()).nonempty({ message: "As tags são obrigatórias" }),
     ])
-    .optional(), // Na UI, tags são string separada por vírgulas, no backend é array
+    .refine(
+      (data) => {
+        if (typeof data === "string") return data.trim().length > 0;
+        if (Array.isArray(data))
+          return data.length > 0 && data.every((tag) => tag.trim().length > 0);
+        return false;
+      },
+      { message: "As tags são obrigatórias e não podem conter apenas espaços." }
+    ),
   url: z.string().url({ message: "URL inválida" }),
   imageUrl: z.string().url({ message: "URL da imagem inválida" }).optional(),
   created_at: z.string().datetime().optional(),
@@ -86,9 +94,8 @@ export interface Esculacho {
 export const EsculachoSchema = z.object({
   titulo: z.string().min(1, { message: "Título é obrigatório." }),
   conteudo: z.string().min(1, { message: "Conteúdo é obrigatório." }),
-  // Para campos opcionais que podem ser string ou não enviados (undefined) e também aceitar null do banco:
-  descricao: z.string().nullable().optional().or(z.literal("")),
-  autor: z.string().nullable().optional().or(z.literal("")),
+  descricao: z.string().min(1, { message: "Descrição é obrigatória." }),
+  autor: z.string().min(1, { message: "Autor é obrigatório." }),
 });
 
 export type EsculachoFormData = z.infer<typeof EsculachoSchema>;

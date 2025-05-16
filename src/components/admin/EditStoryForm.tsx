@@ -37,6 +37,14 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 // O EditStorySchema já inclui 'id'. Para o formulário, tags será uma string.
 const FormSchema = ServerEditStorySchema.extend({
@@ -56,6 +64,8 @@ export function EditStoryForm({}: EditStoryFormProps) {
   const [isLoadingStory, setIsLoadingStory] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -234,12 +244,27 @@ export function EditStoryForm({}: EditStoryFormProps) {
     [editFormAction]
   );
 
+  // Lógica de paginação
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+
   // Filtered stories for the table
   const filteredHistorias = historias?.filter(
     (story) =>
       story.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       story.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const currentItems = filteredHistorias?.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+  const totalPages = filteredHistorias
+    ? Math.ceil(filteredHistorias.length / itemsPerPage)
+    : 0;
+
+  // Função para mudar de página
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   console.log(
     "[EditStoryForm] Renderizando componente. storyIdToEdit:",
@@ -321,8 +346,8 @@ export function EditStoryForm({}: EditStoryFormProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredHistorias && filteredHistorias.length > 0 ? (
-                filteredHistorias.map((story) => (
+              {currentItems && currentItems.length > 0 ? (
+                currentItems.map((story) => (
                   <TableRow key={story.id}>
                     <TableCell className="font-medium">{story.title}</TableCell>
                     <TableCell>
@@ -368,6 +393,49 @@ export function EditStoryForm({}: EditStoryFormProps) {
             </TableBody>
           </Table>
         </div>
+
+        {/* Paginação */}
+        {totalPages > 1 && (
+          <Pagination className="mt-4">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => paginate(Math.max(1, currentPage - 1))}
+                  className={
+                    currentPage === 1
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
+                />
+              </PaginationItem>
+
+              {Array.from({ length: totalPages }).map((_, index) => (
+                <PaginationItem key={index}>
+                  <PaginationLink
+                    isActive={currentPage === index + 1}
+                    onClick={() => paginate(index + 1)}
+                    className="cursor-pointer"
+                  >
+                    {index + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() =>
+                    paginate(Math.min(totalPages, currentPage + 1))
+                  }
+                  className={
+                    currentPage === totalPages
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
       </div>
     );
   };

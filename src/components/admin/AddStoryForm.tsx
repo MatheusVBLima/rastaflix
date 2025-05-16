@@ -24,9 +24,14 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 // Esquema Zod para o formulário do cliente
-// Tags será uma string no formulário, mas um array de strings no schema do servidor
-const FormSchema = ServerStorySchema.extend({
-  tags: z.string().optional(), // Tags é uma string opcional no formulário, a transformação para array é feita na server action.
+// title, description e url vêm do ServerStorySchema para manter suas validações base.
+// tags é uma string obrigatória no formulário.
+// imageUrl é uma string para controle interno do formulário.
+const FormSchema = z.object({
+  title: ServerStorySchema.shape.title,
+  description: ServerStorySchema.shape.description, // Já é .min(1) pelo types.ts
+  tags: z.string().min(1, { message: "As tags são obrigatórias" }), // Tags como string obrigatória no formulário
+  url: ServerStorySchema.shape.url,
   imageUrl: z.string(),
 });
 
@@ -44,18 +49,18 @@ export function AddStoryForm() {
   const [state, formAction] = useFormState(addStory, initialState);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(FormSchema),
+    resolver: zodResolver(FormSchema), // Usando o FormSchema local para o formulário
     defaultValues: {
       title: "",
       description: "",
-      tags: "", // No formulário, tags é uma string
+      tags: "", // tags é uma string
       url: "",
       imageUrl:
-        "https://via.placeholder.com/1200x630?text=Preview+Indisponível", // Valor padrão para imageUrl
+        "https://via.placeholder.com/1200x630?text=Preview+Indisponível",
     },
   });
 
-  const storyUrl = form.watch("url"); // Observar o campo URL
+  const storyUrl = form.watch("url");
 
   // Efeito para buscar preview da URL
   useEffect(() => {
@@ -64,55 +69,39 @@ export function AddStoryForm() {
         setIsFetchingPreview(true);
         setPreviewMessage("Buscando imagem de preview...");
 
-        // Abordagem direta para extrair thumbnails do YouTube
         try {
           const urlObj = new URL(storyUrl);
-
-          // Verificar se é uma URL do YouTube
           if (
             urlObj.hostname.includes("youtube.com") ||
             urlObj.hostname.includes("youtu.be")
           ) {
-            // Extrair videoId para URLs padrão do YouTube
             let videoId = urlObj.searchParams.get("v");
-
-            // Formato youtu.be/ID
             if (!videoId && urlObj.hostname.includes("youtu.be")) {
               videoId = urlObj.pathname.substring(1);
             }
-
             if (videoId) {
-              // Construir URL da thumbnail diretamente
               const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-
-              // Definir a URL da thumbnail no formulário
               form.setValue("imageUrl", thumbnailUrl, { shouldValidate: true });
               setPreviewMessage("Thumbnail do YouTube carregada!");
               setIsFetchingPreview(false);
               return;
             }
           }
-
-          // Não é YouTube ou não conseguiu extrair videoId, usar URL de fallback
           const fallbackUrl =
             "https://via.placeholder.com/1200x630?text=Preview+Indisponível";
           form.setValue("imageUrl", fallbackUrl, { shouldValidate: true });
           setPreviewMessage("URL não é do YouTube. Usando imagem padrão.");
         } catch (error) {
           console.error("[AddStoryForm] Erro ao analisar URL:", error);
-          // Fallback para qualquer erro
           const fallbackUrl =
             "https://via.placeholder.com/1200x630?text=Preview+Indisponível";
           form.setValue("imageUrl", fallbackUrl, { shouldValidate: true });
           setPreviewMessage("Erro ao processar URL. Usando imagem padrão.");
         }
-
         setIsFetchingPreview(false);
       }, 800);
-
       return () => clearTimeout(handler);
     } else {
-      // Se não tiver URL válida, usar imagem padrão
       if (!form.getValues("imageUrl")) {
         const defaultImageUrl =
           "https://via.placeholder.com/1200x630?text=Preview+Indisponível";
@@ -121,30 +110,21 @@ export function AddStoryForm() {
     }
   }, [storyUrl, form]);
 
-  // Efeito para reagir às mudanças de estado do formulário
   useEffect(() => {
     if (state.success) {
-      // Mostrar toast de sucesso
       toast.success("História adicionada com sucesso!", {
         description: state.message,
         position: "bottom-right",
       });
-
-      // Limpar form
       form.reset();
       setPreviewMessage(null);
-
-      // Revalidar dados
       router.refresh();
       queryClient.resetQueries({ queryKey: ["historias"] });
     } else if (state?.message && !state.success) {
-      // Mostrar toast de erro
       toast.error("Erro ao adicionar história", {
         description: state.message,
         position: "bottom-right",
       });
-
-      // Se houver erros de validação, mostrar cada erro em um toast
       if (state.errors) {
         state.errors.forEach((err) => {
           toast.error(`${err.field}: ${err.message}`, {
@@ -158,23 +138,15 @@ export function AddStoryForm() {
   const onSubmit = useCallback(
     (values: FormValues) => {
       startTransition(() => {
-        // FormData é esperado pela server action
         const formData = new FormData();
         formData.append("title", values.title);
-        if (values.description)
-          formData.append("description", values.description);
-
-        // values.tags já é uma string (ou undefined) devido ao FormSchema cliente.
-        if (values.tags) {
-          formData.append("tags", values.tags);
-        }
-
+        formData.append("description", values.description);
+        // values.tags é uma string aqui, conforme FormSchema local
+        formData.append("tags", values.tags);
         formData.append("url", values.url);
-
         if (typeof values.imageUrl === "string") {
           formData.append("imageUrl", values.imageUrl);
         }
-
         formAction(formData);
       });
     },
@@ -194,7 +166,9 @@ export function AddStoryForm() {
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Título</FormLabel>
+              <FormLabel>
+                Título <span className="text-destructive">*</span>
+              </FormLabel>
               <FormControl>
                 <Input placeholder="Título da história" {...field} />
               </FormControl>
@@ -208,7 +182,9 @@ export function AddStoryForm() {
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Descrição (Opcional)</FormLabel>
+              <FormLabel>
+                Descrição <span className="text-destructive">*</span>
+              </FormLabel>
               <FormControl>
                 <Textarea
                   placeholder="Uma breve descrição da história"
@@ -225,25 +201,13 @@ export function AddStoryForm() {
           name="tags"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Tags (Opcional)</FormLabel>
+              <FormLabel>
+                Tags <span className="text-destructive">*</span>
+              </FormLabel>
               <FormControl>
-                {/* No Zod schema, field.value será array após transformação.
-                    Mas o Input espera string.
-                    Então usamos form.setValue para atualizar o form state,
-                    e o valor para o input é pego diretamente do estado do react-hook-form
-                    ou asseguramos que o 'field' seja tratado como string para o input.
-                    Aqui, como 'tags' em FormValues é string, field.value deve ser string.
-                    Se StorySchema.tags fosse z.string(), seria mais direto.
-                    A transformação acontece no Zod. A action espera a string.
-                */}
                 <Input
                   placeholder="js, react, nextjs (separadas por vírgula)"
-                  {...field}
-                  // Assegura que o valor passado para o input seja uma string.
-                  // O `field` para `tags` (que é `string().optional()` no FormSchema antes da transformação)
-                  // deve ser uma string.
-                  value={field.value || ""}
-                  onChange={(e) => field.onChange(e.target.value)}
+                  {...field} // field.value será string
                 />
               </FormControl>
               <FormDescription>Separe as tags por vírgula.</FormDescription>
@@ -257,7 +221,9 @@ export function AddStoryForm() {
           name="url"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>URL da História</FormLabel>
+              <FormLabel>
+                URL da História <span className="text-destructive">*</span>
+              </FormLabel>
               <FormControl>
                 <Input
                   type="url"
@@ -270,11 +236,9 @@ export function AddStoryForm() {
           )}
         />
 
-        {/* Campo da URL da Imagem - Agora oculto para o usuário, preenchido automaticamente */}
         <input
           type="hidden"
           {...form.register("imageUrl")}
-          // Valor padrão para garantir que sempre tenha algo
           defaultValue="https://via.placeholder.com/1200x630?text=Preview+Indisponível"
         />
 
