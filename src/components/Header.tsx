@@ -88,6 +88,12 @@ const universoOvelheraComponents: {
     description: "Conheça os antagonistas dessa jornada rastafari",
     icon: <Users className="h-6 w-6 text-red-600 mb-2" />,
   },
+  {
+    title: "Bingo Rastafari",
+    href: "/bingo",
+    description: "Marque os momentos icônicos que acontecem na live",
+    icon: <Award className="h-6 w-6 text-yellow-600 mb-2" />,
+  },
 ];
 
 const adminComponents: {
