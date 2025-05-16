@@ -18,14 +18,11 @@ interface MusicasProps {
 }
 
 export function Musicas({ initialMusicas, isAdmin }: MusicasProps) {
-  console.log("[Musicas.tsx] Props recebidas:", { initialMusicas });
-
   const [searchTerm, setSearchTerm] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Esta função será usada pelo TanStack Query para buscar dados quando necessário
   async function fetchMusicasClientSide(): Promise<Music[]> {
-    console.log("[Musicas.tsx] fetchMusicasClientSide chamada");
     return initialMusicas;
   }
 
@@ -45,14 +42,7 @@ export function Musicas({ initialMusicas, isAdmin }: MusicasProps) {
   });
 
   const filteredMusicas = useMemo(() => {
-    console.log(
-      "[Musicas.tsx] Calculando filteredMusicas. 'musicas' do useQuery:",
-      musicas
-    );
     if (!musicas || !Array.isArray(musicas)) {
-      console.log(
-        "[Musicas.tsx] 'musicas' do useQuery é undefined ou não é um array, retornando array vazio para filteredMusicas."
-      );
       return [];
     }
 
@@ -67,18 +57,6 @@ export function Musicas({ initialMusicas, isAdmin }: MusicasProps) {
 
     return result;
   }, [musicas, searchTerm]);
-
-  const handleCopyId = (id: string) => {
-    navigator.clipboard
-      .writeText(id)
-      .then(() => {
-        setCopiedId(id);
-        setTimeout(() => setCopiedId(null), 2000);
-      })
-      .catch((err) => {
-        console.error("Falha ao copiar ID: ", err);
-      });
-  };
 
   if (isLoading && !initialMusicas?.length) {
     return (

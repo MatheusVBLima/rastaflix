@@ -37,6 +37,14 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 // O EditStorySchema já inclui 'id'. Para o formulário, tags será uma string.
 const FormSchema = ServerEditStorySchema.extend({
@@ -56,6 +64,8 @@ export function EditStoryForm({}: EditStoryFormProps) {
   const [isLoadingStory, setIsLoadingStory] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -89,15 +99,6 @@ export function EditStoryForm({}: EditStoryFormProps) {
     async (idToLoad?: string) => {
       const idToUse = idToLoad || storyIdToEdit;
 
-      console.log(
-        "[EditStoryForm] Tentando carregar história. ID fornecido:",
-        idToLoad,
-        "ID do estado:",
-        storyIdToEdit,
-        "ID que será usado:",
-        idToUse
-      );
-
       if (!idToUse) {
         setLoadError("Por favor, insira um ID de história para carregar.");
         toast.error("Erro", {
@@ -114,25 +115,14 @@ export function EditStoryForm({}: EditStoryFormProps) {
 
       // Se idToLoad foi fornecido, atualiza também o campo de entrada
       if (idToLoad && idToLoad !== storyIdToEdit) {
-        console.log(
-          "[EditStoryForm] Atualizando campo de entrada com ID:",
-          idToLoad
-        );
         setStoryIdToEdit(idToLoad);
       }
 
       startEditTransition(async () => {
-        console.log("[EditStoryForm] Chamando getStoryById com ID:", idToUse);
         const result = await getStoryById(idToUse);
         setIsLoadingStory(false);
 
-        console.log("[EditStoryForm] Resultado de getStoryById:", result);
-
         if (result.story) {
-          console.log(
-            "[EditStoryForm] História carregada com sucesso:",
-            result.story
-          );
           form.reset({
             id: result.story.id,
             title: result.story.title,
@@ -159,11 +149,6 @@ export function EditStoryForm({}: EditStoryFormProps) {
   useEffect(() => {
     // Evitar carregar com string vazia ou quando já estiver carregando
     if (storyIdToEdit && !isLoadingStory) {
-      console.log(
-        "[EditStoryForm] storyIdToEdit mudou (" +
-          storyIdToEdit +
-          "), e não está carregando. Disparando handleLoadStory via useEffect."
-      );
       handleLoadStory(storyIdToEdit);
     }
     // A dependência em handleLoadStory (que por sua vez depende de storyIdToEdit) garante que
@@ -193,10 +178,6 @@ export function EditStoryForm({}: EditStoryFormProps) {
           if (videoId) {
             // Construir URL da thumbnail diretamente usando hqdefault.jpg
             const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-            console.log(
-              "[EditStoryForm] Thumbnail do YouTube atualizada:",
-              thumbnailUrl
-            );
 
             // Definir a URL da thumbnail no formulário
             form.setValue("imageUrl", thumbnailUrl, { shouldValidate: true });
@@ -241,7 +222,6 @@ export function EditStoryForm({}: EditStoryFormProps) {
   const onSubmit = useCallback(
     (values: FormValues) => {
       if (!values.id) {
-        // Idealmente, isso não deve acontecer se a história foi carregada
         toast.error("Erro", {
           description: "ID da história está faltando. Recarregue a história.",
           position: "bottom-right",
@@ -254,7 +234,7 @@ export function EditStoryForm({}: EditStoryFormProps) {
         formData.append("title", values.title);
         if (values.description)
           formData.append("description", values.description);
-        if (values.tags) formData.append("tags", values.tags);
+        if (values.tags) formData.append("tags", values.tags); // Tags são enviadas como string separada por vírgula
         formData.append("url", values.url);
         if (values.imageUrl) formData.append("imageUrl", values.imageUrl);
 
@@ -264,12 +244,27 @@ export function EditStoryForm({}: EditStoryFormProps) {
     [editFormAction]
   );
 
+  // Lógica de paginação
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+
   // Filtered stories for the table
   const filteredHistorias = historias?.filter(
     (story) =>
       story.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       story.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const currentItems = filteredHistorias?.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+  const totalPages = filteredHistorias
+    ? Math.ceil(filteredHistorias.length / itemsPerPage)
+    : 0;
+
+  // Função para mudar de página
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   console.log(
     "[EditStoryForm] Renderizando componente. storyIdToEdit:",
@@ -323,6 +318,127 @@ export function EditStoryForm({}: EditStoryFormProps) {
       </div>
     </div>
   );
+
+  const renderHistoriasTable = () => {
+    return (
+      <div className="mt-8">
+        <h3 className="text-lg font-medium mb-4">Lista de Histórias</h3>
+
+        <div className="mb-4">
+          <Label htmlFor="searchTerm">Buscar história</Label>
+          <Input
+            id="searchTerm"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Digite o título ou ID da história"
+            className="mt-1"
+          />
+        </div>
+
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[250px]">Título</TableHead>
+                <TableHead>ID</TableHead>
+                <TableHead>Tags</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {currentItems && currentItems.length > 0 ? (
+                currentItems.map((story) => (
+                  <TableRow key={story.id}>
+                    <TableCell className="font-medium">{story.title}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="font-mono text-xs">
+                        {story.id}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {story.tags &&
+                          story.tags.map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="secondary"
+                              className="text-xs"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          handleLoadStory(story.id);
+                        }}
+                      >
+                        <PencilIcon className="h-4 w-4 mr-2" />
+                        Editar
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-4">
+                    Nenhuma história encontrada.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Paginação */}
+        {totalPages > 1 && (
+          <Pagination className="mt-4">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => paginate(Math.max(1, currentPage - 1))}
+                  className={
+                    currentPage === 1
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
+                />
+              </PaginationItem>
+
+              {Array.from({ length: totalPages }).map((_, index) => (
+                <PaginationItem key={index}>
+                  <PaginationLink
+                    isActive={currentPage === index + 1}
+                    onClick={() => paginate(index + 1)}
+                    className="cursor-pointer"
+                  >
+                    {index + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() =>
+                    paginate(Math.min(totalPages, currentPage + 1))
+                  }
+                  className={
+                    currentPage === totalPages
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6 p-4 border rounded-md mt-4">
@@ -450,89 +566,7 @@ export function EditStoryForm({}: EditStoryFormProps) {
       )}
 
       {/* Tabela de histórias - mostrar skeleton durante carregamento */}
-      {isLoading ? (
-        renderLoadingState()
-      ) : (
-        <div className="mt-8">
-          <h3 className="text-lg font-medium mb-4">Lista de Histórias</h3>
-
-          <div className="mb-4">
-            <Label htmlFor="searchTerm">Buscar história</Label>
-            <Input
-              id="searchTerm"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Digite o título ou ID da história"
-              className="mt-1"
-            />
-          </div>
-
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[250px]">Título</TableHead>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Tags</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredHistorias && filteredHistorias.length > 0 ? (
-                  filteredHistorias.map((story) => (
-                    <TableRow key={story.id}>
-                      <TableCell className="font-medium">
-                        {story.title}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="font-mono text-xs">
-                          {story.id}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {story.tags &&
-                            story.tags.map((tag) => (
-                              <Badge
-                                key={tag}
-                                variant="secondary"
-                                className="text-xs"
-                              >
-                                {tag}
-                              </Badge>
-                            ))}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            console.log(
-                              "[EditStoryForm] Botão Editar clicado para ID:",
-                              story.id
-                            );
-                            handleLoadStory(story.id);
-                          }}
-                        >
-                          <PencilIcon className="h-4 w-4 mr-2" />
-                          Editar
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-4">
-                      Nenhuma história encontrada.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      )}
+      {isLoading ? renderLoadingState() : renderHistoriasTable()}
     </div>
   );
 }

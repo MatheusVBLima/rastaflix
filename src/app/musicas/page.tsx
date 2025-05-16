@@ -29,7 +29,6 @@ export default async function MusicasPage() {
   });
 
   const queryKey = ["musicas"];
-  console.log(`🔄 Iniciando prefetch de ${queryKey[0]} no servidor...`);
   const startTime = Date.now();
 
   try {
@@ -41,9 +40,6 @@ export default async function MusicasPage() {
         return musicas;
       },
     });
-    console.log(
-      `✅ Prefetch de ${queryKey[0]} concluído em ${Date.now() - startTime}ms`
-    );
   } catch (error) {
     console.error(`❌ Erro no prefetch de ${queryKey[0]}:`, error);
   }

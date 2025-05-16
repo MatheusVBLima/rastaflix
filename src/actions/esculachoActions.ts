@@ -16,7 +16,6 @@ import {
 } from "@/lib/types";
 
 export async function getEsculachos(): Promise<Esculacho[]> {
-  console.log("Buscando esculachos do Supabase...");
   const supabase = await getSupabaseClient();
 
   const { data, error } = await supabase
