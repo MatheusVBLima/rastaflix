@@ -6,6 +6,8 @@ const publicRoutes = createRouteMatcher([
   "/historias(.*)",
   "/inimigos(.*)",
   "/musicas(.*)",
+  "/bingo(.*)",
+  "/ovelhera-dle(.*)",
   "/esculachos(.*)",
   "/sign-in(.*)",
   "/sign-up(.*)",
