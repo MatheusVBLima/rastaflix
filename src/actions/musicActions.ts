@@ -11,7 +11,6 @@ import { revalidatePath } from "next/cache";
 import { getSupabaseClient, verificarAdmin } from "./commonActions";
 
 export async function getMusicas(): Promise<Music[]> {
-  console.log("Buscando músicas do Supabase...");
   const supabase = await getSupabaseClient();
 
   const { data, error } = await supabase

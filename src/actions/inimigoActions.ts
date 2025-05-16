@@ -149,10 +149,7 @@ export async function getInimigoById(id: string): Promise<Inimigo | null> {
         error.code !== "PGRST116" ||
         (error.code === "PGRST116" && !error.message.includes("multiple rows"))
       ) {
-        console.log(
-          "Inimigo não encontrado ou erro ao buscar por ID:",
-          error.message
-        );
+        return null;
       }
       return null;
     }

@@ -5,9 +5,9 @@ import { EditStoryForm } from "@/components/admin/EditStoryForm";
 import { DeleteStoryForm } from "@/components/admin/DeleteStoryForm";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { QueryClient } from '@tanstack/react-query';
-import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
-import { getHistorias } from '@/actions/storyActions';
+import { QueryClient } from "@tanstack/react-query";
+import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
+import { getHistorias } from "@/actions/storyActions";
 
 async function verificarAdminServerPage(): Promise<boolean> {
   const authState = await auth();
@@ -16,7 +16,9 @@ async function verificarAdminServerPage(): Promise<boolean> {
     const client = await clerkClient();
     const user = await client.users.getUser(authState.userId);
     return user.privateMetadata?.is_admin === true;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 export default async function AdminHistoriasPage() {
@@ -34,11 +36,10 @@ export default async function AdminHistoriasPage() {
       },
     },
   });
-  
-  const queryKey = ['historias'];
-  console.log(`🔄 Iniciando prefetch de ${queryKey[0]} no servidor para admin...`);
+
+  const queryKey = ["historias"];
   const startTime = Date.now();
-  
+
   try {
     // 2. Pré-buscar os dados
     await queryClient.prefetchQuery({
@@ -48,18 +49,17 @@ export default async function AdminHistoriasPage() {
         return historias;
       },
     });
-    console.log(`✅ Prefetch de ${queryKey[0]} para admin concluído em ${Date.now() - startTime}ms`);
   } catch (error) {
     console.error(`❌ Erro no prefetch de ${queryKey[0]} para admin:`, error);
   }
-  
+
   // 3. Desidratar o cache
   const dehydratedState = dehydrate(queryClient);
 
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-3xl font-bold mb-6">Gerenciamento de Histórias</h1>
-      
+
       <HydrationBoundary state={dehydratedState}>
         <Tabs defaultValue="add" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-8">
@@ -67,18 +67,17 @@ export default async function AdminHistoriasPage() {
             <TabsTrigger value="edit">Editar História</TabsTrigger>
             <TabsTrigger value="delete">Deletar História</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="add">
             <AddStoryForm />
           </TabsContent>
-          
+
           <TabsContent value="edit">
             <EditStoryForm />
           </TabsContent>
           <TabsContent value="delete">
             <DeleteStoryForm />
           </TabsContent>
-
         </Tabs>
       </HydrationBoundary>
     </div>

@@ -12,24 +12,16 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 export default async function AdminInimigosPage() {
-  console.log("Acessando AdminInimigosPage...");
-
   const authResult = await auth();
   if (!authResult.userId) {
-    console.log(
-      "AdminInimigosPage: Usuário não logado (authResult.userId é nulo). Redirecionando para /"
-    );
     redirect("/");
   }
-  console.log(`AdminInimigosPage: User ID: ${authResult.userId}`);
 
   let isUserAdmin = false;
   try {
     const client = await clerkClient();
     const user = await client.users.getUser(authResult.userId);
-    console.log("AdminInimigosPage: Metadados privados:", user.privateMetadata);
     isUserAdmin = user.privateMetadata?.is_admin === true;
-    console.log(`AdminInimigosPage: É admin? ${isUserAdmin}`);
   } catch (error) {
     console.error(
       "AdminInimigosPage: Erro ao buscar usuário ou metadados:",
@@ -42,15 +34,8 @@ export default async function AdminInimigosPage() {
   }
 
   if (!isUserAdmin) {
-    console.log(
-      "AdminInimigosPage: Usuário não é admin. Redirecionando para /"
-    );
     redirect("/");
   }
-
-  console.log(
-    "AdminInimigosPage: Usuário é admin, prosseguindo com renderização e prefetch."
-  );
 
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -65,9 +50,6 @@ export default async function AdminInimigosPage() {
       queryKey: ["inimigos"],
       queryFn: getInimigos,
     });
-    console.log(
-      "Dados de inimigos pré-buscados para /admin/inimigos (Server Component)"
-    );
   } catch (error) {
     console.error(
       "Erro ao pré-buscar dados de inimigos (Server Component):",

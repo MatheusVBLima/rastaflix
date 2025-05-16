@@ -1,6 +1,5 @@
 "use server";
 
-import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import {
   StorySchema,
@@ -10,9 +9,7 @@ import {
 } from "@/lib/types";
 import { getSupabaseClient, ensureAdmin } from "./commonActions";
 
-// --- GET STORIES ---
 export async function getHistorias(): Promise<Story[]> {
-  console.log("Buscando histórias do Supabase...");
   const supabase = await getSupabaseClient();
 
   const { data, error } = await supabase
@@ -228,13 +225,6 @@ export async function deleteStory(storyId: string): Promise<ActionResponse> {
 export async function getStoryById(
   storyId: string
 ): Promise<{ story: Story | null; error?: string }> {
-  console.log(
-    "[storyActions] getStoryById chamado com ID:",
-    storyId,
-    "tipo:",
-    typeof storyId
-  );
-
   if (!storyId || storyId.trim() === "") {
     console.error("[storyActions] ID da história não fornecido ou vazio");
     return { story: null, error: "ID da história não fornecido." };
@@ -242,22 +232,15 @@ export async function getStoryById(
 
   // Garantir que o ID seja uma string limpa
   const cleanId = storyId.trim();
-  console.log("[storyActions] ID limpo:", cleanId);
 
   try {
     const supabase = await getSupabaseClient();
-    console.log(
-      "[storyActions] Cliente Supabase inicializado, buscando história com ID:",
-      cleanId
-    );
 
     const { data, error } = await supabase
       .from("historias")
       .select("*")
       .eq("id", cleanId)
       .single();
-
-    console.log("[storyActions] Resposta do Supabase:", { data, error });
 
     if (error) {
       console.error("[storyActions] Erro ao buscar história:", error);
@@ -272,8 +255,6 @@ export async function getStoryById(
       return { story: null, error: "História não encontrada." };
     }
 
-    console.log("[storyActions] História encontrada:", data);
-
     // Converter para o formato do tipo Story
     const story: Story = {
       id: data.id,
@@ -285,10 +266,6 @@ export async function getStoryById(
       created_at: data.created_at,
     };
 
-    console.log(
-      "[storyActions] História convertida para o formato Story:",
-      story
-    );
     return { story };
   } catch (error: any) {
     console.error("[storyActions] Exceção ao buscar história:", error);

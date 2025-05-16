@@ -38,9 +38,6 @@ export default async function AdminMusicasPage() {
   });
 
   const queryKey = ["musicas"];
-  console.log(
-    `🔄 Iniciando prefetch de ${queryKey[0]} no servidor para admin...`
-  );
   const startTime = Date.now();
 
   try {
@@ -52,11 +49,6 @@ export default async function AdminMusicasPage() {
         return musicas;
       },
     });
-    console.log(
-      `✅ Prefetch de ${queryKey[0]} para admin concluído em ${
-        Date.now() - startTime
-      }ms`
-    );
   } catch (error) {
     console.error(`❌ Erro no prefetch de ${queryKey[0]} para admin:`, error);
   }

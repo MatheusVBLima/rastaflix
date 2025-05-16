@@ -38,9 +38,6 @@ export default async function AdminEsculachosPage() {
 
   // Pré-busca dos dados de esculachos para popular o cache do React Query
   const queryKey = ["esculachos"];
-  console.log(
-    `🔄 Iniciando prefetch de ${queryKey[0]} no servidor para admin...`
-  );
   const startTime = Date.now();
 
   try {
@@ -49,11 +46,6 @@ export default async function AdminEsculachosPage() {
       queryKey: queryKey,
       queryFn: getEsculachos,
     });
-    console.log(
-      `✅ Prefetch de ${queryKey[0]} para admin concluído em ${
-        Date.now() - startTime
-      }ms`
-    );
   } catch (error) {
     console.error(`❌ Erro no prefetch de ${queryKey[0]} para admin:`, error);
   }

@@ -20,9 +20,6 @@ export default async function InimigosPage() {
       queryKey: ["inimigos"],
       queryFn: getInimigos,
     });
-    console.log(
-      "Dados de inimigos pré-buscados para /inimigos (Server Component)"
-    );
   } catch (error) {
     console.error(
       "Erro ao pré-buscar dados de inimigos para /inimigos (Server Component):",

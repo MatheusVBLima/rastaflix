@@ -59,16 +59,7 @@ export function AddStoryForm() {
 
   // Efeito para buscar preview da URL
   useEffect(() => {
-    console.log(
-      "[AddStoryForm] useEffect para preview de URL disparado. storyUrl:",
-      storyUrl
-    );
-
     if (storyUrl && storyUrl.startsWith("http")) {
-      console.log(
-        "[AddStoryForm] Configurando timeout para analisar a URL:",
-        storyUrl
-      );
       const handler = setTimeout(() => {
         setIsFetchingPreview(true);
         setPreviewMessage("Buscando imagem de preview...");
@@ -93,7 +84,6 @@ export function AddStoryForm() {
             if (videoId) {
               // Construir URL da thumbnail diretamente
               const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-              console.log("[AddStoryForm] Thumbnail do YouTube:", thumbnailUrl);
 
               // Definir a URL da thumbnail no formulário
               form.setValue("imageUrl", thumbnailUrl, { shouldValidate: true });

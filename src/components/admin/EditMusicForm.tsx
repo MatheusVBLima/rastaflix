@@ -119,10 +119,6 @@ export function EditMusicForm({}: EditMusicFormProps) {
           if (videoId) {
             // Construir URL da thumbnail diretamente
             const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-            console.log(
-              "[EditMusicForm] Thumbnail do YouTube atualizada:",
-              thumbnailUrl
-            );
 
             // Definir a URL da thumbnail no formulário
             form.setValue("imageUrl", thumbnailUrl, { shouldValidate: true });

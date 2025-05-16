@@ -42,9 +42,6 @@ export function Esculachos({ initialEsculachos }: EsculachosProps) {
   const [isLoadingVoices, setIsLoadingVoices] = useState(true);
 
   async function fetchEsculachosClientSide(): Promise<Esculacho[]> {
-    console.log(
-      "[Esculachos.tsx] fetchEsculachosClientSide chamada, retornando initialEsculachos"
-    );
     return initialEsculachos;
   }
 

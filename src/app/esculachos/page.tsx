@@ -19,9 +19,6 @@ export default async function EsculachosPage() {
   });
 
   const queryKey = ["esculachos"];
-  console.log(
-    `🔄 Iniciando prefetch de ${queryKey[0]} no servidor para página pública...`
-  );
   const startTime = Date.now();
 
   try {
@@ -33,11 +30,6 @@ export default async function EsculachosPage() {
         return esculachosData; // getEsculachos retorna diretamente o array Esculacho[]
       },
     });
-    console.log(
-      `✅ Prefetch de ${queryKey[0]} para página pública concluído em ${
-        Date.now() - startTime
-      }ms`
-    );
   } catch (error) {
     console.error(
       `❌ Erro no prefetch de ${queryKey[0]} para página pública:`,

@@ -36,11 +36,6 @@ export function Historias({
   initialTags,
   isAdmin,
 }: HistoriasProps) {
-  console.log("[Historias.tsx] Props recebidas:", {
-    initialHistorias,
-    initialTags,
-  });
-
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTag, setSelectedTag] = useState<string>("todas");
   const [copiedId, setCopiedId] = useState<string | null>(null); // Estado para feedback de cópia
@@ -48,7 +43,6 @@ export function Historias({
   // Esta função será usada pelo TanStack Query para buscar dados quando necessário
   // (geralmente só será chamada quando o cache for invalidado ou resetado)
   async function fetchHistoriasClientSide(): Promise<Story[]> {
-    console.log("[Historias.tsx] fetchHistoriasClientSide chamada");
     // Numa implementação real, poderíamos buscar do servidor
     // Mas como os dados já foram pré-buscados via prefetchQuery no server
     // e desidratados/hidratados, esta função raramente será chamada
@@ -74,23 +68,11 @@ export function Historias({
   });
 
   useEffect(() => {
-    console.log("[Historias.tsx] Estado do useQuery:", {
-      historias,
-      isLoading,
-      error,
-      status,
-    });
+    // Adicionado para log
   }, [historias, isLoading, error, status]);
 
   const filteredHistorias = useMemo(() => {
-    console.log(
-      "[Historias.tsx] Calculando filteredHistorias. 'historias' do useQuery:",
-      historias
-    );
     if (!historias || !Array.isArray(historias)) {
-      console.log(
-        "[Historias.tsx] 'historias' do useQuery é undefined ou não é um array, retornando array vazio para filteredHistorias."
-      );
       return [];
     }
 
@@ -107,25 +89,10 @@ export function Historias({
           : true;
       return matchesSearchTerm && matchesTag;
     });
-    console.log("[Historias.tsx] Resultado de filteredHistorias:", result);
     return result;
   }, [historias, searchTerm, selectedTag]);
 
-  const handleCopyId = (id: string) => {
-    navigator.clipboard
-      .writeText(id)
-      .then(() => {
-        setCopiedId(id);
-        setTimeout(() => setCopiedId(null), 2000); // Resetar após 2 segundos
-      })
-      .catch((err) => {
-        console.error("Falha ao copiar ID: ", err);
-        // Adicionar feedback de erro para o usuário se desejado
-      });
-  };
-
   if (isLoading && !initialHistorias?.length) {
-    console.log("[Historias.tsx] Renderizando: Carregando histórias...");
     return <p>Carregando histórias...</p>;
   }
   if (error) {
@@ -135,13 +102,6 @@ export function Historias({
     );
     return <p>Erro ao carregar histórias: {error.message}</p>;
   }
-
-  console.log(
-    "[Historias.tsx] Antes de renderizar a lista. isLoading:",
-    isLoading,
-    "filteredHistorias.length:",
-    filteredHistorias.length
-  );
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">
