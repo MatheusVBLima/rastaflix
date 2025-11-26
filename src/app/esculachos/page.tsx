@@ -4,6 +4,7 @@ import { Esculacho } from "@/lib/types"; // Precisaremos do tipo Esculacho
 import { QueryClient } from "@tanstack/react-query";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { Esculachos } from "@/components/esculachos/Esculachos"; // Importar o novo componente
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Não vamos verificar admin por enquanto para a página pública
 // async function verificarAdmin(): Promise<boolean> { ... }
@@ -44,8 +45,10 @@ export default async function EsculachosPage() {
   const dehydratedState = dehydrate(queryClient);
 
   return (
-    <HydrationBoundary state={dehydratedState}>
-      <Esculachos initialEsculachos={esculachos} />
-    </HydrationBoundary>
+    <ErrorBoundary>
+      <HydrationBoundary state={dehydratedState}>
+        <Esculachos initialEsculachos={esculachos} />
+      </HydrationBoundary>
+    </ErrorBoundary>
   );
 }

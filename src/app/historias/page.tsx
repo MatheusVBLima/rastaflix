@@ -1,10 +1,11 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { fetchHistorias, getAllTags } from "@/lib/queries";
 import { Historias } from "@/components/historias/Historias";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { QueryClient } from "@tanstack/react-query";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { Story } from "@/lib/types";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 async function verificarAdmin(): Promise<boolean> {
   const authState = await auth();
@@ -54,12 +55,14 @@ export default async function HistoriasPage() {
 
   // 4. Renderizar o Client Component dentro do HydrationBoundary
   return (
-    <HydrationBoundary state={dehydratedState}>
-      <Historias
-        initialHistorias={historias}
-        initialTags={tags}
-        isAdmin={isAdmin}
-      />
-    </HydrationBoundary>
+    <ErrorBoundary>
+      <HydrationBoundary state={dehydratedState}>
+        <Historias
+          initialHistorias={historias}
+          initialTags={tags}
+          isAdmin={isAdmin}
+        />
+      </HydrationBoundary>
+    </ErrorBoundary>
   );
 }

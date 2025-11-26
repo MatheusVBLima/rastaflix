@@ -1,10 +1,11 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { fetchMusicas } from "@/lib/queries";
 import { Musicas } from "@/components/musicas/Musicas";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { QueryClient } from "@tanstack/react-query";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { Music } from "@/lib/types";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 async function verificarAdmin(): Promise<boolean> {
   const authState = await auth();
@@ -53,8 +54,10 @@ export default async function MusicasPage() {
 
   // 4. Renderizar o Client Component dentro do HydrationBoundary
   return (
-    <HydrationBoundary state={dehydratedState}>
-      <Musicas initialMusicas={musicas} isAdmin={isAdmin} />
-    </HydrationBoundary>
+    <ErrorBoundary>
+      <HydrationBoundary state={dehydratedState}>
+        <Musicas initialMusicas={musicas} isAdmin={isAdmin} />
+      </HydrationBoundary>
+    </ErrorBoundary>
   );
 }

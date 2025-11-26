@@ -15,6 +15,8 @@ export default function Providers({ children }: ProvidersProps) {
         staleTime: 1000 * 60 * 5, // 5 minutos
         gcTime: 1000 * 60 * 60, // 1 hora
         refetchOnWindowFocus: false,
+        refetchOnReconnect: false, // Não refetch ao reconectar
+        retry: 2, // Apenas 2 tentativas em caso de erro
       },
     },
   }));
