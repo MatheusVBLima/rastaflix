@@ -4,7 +4,8 @@ import React, { useState, useTransition, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { editStory, getStoryById, getHistorias } from "@/actions/storyActions";
+import { editStory } from "@/actions/storyActions";
+import { fetchStoryById, fetchHistorias } from "@/lib/queries";
 import type { Story, ActionResponse } from "@/lib/types";
 import { EditStorySchema as ServerEditStorySchema } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -76,7 +77,7 @@ export function EditStoryForm({}: EditStoryFormProps) {
   // Usar o useQuery que já está com o cache populado graças ao prefetch
   const { data: historias, isLoading } = useQuery<Story[]>({
     queryKey: ["historias"],
-    queryFn: getHistorias,
+    queryFn: fetchHistorias,
     staleTime: Infinity, // Match the staleTime from the server
   });
 
@@ -119,7 +120,7 @@ export function EditStoryForm({}: EditStoryFormProps) {
       }
 
       startEditTransition(async () => {
-        const result = await getStoryById(idToUse);
+        const result = await fetchStoryById(idToUse);
         setIsLoadingStory(false);
 
         if (result.story) {

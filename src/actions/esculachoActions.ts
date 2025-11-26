@@ -15,73 +15,8 @@ import {
   EditEsculachoSchema,
 } from "@/lib/types";
 
-export async function getEsculachos(): Promise<Esculacho[]> {
-  const supabase = await getSupabaseClient();
-
-  const { data, error } = await supabase
-    .from("esculachos")
-    .select("id, titulo, descricao, conteudo, autor, created_at")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("Erro ao buscar esculachos do Supabase:", error);
-    return [];
-  }
-
-  if (!data) {
-    return [];
-  }
-
-  // Mapear os dados para a interface Esculacho (ajuste se necessário)
-  return data.map((item) => ({
-    ...item,
-    id: item.id || "",
-    titulo: item.titulo || "",
-    conteudo: item.conteudo || "",
-    // Campos opcionais podem precisar de tratamento se forem null no DB e undefined no tipo
-    descricao: item.descricao,
-    autor: item.autor,
-  }));
-}
-
-export async function getEsculachoById(
-  id: string
-): Promise<{ esculacho?: Esculacho; error?: string }> {
-  if (!id) {
-    return { error: "ID do esculacho não fornecido" };
-  }
-
-  try {
-    const supabase = await getSupabaseClient();
-    const { data, error } = await supabase
-      .from("esculachos")
-      .select("id, titulo, descricao, conteudo, autor, created_at")
-      .eq("id", id)
-      .single();
-
-    if (error) {
-      return { error: error.message };
-    }
-
-    if (!data) {
-      return { error: "Esculacho não encontrado" };
-    }
-
-    const esculacho: Esculacho = {
-      id: data.id,
-      titulo: data.titulo,
-      descricao: data.descricao,
-      conteudo: data.conteudo,
-      autor: data.autor,
-      created_at: data.created_at,
-    };
-
-    return { esculacho };
-  } catch (error) {
-    console.error("Erro ao buscar esculacho por ID:", error);
-    return { error: "Erro ao buscar esculacho" };
-  }
-}
+// NOTA: getEsculachos() e getEsculachoById() foram movidos para @/lib/queries
+// Para buscar esculachos, use: import { fetchEsculachos, fetchEsculachoById } from '@/lib/queries'
 
 export async function addEsculacho(
   formData: FormData

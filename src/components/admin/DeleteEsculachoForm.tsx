@@ -2,7 +2,8 @@
 
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { deleteEsculacho, getEsculachos } from "@/actions/esculachoActions"; // Atualizado
+import { deleteEsculacho } from "@/actions/esculachoActions"; // Atualizado
+import { fetchEsculachos } from "@/lib/queries";
 import type { ActionResponse, Esculacho } from "@/lib/types"; // Atualizado
 import { Button } from "@/components/ui/button";
 import {
@@ -57,7 +58,7 @@ export function DeleteEsculachoForm() {
     error,
   } = useQuery<Esculacho[]>({
     queryKey: ["esculachos"], // Atualizado
-    queryFn: getEsculachos, // Atualizado
+    queryFn: fetchEsculachos, // Atualizado
     // staleTime: Infinity, // Removido ou ajustado conforme necessidade
   });
 

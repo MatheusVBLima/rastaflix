@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getMusicas } from '@/actions/musicActions';
+import { fetchMusicas } from '@/lib/queries';
 import { Music } from '@/lib/types';
 import { DeleteMusicButton } from './DeleteMusicButton';
 import {
@@ -23,7 +23,7 @@ export function MusicListAdmin({ showDeleteButton = true }: MusicListAdminProps)
   // Usar o useQuery que já está com o cache populado graças ao prefetch
   const { data: musicas, isLoading, error } = useQuery<Music[]>({
     queryKey: ['musicas'],
-    queryFn: getMusicas,
+    queryFn: fetchMusicas,
     staleTime: Infinity, // Match the staleTime from the server
   });
 

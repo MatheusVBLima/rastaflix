@@ -9,40 +9,8 @@ import {
 } from "@/lib/types";
 import { getSupabaseClient, ensureAdmin } from "./commonActions";
 
-export async function getHistorias(): Promise<Story[]> {
-  const supabase = await getSupabaseClient();
-
-  const { data, error } = await supabase
-    .from("historias")
-    .select("id, title, description, tags, url, image_url, created_at")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("Erro ao buscar histórias do Supabase:", error);
-    return []; // Retorna array vazio em caso de erro
-  }
-
-  if (!data) {
-    return [];
-  }
-
-  // Mapear os dados para a interface Story
-  return data.map((story) => ({
-    ...story,
-    description: story.description || "", // Garantir que description seja string
-    tags: story.tags || [], // Garantir que tags seja array
-    imageUrl: story.image_url, // Mapeamento direto
-  }));
-}
-
-// Função para obter todas as tags únicas das histórias
-export async function getAllTags(historias: Story[]): Promise<string[]> {
-  const allTags = new Set<string>();
-  historias.forEach((story) => {
-    story.tags.forEach((tag) => allTags.add(tag));
-  });
-  return Array.from(allTags).sort();
-}
+// NOTA: getHistorias() e getAllTags() foram movidos para @/lib/queries
+// Para buscar histórias, use: import { fetchHistorias, getAllTags } from '@/lib/queries'
 
 // --- ADD STORY ---
 export async function addStory(
@@ -221,54 +189,5 @@ export async function deleteStory(storyId: string): Promise<ActionResponse> {
   return { success: true, message: "História excluída com sucesso!" };
 }
 
-// --- GET STORY BY ID ---
-export async function getStoryById(
-  storyId: string
-): Promise<{ story: Story | null; error?: string }> {
-  if (!storyId || storyId.trim() === "") {
-    console.error("[storyActions] ID da história não fornecido ou vazio");
-    return { story: null, error: "ID da história não fornecido." };
-  }
-
-  // Garantir que o ID seja uma string limpa
-  const cleanId = storyId.trim();
-
-  try {
-    const supabase = await getSupabaseClient();
-
-    const { data, error } = await supabase
-      .from("historias")
-      .select("*")
-      .eq("id", cleanId)
-      .single();
-
-    if (error) {
-      console.error("[storyActions] Erro ao buscar história:", error);
-      return { story: null, error: error.message };
-    }
-
-    if (!data) {
-      console.error(
-        "[storyActions] Nenhum dado encontrado para o ID:",
-        cleanId
-      );
-      return { story: null, error: "História não encontrada." };
-    }
-
-    // Converter para o formato do tipo Story
-    const story: Story = {
-      id: data.id,
-      title: data.title,
-      description: data.description || "",
-      tags: data.tags || [],
-      url: data.url,
-      imageUrl: data.image_url,
-      created_at: data.created_at,
-    };
-
-    return { story };
-  } catch (error: any) {
-    console.error("[storyActions] Exceção ao buscar história:", error);
-    return { story: null, error: `Erro ao buscar história: ${error.message}` };
-  }
-}
+// NOTA: getStoryById() foi movido para @/lib/queries
+// Para buscar história por ID, use: import { fetchStoryById } from '@/lib/queries'
