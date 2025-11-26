@@ -133,14 +133,16 @@ export function RastaAwardsVoting({ userId }: RastaAwardsVotingProps) {
 
       {/* Status de autenticação */}
       {!userId && isActive && (
-        <Alert className="mb-6">
+        <Alert className="mb-6 border-primary/50 bg-primary/5">
           <Lock className="h-4 w-4" />
           <AlertTitle>Faça login para votar</AlertTitle>
-          <AlertDescription>
-            Você precisa estar logado para participar da votação.{" "}
-            <Link href="/sign-in" className="underline font-medium">
-              Clique aqui para fazer login
-            </Link>
+          <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-3 mt-2">
+            <span>Você precisa estar logado para participar da votação.</span>
+            <Button asChild size="sm" className="w-fit">
+              <Link href="/sign-in">
+                Fazer Login
+              </Link>
+            </Button>
           </AlertDescription>
         </Alert>
       )}
