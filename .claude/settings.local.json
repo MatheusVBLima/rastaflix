@@ -12,7 +12,8 @@
       "Bash(git rm:*)",
       "Bash(npx tsc:*)",
       "Bash(cd:*)",
-      "Bash(npx shadcn@latest add radio-group --yes)"
+      "Bash(npx shadcn@latest add radio-group --yes)",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": []
