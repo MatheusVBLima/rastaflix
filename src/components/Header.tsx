@@ -41,6 +41,7 @@ import {
   Award,
   Users,
   Gamepad,
+  Trophy,
   Lock,
 } from "lucide-react";
 
@@ -77,6 +78,12 @@ const universoOvelheraComponents: {
   icon: React.ReactNode;
 }[] = [
   {
+    title: "Rasta Awards",
+    href: "/rasta-awards",
+    description: "Vote nos melhores momentos e conteúdos do ano",
+    icon: <Trophy className="h-6 w-6 text-yellow-500 mb-2" />,
+  },
+  {
     title: "Ovelhera DLE",
     href: "/ovelhera-dle",
     description: "Diga qual a história de acordo com os emojis",
@@ -102,6 +109,12 @@ const adminComponents: {
   description: string;
   icon: React.ReactNode;
 }[] = [
+  {
+    title: "Gerenciar Awards",
+    href: "/admin/rasta-awards",
+    description: "Gerencie temporadas, categorias e nominados.",
+    icon: <Trophy className="h-6 w-6 text-yellow-500 mb-2" />,
+  },
   {
     title: "Gerenciar Histórias",
     href: "/admin/historias",
@@ -398,7 +411,7 @@ export function Header() {
             <ClerkLoaded>
               <Button variant="outline" asChild size="sm">
                 <Link href="/sign-in">
-                  <Lock /> Admin Login
+                  Login
                 </Link>
               </Button>
             </ClerkLoaded>
