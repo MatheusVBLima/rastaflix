@@ -29,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider dynamic>
       <html lang="en" suppressHydrationWarning>
         <head>
           <link rel="icon" href="/favicon.png" sizes="32" />

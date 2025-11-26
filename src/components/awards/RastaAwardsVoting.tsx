@@ -2,6 +2,7 @@
 
 import React, { useState, useTransition } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@clerk/nextjs";
 import { fetchActiveSeason, fetchVotingData, fetchUserVotes } from "@/lib/queries";
 import { submitVote } from "@/actions/awardActions";
 import { AwardSeason, VotingData, AwardVote } from "@/lib/types";
@@ -17,11 +18,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { EmptyState } from "@/components/ui/empty-state";
 
-interface RastaAwardsVotingProps {
-  userId: string | null;
-}
-
-export function RastaAwardsVoting({ userId }: RastaAwardsVotingProps) {
+export function RastaAwardsVoting() {
+  // Usar hook do Clerk diretamente no cliente para garantir autenticação correta em produção
+  const { userId, isLoaded } = useAuth();
   const [isPending, startTransition] = useTransition();
   const [votingCategoryId, setVotingCategoryId] = useState<string | null>(null);
   const queryClient = useQueryClient();
@@ -77,6 +76,18 @@ export function RastaAwardsVoting({ userId }: RastaAwardsVotingProps) {
   function getUserVoteForCategory(categoryId: string): string | null {
     const vote = userVotes.find((v) => v.category_id === categoryId);
     return vote?.nominee_id || null;
+  }
+
+  // Aguardar o Clerk carregar para evitar flash de conteúdo incorreto
+  if (!isLoaded) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="space-y-4">
+          <div className="h-12 bg-muted animate-pulse rounded" />
+          <div className="h-64 bg-muted animate-pulse rounded" />
+        </div>
+      </div>
+    );
   }
 
   if (!activeSeason) {
