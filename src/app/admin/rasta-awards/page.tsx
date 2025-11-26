@@ -8,6 +8,16 @@ import {
   fetchCategoriesBySeason,
   fetchNomineesByCategory,
 } from "@/lib/queries";
+import {
+  Trophy,
+  List,
+  Users,
+  BarChart,
+  Plus,
+  Pencil,
+  Trash2
+} from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Forms - Seasons
 import { AddSeasonForm } from "@/components/admin/awards/AddSeasonForm";
@@ -69,92 +79,175 @@ export default async function AdminRastaAwardsPage() {
   const dehydratedState = dehydrate(queryClient);
 
   return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">
-        Gerenciamento de Rasta Awards
-      </h1>
+    <div className="container mx-auto py-10 space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Gerenciamento de Rasta Awards</h1>
+          <p className="text-muted-foreground mt-2">
+            Gerencie temporadas, categorias, nominados e visualize resultados.
+          </p>
+        </div>
+      </div>
 
       <HydrationBoundary state={dehydratedState}>
-        <Tabs defaultValue="seasons" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8">
-            <TabsTrigger value="seasons">Temporadas</TabsTrigger>
-            <TabsTrigger value="categories">Categorias</TabsTrigger>
-            <TabsTrigger value="nominees">Nominados</TabsTrigger>
-            <TabsTrigger value="results">Resultados</TabsTrigger>
+        <Tabs defaultValue="seasons" className="w-full space-y-6">
+          <TabsList className="grid w-full grid-cols-4 p-1 h-auto bg-muted/50">
+            <TabsTrigger value="seasons" className="py-3 flex items-center gap-2">
+              <Trophy className="h-4 w-4" />
+              Temporadas
+            </TabsTrigger>
+            <TabsTrigger value="categories" className="py-3 flex items-center gap-2">
+              <List className="h-4 w-4" />
+              Categorias
+            </TabsTrigger>
+            <TabsTrigger value="nominees" className="py-3 flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Nominados
+            </TabsTrigger>
+            <TabsTrigger value="results" className="py-3 flex items-center gap-2">
+              <BarChart className="h-4 w-4" />
+              Resultados
+            </TabsTrigger>
           </TabsList>
 
           {/* TAB: Seasons */}
-          <TabsContent value="seasons">
-            <Tabs defaultValue="add-season" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-6">
-                <TabsTrigger value="add-season">Adicionar</TabsTrigger>
-                <TabsTrigger value="edit-season">Editar</TabsTrigger>
-                <TabsTrigger value="delete-season">Deletar</TabsTrigger>
-              </TabsList>
+          <TabsContent value="seasons" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Gerenciar Temporadas</CardTitle>
+                <CardDescription>
+                  Crie, edite ou remova temporadas de premiação.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="add-season" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 mb-6">
+                    <TabsTrigger value="add-season" className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" /> Adicionar
+                    </TabsTrigger>
+                    <TabsTrigger value="edit-season" className="flex items-center gap-2">
+                      <Pencil className="h-4 w-4" /> Editar
+                    </TabsTrigger>
+                    <TabsTrigger value="delete-season" className="flex items-center gap-2">
+                      <Trash2 className="h-4 w-4" /> Deletar
+                    </TabsTrigger>
+                  </TabsList>
 
-              <TabsContent value="add-season">
-                <AddSeasonForm />
-              </TabsContent>
+                  <div className="mt-6 border rounded-lg p-6 bg-card">
+                    <TabsContent value="add-season" className="mt-0">
+                      <AddSeasonForm />
+                    </TabsContent>
 
-              <TabsContent value="edit-season">
-                <EditSeasonForm />
-              </TabsContent>
+                    <TabsContent value="edit-season" className="mt-0">
+                      <EditSeasonForm />
+                    </TabsContent>
 
-              <TabsContent value="delete-season">
-                <DeleteSeasonForm />
-              </TabsContent>
-            </Tabs>
+                    <TabsContent value="delete-season" className="mt-0">
+                      <DeleteSeasonForm />
+                    </TabsContent>
+                  </div>
+                </Tabs>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* TAB: Categories */}
-          <TabsContent value="categories">
-            <Tabs defaultValue="add-category" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-6">
-                <TabsTrigger value="add-category">Adicionar</TabsTrigger>
-                <TabsTrigger value="edit-category">Editar</TabsTrigger>
-                <TabsTrigger value="delete-category">Deletar</TabsTrigger>
-              </TabsList>
+          <TabsContent value="categories" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Gerenciar Categorias</CardTitle>
+                <CardDescription>
+                  Adicione ou modifique categorias para as temporadas.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="add-category" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 mb-6">
+                    <TabsTrigger value="add-category" className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" /> Adicionar
+                    </TabsTrigger>
+                    <TabsTrigger value="edit-category" className="flex items-center gap-2">
+                      <Pencil className="h-4 w-4" /> Editar
+                    </TabsTrigger>
+                    <TabsTrigger value="delete-category" className="flex items-center gap-2">
+                      <Trash2 className="h-4 w-4" /> Deletar
+                    </TabsTrigger>
+                  </TabsList>
 
-              <TabsContent value="add-category">
-                <AddCategoryForm />
-              </TabsContent>
+                  <div className="mt-6 border rounded-lg p-6 bg-card">
+                    <TabsContent value="add-category" className="mt-0">
+                      <AddCategoryForm />
+                    </TabsContent>
 
-              <TabsContent value="edit-category">
-                <EditCategoryForm />
-              </TabsContent>
+                    <TabsContent value="edit-category" className="mt-0">
+                      <EditCategoryForm />
+                    </TabsContent>
 
-              <TabsContent value="delete-category">
-                <DeleteCategoryForm />
-              </TabsContent>
-            </Tabs>
+                    <TabsContent value="delete-category" className="mt-0">
+                      <DeleteCategoryForm />
+                    </TabsContent>
+                  </div>
+                </Tabs>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* TAB: Nominees */}
-          <TabsContent value="nominees">
-            <Tabs defaultValue="add-nominee" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-6">
-                <TabsTrigger value="add-nominee">Adicionar</TabsTrigger>
-                <TabsTrigger value="edit-nominee">Editar</TabsTrigger>
-                <TabsTrigger value="delete-nominee">Deletar</TabsTrigger>
-              </TabsList>
+          <TabsContent value="nominees" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Gerenciar Nominados</CardTitle>
+                <CardDescription>
+                  Cadastre os participantes que concorrerão aos prêmios.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="add-nominee" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 mb-6">
+                    <TabsTrigger value="add-nominee" className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" /> Adicionar
+                    </TabsTrigger>
+                    <TabsTrigger value="edit-nominee" className="flex items-center gap-2">
+                      <Pencil className="h-4 w-4" /> Editar
+                    </TabsTrigger>
+                    <TabsTrigger value="delete-nominee" className="flex items-center gap-2">
+                      <Trash2 className="h-4 w-4" /> Deletar
+                    </TabsTrigger>
+                  </TabsList>
 
-              <TabsContent value="add-nominee">
-                <AddNomineeForm />
-              </TabsContent>
+                  <div className="mt-6 border rounded-lg p-6 bg-card">
+                    <TabsContent value="add-nominee" className="mt-0">
+                      <AddNomineeForm />
+                    </TabsContent>
 
-              <TabsContent value="edit-nominee">
-                <EditNomineeForm />
-              </TabsContent>
+                    <TabsContent value="edit-nominee" className="mt-0">
+                      <EditNomineeForm />
+                    </TabsContent>
 
-              <TabsContent value="delete-nominee">
-                <DeleteNomineeForm />
-              </TabsContent>
-            </Tabs>
+                    <TabsContent value="delete-nominee" className="mt-0">
+                      <DeleteNomineeForm />
+                    </TabsContent>
+                  </div>
+                </Tabs>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* TAB: Results */}
-          <TabsContent value="results">
-            <ResultsViewer />
+          <TabsContent value="results" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Resultados da Votação</CardTitle>
+                <CardDescription>
+                  Acompanhe em tempo real ou visualize o resultado final.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="mt-0 border rounded-lg p-6 bg-card">
+                  <ResultsViewer />
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </HydrationBoundary>
