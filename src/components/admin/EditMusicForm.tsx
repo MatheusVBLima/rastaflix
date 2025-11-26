@@ -4,7 +4,8 @@ import React, { useState, useTransition, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { editMusic, getMusicById, getMusicas } from "@/actions/musicActions";
+import { editMusic } from "@/actions/musicActions";
+import { fetchMusicById, fetchMusicas } from "@/lib/queries";
 import type { Music, ActionResponse } from "@/lib/types";
 import { EditMusicSchema } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -88,7 +89,7 @@ export function EditMusicForm({}: EditMusicFormProps) {
   // Usar o useQuery que já está com o cache populado graças ao prefetch
   const { data: musicas, isLoading } = useQuery<Music[]>({
     queryKey: ["musicas"],
-    queryFn: getMusicas,
+    queryFn: fetchMusicas,
     staleTime: Infinity, // Match the staleTime from the server
   });
 
@@ -162,7 +163,7 @@ export function EditMusicForm({}: EditMusicFormProps) {
       form.reset({ id: currentId, title: "", url: "", imageUrl: "" });
 
       startEditTransition(async () => {
-        const result = await getMusicById(currentId);
+        const result = await fetchMusicById(currentId);
         setIsLoadingMusic(false);
         if (result.music) {
           form.reset({

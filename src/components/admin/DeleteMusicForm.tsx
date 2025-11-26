@@ -2,7 +2,8 @@
 
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { deleteMusic, getMusicas } from "@/actions/musicActions";
+import { deleteMusic } from "@/actions/musicActions";
+import { fetchMusicas } from "@/lib/queries";
 import type { ActionResponse, Music } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,7 +59,7 @@ export function DeleteMusicForm() {
     error,
   } = useQuery<Music[]>({
     queryKey: ["musicas"],
-    queryFn: getMusicas,
+    queryFn: fetchMusicas,
     staleTime: Infinity, // Match the staleTime from the server
   });
 

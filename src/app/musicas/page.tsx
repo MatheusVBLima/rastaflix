@@ -1,5 +1,5 @@
 import React from "react";
-import { getMusicas } from "@/actions/musicActions";
+import { fetchMusicas } from "@/lib/queries";
 import { Musicas } from "@/components/musicas/Musicas";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { QueryClient } from "@tanstack/react-query";
@@ -36,7 +36,7 @@ export default async function MusicasPage() {
     await queryClient.prefetchQuery({
       queryKey: queryKey,
       queryFn: async () => {
-        const musicas = await getMusicas();
+        const musicas = await fetchMusicas();
         return musicas;
       },
     });

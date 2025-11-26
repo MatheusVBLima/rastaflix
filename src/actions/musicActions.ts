@@ -10,70 +10,8 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { getSupabaseClient, verificarAdmin } from "./commonActions";
 
-export async function getMusicas(): Promise<Music[]> {
-  const supabase = await getSupabaseClient();
-
-  const { data, error } = await supabase
-    .from("musicas")
-    .select("id, title, url, image_url, created_at")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("Erro ao buscar músicas do Supabase:", error);
-    return []; // Retorna array vazio em caso de erro
-  }
-
-  if (!data) {
-    return [];
-  }
-
-  // Mapear os dados para a interface Music
-  return data.map((music) => ({
-    ...music,
-    imageUrl: music.image_url, // Mapeamento direto
-    id: music.id || "",
-    title: music.title || "",
-    url: music.url || "",
-  }));
-}
-
-export async function getMusicById(
-  id: string
-): Promise<{ music?: Music; error?: string }> {
-  if (!id) {
-    return { error: "ID da música não fornecido" };
-  }
-
-  try {
-    const supabase = await getSupabaseClient();
-    const { data, error } = await supabase
-      .from("musicas")
-      .select("id, title, url, image_url, created_at")
-      .eq("id", id)
-      .single();
-
-    if (error) {
-      return { error: error.message };
-    }
-
-    if (!data) {
-      return { error: "Música não encontrada" };
-    }
-
-    const music: Music = {
-      id: data.id,
-      title: data.title,
-      url: data.url,
-      imageUrl: data.image_url,
-      created_at: data.created_at,
-    };
-
-    return { music };
-  } catch (error) {
-    console.error("Erro ao buscar música por ID:", error);
-    return { error: "Erro ao buscar música" };
-  }
-}
+// NOTA: getMusicas() e getMusicById() foram movidos para @/lib/queries
+// Para buscar músicas, use: import { fetchMusicas, fetchMusicById } from '@/lib/queries'
 
 export async function addMusic(formData: FormData): Promise<ActionResponse> {
   const isAdmin = await verificarAdmin();

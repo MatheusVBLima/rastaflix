@@ -3,7 +3,7 @@ import {
   QueryClient,
   dehydrate,
 } from "@tanstack/react-query";
-import { getInimigos } from "@/actions/inimigoActions";
+import { fetchInimigos } from "@/lib/queries";
 import { Inimigos } from "@/components/inimigos/Inimigos";
 
 export default async function InimigosPage() {
@@ -18,7 +18,7 @@ export default async function InimigosPage() {
   try {
     await queryClient.prefetchQuery({
       queryKey: ["inimigos"],
-      queryFn: getInimigos,
+      queryFn: fetchInimigos,
     });
   } catch (error) {
     console.error(

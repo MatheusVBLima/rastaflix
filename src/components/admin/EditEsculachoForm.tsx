@@ -4,11 +4,8 @@ import React, { useState, useTransition, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  editEsculacho,
-  getEsculachoById,
-  getEsculachos,
-} from "@/actions/esculachoActions"; // Atualizado
+import { editEsculacho } from "@/actions/esculachoActions"; // Atualizado
+import { fetchEsculachoById, fetchEsculachos } from "@/lib/queries";
 import type { Esculacho, ActionResponse, EsculachoFormData } from "@/lib/types"; // Atualizado
 import { EditEsculachoSchema } from "@/lib/types"; // Atualizado
 import { Button } from "@/components/ui/button";
@@ -85,7 +82,7 @@ export function EditEsculachoForm() {
     error: listError,
   } = useQuery<Esculacho[]>({
     queryKey: ["esculachos"],
-    queryFn: getEsculachos,
+    queryFn: fetchEsculachos,
     // staleTime: Infinity, // Removido ou ajustado conforme necessidade de refetch
   });
 
@@ -129,7 +126,7 @@ export function EditEsculachoForm() {
       });
 
       startEditTransition(async () => {
-        const result = await getEsculachoById(currentId);
+        const result = await fetchEsculachoById(currentId);
         setIsLoadingEsculacho(false);
         if (result.esculacho) {
           form.reset({

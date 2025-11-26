@@ -2,7 +2,8 @@
 
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { deleteStory, getHistorias } from "@/actions/storyActions";
+import { deleteStory } from "@/actions/storyActions";
+import { fetchHistorias } from "@/lib/queries";
 import type { ActionResponse, Story } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,7 +59,7 @@ export function DeleteStoryForm() {
     error,
   } = useQuery<Story[]>({
     queryKey: ["historias"],
-    queryFn: getHistorias,
+    queryFn: fetchHistorias,
     staleTime: Infinity, // Match the staleTime from the server
   });
 

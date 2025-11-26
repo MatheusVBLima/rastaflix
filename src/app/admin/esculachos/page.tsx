@@ -9,7 +9,7 @@ import {
 import AddEsculachoForm from "@/components/admin/AddEsculachoForm";
 import { EditEsculachoForm } from "@/components/admin/EditEsculachoForm";
 import { DeleteEsculachoForm } from "@/components/admin/DeleteEsculachoForm";
-import { getEsculachos } from "@/actions/esculachoActions"; // Para prefetch
+import { fetchEsculachos } from "@/lib/queries"; // Para prefetch
 
 export default async function AdminEsculachosPage() {
   // 1. Criar QueryClient no Server Component
@@ -44,7 +44,7 @@ export default async function AdminEsculachosPage() {
     // 2. Pré-buscar os dados
     await queryClient.prefetchQuery({
       queryKey: queryKey,
-      queryFn: getEsculachos,
+      queryFn: fetchEsculachos,
     });
   } catch (error) {
     console.error(`❌ Erro no prefetch de ${queryKey[0]} para admin:`, error);

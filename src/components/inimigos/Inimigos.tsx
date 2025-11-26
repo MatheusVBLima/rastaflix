@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getInimigos } from "@/actions/inimigoActions";
+import { fetchInimigos } from "@/lib/queries";
 import { Inimigo } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -20,6 +20,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { Clock, Skull } from "lucide-react";
 
 export function Inimigos() {
+  // Usar useQuery que vai se hidratar com os dados pré-buscados no server
   const {
     data: inimigos,
     isLoading,
@@ -27,7 +28,12 @@ export function Inimigos() {
     error,
   } = useQuery<Inimigo[], Error>({
     queryKey: ["inimigos"],
-    queryFn: getInimigos,
+    queryFn: fetchInimigos,
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const isMobile = useMediaQuery("(max-width: 767px)");

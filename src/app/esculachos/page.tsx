@@ -1,5 +1,5 @@
 import React from "react";
-import { getEsculachos } from "@/actions/esculachoActions";
+import { fetchEsculachos } from "@/lib/queries";
 import { Esculacho } from "@/lib/types"; // Precisaremos do tipo Esculacho
 import { QueryClient } from "@tanstack/react-query";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
@@ -26,8 +26,8 @@ export default async function EsculachosPage() {
     await queryClient.prefetchQuery({
       queryKey: queryKey,
       queryFn: async () => {
-        const esculachosData = await getEsculachos();
-        return esculachosData; // getEsculachos retorna diretamente o array Esculacho[]
+        const esculachosData = await fetchEsculachos();
+        return esculachosData; // fetchEsculachos retorna diretamente o array Esculacho[]
       },
     });
   } catch (error) {

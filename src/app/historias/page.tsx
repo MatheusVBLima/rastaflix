@@ -1,5 +1,5 @@
 import React from "react";
-import { getHistorias, getAllTags } from "@/actions/storyActions";
+import { fetchHistorias, getAllTags } from "@/lib/queries";
 import { Historias } from "@/components/historias/Historias";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { QueryClient } from "@tanstack/react-query";
@@ -36,7 +36,7 @@ export default async function HistoriasPage() {
     await queryClient.prefetchQuery({
       queryKey: queryKey,
       queryFn: async () => {
-        const historias = await getHistorias();
+        const historias = await fetchHistorias();
         return historias;
       },
     });

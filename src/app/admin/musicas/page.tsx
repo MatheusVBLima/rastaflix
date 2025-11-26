@@ -7,7 +7,7 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { QueryClient } from "@tanstack/react-query";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
-import { getMusicas } from "@/actions/musicActions";
+import { fetchMusicas } from "@/lib/queries";
 
 async function verificarAdminServerPage(): Promise<boolean> {
   const authState = await auth();
@@ -45,7 +45,7 @@ export default async function AdminMusicasPage() {
     await queryClient.prefetchQuery({
       queryKey: queryKey,
       queryFn: async () => {
-        const musicas = await getMusicas();
+        const musicas = await fetchMusicas();
         return musicas;
       },
     });

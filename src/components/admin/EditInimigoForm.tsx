@@ -10,11 +10,8 @@ import {
   InimigoStatusSchema,
   InimigoSchema, // Garantir que InimigoSchema está importado
 } from "@/lib/types";
-import {
-  getInimigos,
-  getInimigoById,
-  editInimigo,
-} from "@/actions/inimigoActions";
+import { editInimigo } from "@/actions/inimigoActions";
+import { fetchInimigos, fetchInimigoById } from "@/lib/queries";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,7 +44,7 @@ export function EditInimigoForm() {
     error: errorInimigos,
   } = useQuery<Inimigo[], Error>({
     queryKey: ["inimigos"],
-    queryFn: getInimigos,
+    queryFn: fetchInimigos,
     staleTime: 5 * 60 * 1000, // Cache por 5 minutos
   });
 
@@ -65,7 +62,7 @@ export function EditInimigoForm() {
         form.reset({ nome: "", status: "pendente" });
         return;
       }
-      const inimigo = await getInimigoById(id);
+      const inimigo = await fetchInimigoById(id);
       if (inimigo) {
         form.reset({
           nome: inimigo.nome,

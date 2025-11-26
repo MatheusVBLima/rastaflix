@@ -96,69 +96,11 @@ export async function addInimigo(
   }
 }
 
-/**
- * Busca todos os inimigos do banco de dados.
- */
-export async function getInimigos(): Promise<Inimigo[]> {
-  const supabase = await getSupabaseClient();
-  if (!supabase) {
-    console.error("Falha ao conectar com o banco de dados em getInimigos.");
-    return [];
-  }
+// NOTA: getInimigos() foi movido para @/lib/queries
+// Para buscar inimigos, use: import { fetchInimigos } from '@/lib/queries'
 
-  try {
-    const { data, error } = await supabase
-      .from("inimigos")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Erro do Supabase ao buscar inimigos:", error);
-      return [];
-    }
-    return data || [];
-  } catch (e: any) {
-    console.error("Exceção ao buscar inimigos:", e);
-    return [];
-  }
-}
-
-/**
- * Busca um inimigo específico pelo ID.
- */
-export async function getInimigoById(id: string): Promise<Inimigo | null> {
-  if (!id) return null;
-
-  const supabase = await getSupabaseClient();
-  if (!supabase) {
-    console.error("Falha ao conectar com o banco de dados em getInimigoById.");
-    return null;
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("inimigos")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (error) {
-      // Se o erro for "PGRST116" (JSON object requested, multiple (or no) rows returned), significa que não encontrou ou encontrou mais de um.
-      // Para "no rows returned", é esperado que retorne null.
-      if (
-        error.code !== "PGRST116" ||
-        (error.code === "PGRST116" && !error.message.includes("multiple rows"))
-      ) {
-        return null;
-      }
-      return null;
-    }
-    return data;
-  } catch (e: any) {
-    console.error("Exceção ao buscar inimigo por ID:", e);
-    return null;
-  }
-}
+// NOTA: getInimigoById() foi movido para @/lib/queries
+// Para buscar inimigo por ID, use: import { fetchInimigoById } from '@/lib/queries'
 
 /**
  * Edita um inimigo existente.

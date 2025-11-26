@@ -2,7 +2,8 @@
 
 import React, { useState, useTransition } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getInimigos, deleteInimigo } from "@/actions/inimigoActions";
+import { deleteInimigo } from "@/actions/inimigoActions";
+import { fetchInimigos } from "@/lib/queries";
 import { Inimigo } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,7 +38,7 @@ export function DeleteInimigoForm() {
     error: errorInimigos,
   } = useQuery<Inimigo[], Error>({
     queryKey: ["inimigos"],
-    queryFn: getInimigos,
+    queryFn: fetchInimigos,
     staleTime: 5 * 60 * 1000, // Cache por 5 minutos
   });
 

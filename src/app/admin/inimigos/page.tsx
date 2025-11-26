@@ -7,7 +7,7 @@ import {
 import AddInimigoForm from "@/components/admin/AddInimigoForm";
 import { EditInimigoForm } from "@/components/admin/EditInimigoForm";
 import { DeleteInimigoForm } from "@/components/admin/DeleteInimigoForm";
-import { getInimigos } from "@/actions/inimigoActions";
+import { fetchInimigos } from "@/lib/queries";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
@@ -48,7 +48,7 @@ export default async function AdminInimigosPage() {
   try {
     await queryClient.prefetchQuery({
       queryKey: ["inimigos"],
-      queryFn: getInimigos,
+      queryFn: fetchInimigos,
     });
   } catch (error) {
     console.error(

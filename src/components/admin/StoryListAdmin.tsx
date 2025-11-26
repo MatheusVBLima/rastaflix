@@ -6,7 +6,7 @@ import { Story } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import { DeleteStoryButton } from './DeleteStoryButton'; 
-import { getHistorias } from '@/actions/storyActions';
+import { fetchHistorias } from '@/lib/queries';
 
 interface StoryListAdminProps {
   showDeleteButton?: boolean;
@@ -16,7 +16,7 @@ export function StoryListAdmin({ showDeleteButton = true }: StoryListAdminProps)
   // Usar o useQuery que já está com o cache populado graças ao prefetch
   const { data: historias, isLoading, error } = useQuery<Story[]>({
     queryKey: ['historias'],
-    queryFn: getHistorias,
+    queryFn: fetchHistorias,
     staleTime: Infinity, // Match the staleTime from the server
   });
 
