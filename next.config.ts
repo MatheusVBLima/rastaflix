@@ -15,8 +15,8 @@ const nextConfig: NextConfig = {
         hostname: "**",
       },
     ],
-    // Desabilita o otimizador de imagens para URLs externas no ambiente de produção
-    unoptimized: process.env.NODE_ENV === "production",
+    // Image optimization habilitado para melhor performance
+    unoptimized: false,
   },
 };
 
