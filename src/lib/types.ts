@@ -154,3 +154,192 @@ export interface InimigoActionResponse extends ActionResponse {
 //   errors?: Record<string, string[]> | { _form?: string[] } | null;
 //   data?: any;
 // }
+
+// ============================================
+// RASTA AWARDS - Types & Schemas
+// ============================================
+
+// ========== Award Season ==========
+export interface AwardSeason {
+  id: string;
+  year: number;
+  title: string;
+  description?: string | null;
+  start_date: string;
+  end_date: string;
+  status: "draft" | "active" | "closed";
+  created_at?: string;
+  updated_at?: string;
+}
+
+export const AwardSeasonSchema = z.object({
+  year: z
+    .number()
+    .int({ message: "Ano deve ser um número inteiro" })
+    .min(2020, { message: "Ano deve ser maior que 2020" })
+    .max(2100, { message: "Ano deve ser menor que 2100" }),
+  title: z.string().min(1, { message: "Título é obrigatório" }),
+  description: z.string().optional(),
+  start_date: z.string().min(1, { message: "Data de início é obrigatória" }),
+  end_date: z.string().min(1, { message: "Data de término é obrigatória" }),
+  status: z.enum(["draft", "active", "closed"], {
+    message: "Status deve ser draft, active ou closed",
+  }),
+});
+
+export const EditAwardSeasonSchema = AwardSeasonSchema.extend({
+  id: z
+    .string()
+    .uuid({ message: "ID deve ser um UUID válido" })
+    .min(1, { message: "ID é obrigatório para edição" }),
+});
+
+export type AwardSeasonFormData = z.infer<typeof AwardSeasonSchema>;
+export type EditAwardSeasonFormData = z.infer<typeof EditAwardSeasonSchema>;
+
+// ========== Award Category ==========
+export interface AwardCategory {
+  id: string;
+  season_id: string;
+  name: string;
+  description?: string | null;
+  display_order: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export const AwardCategorySchema = z.object({
+  season_id: z.string().uuid({ message: "ID da temporada é obrigatório" }),
+  name: z
+    .string()
+    .min(1, { message: "Nome da categoria é obrigatório" })
+    .max(100, { message: "Nome não pode exceder 100 caracteres" }),
+  description: z.string().optional(),
+  display_order: z
+    .number()
+    .int({ message: "Ordem deve ser um número inteiro" })
+    .default(0),
+});
+
+export const EditAwardCategorySchema = AwardCategorySchema.extend({
+  id: z
+    .string()
+    .uuid({ message: "ID deve ser um UUID válido" })
+    .min(1, { message: "ID é obrigatório para edição" }),
+});
+
+export type AwardCategoryFormData = z.infer<typeof AwardCategorySchema>;
+export type EditAwardCategoryFormData = z.infer<typeof EditAwardCategorySchema>;
+
+// ========== Award Nominee ==========
+export interface AwardNominee {
+  id: string;
+  category_id: string;
+  title: string;
+  description?: string | null;
+  image_url?: string | null;
+  content_link?: string | null;
+  display_order: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export const AwardNomineeSchema = z.object({
+  category_id: z.string().uuid({ message: "ID da categoria é obrigatório" }),
+  title: z
+    .string()
+    .min(1, { message: "Título do nominee é obrigatório" })
+    .max(200, { message: "Título não pode exceder 200 caracteres" }),
+  description: z.string().optional(),
+  image_url: z
+    .string()
+    .url({ message: "URL da imagem inválida" })
+    .optional()
+    .or(z.literal("")),
+  content_link: z
+    .string()
+    .url({ message: "URL do conteúdo inválida" })
+    .optional()
+    .or(z.literal("")),
+  display_order: z
+    .number()
+    .int({ message: "Ordem deve ser um número inteiro" })
+    .default(0),
+});
+
+export const EditAwardNomineeSchema = AwardNomineeSchema.extend({
+  id: z
+    .string()
+    .uuid({ message: "ID deve ser um UUID válido" })
+    .min(1, { message: "ID é obrigatório para edição" }),
+});
+
+export type AwardNomineeFormData = z.infer<typeof AwardNomineeSchema>;
+export type EditAwardNomineeFormData = z.infer<typeof EditAwardNomineeSchema>;
+
+// ========== Award Vote ==========
+export interface AwardVote {
+  id: string;
+  user_id: string;
+  category_id: string;
+  nominee_id: string;
+  season_id: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export const VoteSchema = z.object({
+  category_id: z.string().uuid({ message: "ID da categoria é obrigatório" }),
+  nominee_id: z.string().uuid({ message: "ID do nominee é obrigatório" }),
+  season_id: z.string().uuid({ message: "ID da temporada é obrigatório" }),
+});
+
+export type VoteFormData = z.infer<typeof VoteSchema>;
+
+// ========== Vote Results (Admin Only) ==========
+export interface VoteResults {
+  nominee_id: string;
+  nominee_title: string;
+  nominee_description?: string | null;
+  nominee_image_url?: string | null;
+  nominee_content_link?: string | null;
+  vote_count: number;
+  percentage: number;
+}
+
+export interface CategoryWithResults extends AwardCategory {
+  nominees: (AwardNominee & { vote_count?: number; percentage?: number })[];
+  total_votes: number;
+}
+
+// ========== Voting Data (Public) ==========
+export interface CategoryWithNominees extends AwardCategory {
+  nominees: AwardNominee[];
+}
+
+export interface VotingData {
+  season: AwardSeason;
+  categories: CategoryWithNominees[];
+}
+
+// ========== Response Types ==========
+export interface AwardSeasonActionResponse extends ActionResponse {
+  seasonId?: string;
+  season?: AwardSeason;
+}
+
+export interface AwardCategoryActionResponse extends ActionResponse {
+  categoryId?: string;
+  category?: AwardCategory;
+}
+
+export interface AwardNomineeActionResponse extends ActionResponse {
+  nomineeId?: string;
+  nominee?: AwardNominee;
+}
+
+export interface VoteActionResponse extends ActionResponse {
+  voteId?: string;
+  vote?: AwardVote;
+  voted?: boolean;
+}
