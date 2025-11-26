@@ -10,11 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { Loader2, Trophy, Lock, CheckCircle2, Calendar, Info } from "lucide-react";
+import { Loader2, Trophy, Lock, CheckCircle2, Calendar, Info, Award } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import Image from "next/image";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface RastaAwardsVotingProps {
   userId: string | null;
@@ -80,14 +81,12 @@ export function RastaAwardsVoting({ userId }: RastaAwardsVotingProps) {
 
   if (!activeSeason) {
     return (
-      <div className="max-w-4xl mx-auto">
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertTitle>Nenhuma votação ativa</AlertTitle>
-          <AlertDescription>
-            Não há nenhuma temporada de votação ativa no momento. Fique atento às próximas edições do Rasta Awards!
-          </AlertDescription>
-        </Alert>
+      <div className="max-w-4xl mx-auto py-12">
+        <EmptyState
+          icon={Award}
+          title="Nenhuma votação ativa"
+          description="Não há nenhuma temporada de votação ativa no momento. Fique atento às próximas edições do Rasta Awards!"
+        />
       </div>
     );
   }

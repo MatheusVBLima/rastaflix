@@ -329,7 +329,7 @@ export async function fetchActiveSeason(): Promise<AwardSeason | null> {
     .from("award_seasons")
     .select("*")
     .eq("status", "active")
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error("Erro ao buscar temporada ativa:", error);
