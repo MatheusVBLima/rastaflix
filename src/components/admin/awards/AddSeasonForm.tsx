@@ -59,6 +59,7 @@ export function AddSeasonForm() {
         toast.success(result.message);
         form.reset();
         queryClient.invalidateQueries({ queryKey: ["seasons"] });
+        queryClient.invalidateQueries({ queryKey: ["activeSeason"] });
       } else {
         toast.error(result.message);
         if (result.errors) {

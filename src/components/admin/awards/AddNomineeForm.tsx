@@ -47,6 +47,7 @@ export function AddNomineeForm() {
         toast.success(result.message);
         form.reset();
         queryClient.invalidateQueries({ queryKey: ["nominees"] });
+        queryClient.invalidateQueries({ queryKey: ["votingData", selectedSeasonId] });
       } else {
         toast.error(result.message);
       }

@@ -37,6 +37,9 @@ import { DeleteNomineeForm } from "@/components/admin/awards/DeleteNomineeForm";
 // Results Viewer
 import { ResultsViewer } from "@/components/admin/awards/ResultsViewer";
 
+// Preview Button
+import { PreviewButton } from "@/components/admin/awards/PreviewButton";
+
 async function verificarAdminServerPage(): Promise<boolean> {
   const authState = await auth();
   if (!authState.userId) return false;
@@ -88,6 +91,9 @@ export default async function AdminRastaAwardsPage() {
           </p>
         </div>
       </div>
+
+      {/* Botão de Preview Flutuante */}
+      <PreviewButton />
 
       <HydrationBoundary state={dehydratedState}>
         <Tabs defaultValue="seasons" className="w-full space-y-6">

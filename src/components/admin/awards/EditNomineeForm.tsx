@@ -63,6 +63,7 @@ export function EditNomineeForm() {
       if (result.success) {
         toast.success(result.message);
         queryClient.invalidateQueries({ queryKey: ["nominees"] });
+        queryClient.invalidateQueries({ queryKey: ["votingData", selectedSeasonId] });
         form.reset();
         setSelectedId("");
       } else {
