@@ -53,8 +53,10 @@ export function AddCategoryForm() {
 
       if (result.success) {
         toast.success(result.message);
+        const seasonId = data.season_id;
         form.reset();
         queryClient.invalidateQueries({ queryKey: ["categories"] });
+        queryClient.invalidateQueries({ queryKey: ["votingData", seasonId] });
       } else {
         toast.error(result.message);
       }

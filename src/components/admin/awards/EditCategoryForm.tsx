@@ -54,7 +54,9 @@ export function EditCategoryForm() {
       const result = await editCategory(formData);
       if (result.success) {
         toast.success(result.message);
+        const seasonId = data.season_id;
         queryClient.invalidateQueries({ queryKey: ["categories"] });
+        queryClient.invalidateQueries({ queryKey: ["votingData", seasonId] });
         form.reset();
         setSelectedId("");
       } else {
