@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import Image from "next/image";
+import { fetchHistorias } from "@/lib/queries";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -38,38 +39,23 @@ export function Historias({
 }: HistoriasProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTag, setSelectedTag] = useState<string>("todas");
-  const [copiedId, setCopiedId] = useState<string | null>(null); // Estado para feedback de cópia
-
-  // Esta função será usada pelo TanStack Query para buscar dados quando necessário
-  // (geralmente só será chamada quando o cache for invalidado ou resetado)
-  async function fetchHistoriasClientSide(): Promise<Story[]> {
-    // Numa implementação real, poderíamos buscar do servidor
-    // Mas como os dados já foram pré-buscados via prefetchQuery no server
-    // e desidratados/hidratados, esta função raramente será chamada
-    return initialHistorias;
-  }
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Usar useQuery com a mesma queryKey usada no prefetch
+  // A queryFn usa fetchHistorias real para que invalidateQueries funcione corretamente
   const {
     data: historias,
     isLoading,
     error,
-    status, // Adicionado para log
   } = useQuery<Story[], Error>({
     queryKey: ["historias"],
-    queryFn: fetchHistoriasClientSide,
-    // initialData não é necessária, pois estamos usando hydration
-    // A configuração abaixo é menos relevante pois o cache vem pre-hidratado
+    queryFn: fetchHistorias,
     staleTime: Infinity,
     gcTime: Infinity,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
-
-  useEffect(() => {
-    // Adicionado para log
-  }, [historias, isLoading, error, status]);
 
   const filteredHistorias = useMemo(() => {
     if (!historias || !Array.isArray(historias)) {

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   UserButton,
@@ -19,7 +20,6 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme/ThemeSwitcher";
@@ -150,8 +150,14 @@ const adminComponents: {
  */
 export function Header() {
   const { user } = useUser();
+  const router = useRouter();
   const [isAdmin, setIsAdmin] = React.useState(false);
   const [isCheckingAdmin, setIsCheckingAdmin] = React.useState(false);
+
+  // Prefetch da rota no hover para navegação mais rápida
+  const handlePrefetch = React.useCallback((href: string) => {
+    router.prefetch(href);
+  }, [router]);
 
   React.useEffect(() => {
     if (user) {
@@ -235,6 +241,7 @@ export function Header() {
                         icon={component.icon}
                         backgroundImage="/Sweeping Light Arc.jpeg"
                         className="bg-cover bg-center"
+                        onPrefetch={handlePrefetch}
                       >
                         {component.description}
                       </ListItem>
@@ -253,6 +260,7 @@ export function Header() {
                         href={component.href}
                         icon={component.icon}
                         backgroundImage="/Glowing Star Abstract.jpeg"
+                        onPrefetch={handlePrefetch}
                       >
                         {component.description}
                       </ListItem>
@@ -284,6 +292,7 @@ export function Header() {
                               href={component.href}
                               icon={component.icon}
                               backgroundImage="/Glowing Star Abstract.jpeg"
+                              onPrefetch={handlePrefetch}
                             >
                               {component.description}
                             </ListItem>
@@ -422,17 +431,17 @@ export function Header() {
   );
 }
 
-const ListItem = React.forwardRef<
-  React.ElementRef<"a">,
-  Omit<React.ComponentPropsWithoutRef<typeof Link>, "href"> & {
-    href: string;
-    title: string;
-    icon?: React.ReactNode;
-    backgroundImage?: string;
-  }
->(
+interface ListItemProps extends Omit<React.ComponentPropsWithoutRef<typeof Link>, "href"> {
+  href: string;
+  title: string;
+  icon?: React.ReactNode;
+  backgroundImage?: string;
+  onPrefetch?: (href: string) => void;
+}
+
+const ListItem = React.forwardRef<React.ElementRef<"a">, ListItemProps>(
   (
-    { className, title, children, href, icon, backgroundImage, ...props },
+    { className, title, children, href, icon, backgroundImage, onPrefetch, ...props },
     ref
   ) => {
     return (
@@ -441,6 +450,8 @@ const ListItem = React.forwardRef<
           <Link
             href={href}
             ref={ref}
+            onMouseEnter={() => onPrefetch?.(href)}
+            onFocus={() => onPrefetch?.(href)}
             className={cn(
               "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:shadow-lg hover:scale-[1.02] bg-card",
               className

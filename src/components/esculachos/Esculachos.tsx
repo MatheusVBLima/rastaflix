@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { fetchEsculachos } from "@/lib/queries";
 import { Esculacho } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -41,17 +42,15 @@ export function Esculachos({ initialEsculachos }: EsculachosProps) {
   );
   const [isLoadingVoices, setIsLoadingVoices] = useState(true);
 
-  async function fetchEsculachosClientSide(): Promise<Esculacho[]> {
-    return initialEsculachos;
-  }
-
+  // Usar useQuery com a mesma queryKey usada no prefetch
+  // A queryFn usa fetchEsculachos real para que invalidateQueries funcione corretamente
   const {
     data: esculachos,
     isLoading,
     error,
   } = useQuery<Esculacho[], Error>({
     queryKey: ["esculachos"],
-    queryFn: fetchEsculachosClientSide,
+    queryFn: fetchEsculachos,
     staleTime: Infinity,
     gcTime: Infinity,
     refetchOnMount: false,

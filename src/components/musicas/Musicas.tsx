@@ -4,12 +4,11 @@ import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import Image from "next/image";
+import { fetchMusicas } from "@/lib/queries";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Music } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { ClipboardCopyIcon, CheckIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface MusicasProps {
@@ -19,21 +18,16 @@ interface MusicasProps {
 
 export function Musicas({ initialMusicas, isAdmin }: MusicasProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  // Esta função será usada pelo TanStack Query para buscar dados quando necessário
-  async function fetchMusicasClientSide(): Promise<Music[]> {
-    return initialMusicas;
-  }
 
   // Usar useQuery com a mesma queryKey usada no prefetch
+  // A queryFn usa fetchMusicas real para que invalidateQueries funcione corretamente
   const {
     data: musicas,
     isLoading,
     error,
   } = useQuery<Music[], Error>({
     queryKey: ["musicas"],
-    queryFn: fetchMusicasClientSide,
+    queryFn: fetchMusicas,
     staleTime: Infinity,
     gcTime: Infinity,
     refetchOnMount: false,

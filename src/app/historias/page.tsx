@@ -1,9 +1,7 @@
-import React, { Suspense } from "react";
 import { fetchHistorias, getAllTags } from "@/lib/queries";
 import { Historias } from "@/components/historias/Historias";
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { QueryClient } from "@tanstack/react-query";
-import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
+import { QueryClient, HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { Story } from "@/lib/types";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -30,7 +28,6 @@ export default async function HistoriasPage() {
   });
 
   const queryKey = ["historias"];
-  const startTime = Date.now();
 
   try {
     // 2. Pré-buscar os dados
