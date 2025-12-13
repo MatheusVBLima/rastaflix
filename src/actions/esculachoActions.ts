@@ -36,8 +36,8 @@ export async function addEsculacho(
     autor: formData.get("autor") as string | null,
   };
 
-  // Audio base64 vem separado - salvar diretamente no banco
-  const audioBase64 = formData.get("audioBase64") as string | null;
+  // URL do áudio no Supabase Storage
+  const audioUrl = formData.get("audioUrl") as string | null;
 
   try {
     const validatedData = EsculachoSchema.parse(rawData);
@@ -52,7 +52,7 @@ export async function addEsculacho(
           descricao: validatedData.descricao,
           conteudo: validatedData.conteudo,
           autor: validatedData.autor,
-          audio_data: audioBase64, // Salva base64 diretamente no banco
+          audio_url: audioUrl, // URL do áudio no Supabase Storage
         },
       ]);
 
@@ -110,8 +110,8 @@ export async function editEsculacho(
     autor: formData.get("autor") as string | null,
   };
 
-  // Audio base64 vem separado (novo áudio gerado) - salvar diretamente no banco
-  const audioBase64 = formData.get("audioBase64") as string | null;
+  // URL do áudio no Supabase Storage (novo áudio gerado)
+  const audioUrl = formData.get("audioUrl") as string | null;
 
   try {
     const validatedData = EditEsculachoSchema.parse(rawData);
@@ -124,7 +124,7 @@ export async function editEsculacho(
       descricao: string | null | undefined;
       conteudo: string;
       autor: string | null | undefined;
-      audio_data?: string;
+      audio_url?: string;
     } = {
       titulo: validatedData.titulo,
       descricao: validatedData.descricao,
@@ -133,8 +133,8 @@ export async function editEsculacho(
     };
 
     // Se tem novo áudio, adicionar ao update
-    if (audioBase64) {
-      updateData.audio_data = audioBase64;
+    if (audioUrl) {
+      updateData.audio_url = audioUrl;
     }
 
     const { error } = await supabase

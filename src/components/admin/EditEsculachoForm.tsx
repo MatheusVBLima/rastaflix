@@ -59,9 +59,8 @@ export function EditEsculachoForm() {
 
   // Estados para áudio
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
-  const [audioBase64, setAudioBase64] = useState<string | null>(null);
-  const [audioMimeType, setAudioMimeType] = useState<string>("audio/wav");
-  const [currentAudioData, setCurrentAudioData] = useState<string | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [currentAudioUrl, setCurrentAudioUrl] = useState<string | null>(null);
   const [originalConteudo, setOriginalConteudo] = useState<string>("");
 
   const router = useRouter();
@@ -130,8 +129,7 @@ export function EditEsculachoForm() {
         throw new Error(data.error || "Erro ao gerar áudio");
       }
 
-      setAudioBase64(data.audio);
-      setAudioMimeType(data.mimeType || "audio/wav");
+      setAudioUrl(data.audioUrl);
       toast.success("Áudio gerado com sucesso! Ouça o preview abaixo.");
     } catch (error) {
       console.error("Erro ao gerar áudio:", error);
@@ -162,9 +160,8 @@ export function EditEsculachoForm() {
       }
       setIsLoadingEsculacho(true);
       setLoadError(null);
-      setAudioBase64(null);
-      setAudioMimeType("audio/wav");
-      setCurrentAudioData(null);
+      setAudioUrl(null);
+      setCurrentAudioUrl(null);
       setOriginalConteudo("");
       form.reset({
         id: currentId,
@@ -186,7 +183,7 @@ export function EditEsculachoForm() {
             autor: result.esculacho.autor || "",
           });
           setOriginalConteudo(result.esculacho.conteudo);
-          setCurrentAudioData(result.esculacho.audio_data || null);
+          setCurrentAudioUrl(result.esculacho.audio_url || null);
           if (esculachoIdToEdit !== result.esculacho.id) {
             setEsculachoIdToEdit(result.esculacho.id);
           }
@@ -205,7 +202,7 @@ export function EditEsculachoForm() {
       toast.success(editState.message || "Esculacho atualizado com sucesso!");
       router.refresh();
       queryClient.invalidateQueries({ queryKey: ["esculachos"] });
-      setAudioBase64(null);
+      setAudioUrl(null);
     } else if (editState?.message && !editState.success) {
       toast.error(editState.message || "Erro ao editar esculacho.", {
         description: editState.errors
@@ -223,7 +220,7 @@ export function EditEsculachoForm() {
       }
 
       // Se o conteúdo mudou e não tem novo áudio gerado
-      if (conteudoChanged && !audioBase64) {
+      if (conteudoChanged && !audioUrl) {
         toast.error("O conteúdo foi alterado. Gere um novo áudio antes de salvar.");
         return;
       }
@@ -237,14 +234,14 @@ export function EditEsculachoForm() {
         formData.append("autor", values.autor);
 
         // Adicionar áudio se foi gerado um novo
-        if (audioBase64) {
-          formData.append("audioBase64", audioBase64);
+        if (audioUrl) {
+          formData.append("audioUrl", audioUrl);
         }
 
         dispatchEditFormAction(formData);
       });
     },
-    [dispatchEditFormAction, conteudoChanged, audioBase64]
+    [dispatchEditFormAction, conteudoChanged, audioUrl]
   );
 
   // Lógica de paginação
@@ -270,11 +267,7 @@ export function EditEsculachoForm() {
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   // Determinar qual áudio mostrar (novo gerado ou existente do banco)
-  const audioSrc = audioBase64
-    ? `data:${audioMimeType};base64,${audioBase64}`
-    : currentAudioData
-    ? `data:audio/wav;base64,${currentAudioData}`
-    : null;
+  const audioSrc = audioUrl || currentAudioUrl;
 
   return (
     <div className="space-y-6 p-4 border rounded-md mt-4">
@@ -381,7 +374,7 @@ export function EditEsculachoForm() {
                   ) : (
                     <>
                       <RotateCcw className="mr-2 h-4 w-4" />
-                      {audioBase64 ? "Regenerar Áudio" : "Gerar Novo Áudio"}
+                      {audioUrl ? "Regenerar Áudio" : "Gerar Novo Áudio"}
                     </>
                   )}
                 </Button>
@@ -389,7 +382,7 @@ export function EditEsculachoForm() {
 
               {audioSrc ? (
                 <div className="space-y-2">
-                  {audioBase64 ? (
+                  {audioUrl ? (
                     <p className="text-xs text-muted-foreground">
                       Preview do novo áudio gerado.
                     </p>
@@ -439,7 +432,7 @@ export function EditEsculachoForm() {
             />
             <Button
               type="submit"
-              disabled={isEditPending || isLoadingEsculacho || (conteudoChanged && !audioBase64)}
+              disabled={isEditPending || isLoadingEsculacho || (conteudoChanged && !audioUrl)}
             >
               {isEditPending ? "Salvando..." : "Salvar Alterações"}
             </Button>
@@ -506,7 +499,7 @@ export function EditEsculachoForm() {
                     <TableCell className="font-medium">{item.titulo}</TableCell>
                     <TableCell>{item.autor || "-"}</TableCell>
                     <TableCell>
-                      {item.audio_data ? (
+                      {item.audio_url ? (
                         <Badge variant="default" className="text-xs">
                           <Volume2 className="h-3 w-3 mr-1" />
                           Sim

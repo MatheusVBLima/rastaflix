@@ -23,69 +23,16 @@ interface EsculachosProps {
   initialEsculachos: Esculacho[];
 }
 
-// Componente separado para gerenciar Blob URL e limpeza
+// Componente simplificado para áudio - usa URL direta do Supabase Storage
 function EsculachoAudio({ 
-  audioData, 
+  audioUrl, 
   titulo, 
   esculachoId 
 }: { 
-  audioData: string; 
+  audioUrl: string; 
   titulo: string; 
   esculachoId: string;
 }) {
-  const [audioUrl, setAudioUrl] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    try {
-      // Decodificar base64
-      const binaryString = atob(audioData);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      // Criar Blob e URL
-      const blob = new Blob([bytes], { type: "audio/wav" });
-      const url = URL.createObjectURL(blob);
-      setAudioUrl(url);
-
-      // Limpar URL quando componente desmontar
-      return () => {
-        URL.revokeObjectURL(url);
-      };
-    } catch (error) {
-      console.error("Erro ao criar Blob URL:", error);
-      // Fallback para data URI
-      setAudioUrl(`data:audio/wav;base64,${audioData}`);
-    }
-  }, [audioData]);
-
-  const downloadUrl = React.useMemo(() => {
-    try {
-      const binaryString = atob(audioData);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      const blob = new Blob([bytes], { type: "audio/wav" });
-      return URL.createObjectURL(blob);
-    } catch {
-      return `data:audio/wav;base64,${audioData}`;
-    }
-  }, [audioData]);
-
-  // Limpar downloadUrl quando componente desmontar
-  React.useEffect(() => {
-    return () => {
-      if (downloadUrl && downloadUrl.startsWith("blob:")) {
-        URL.revokeObjectURL(downloadUrl);
-      }
-    };
-  }, [downloadUrl]);
-
-  if (!audioUrl) {
-    return <p className="text-sm text-muted-foreground">Carregando áudio...</p>;
-  }
-
   return (
     <div className="w-full space-y-2">
       <AudioPlayerComplete
@@ -98,7 +45,7 @@ function EsculachoAudio({
       />
       <Button variant="outline" size="sm" className="w-full" asChild>
         <a
-          href={downloadUrl}
+          href={audioUrl}
           download={`${titulo.replace(/[^a-zA-Z0-9]/g, "_")}.wav`}
         >
           <Download className="mr-2 h-4 w-4" />
@@ -219,9 +166,9 @@ export function Esculachos({ initialEsculachos }: EsculachosProps) {
                     <Badge variant="outline">Autor: {esculacho.autor}</Badge>
                   )}
                 </div>
-                {esculacho.audio_data ? (
+                {esculacho.audio_url ? (
                   <EsculachoAudio 
-                    audioData={esculacho.audio_data} 
+                    audioUrl={esculacho.audio_url} 
                     titulo={esculacho.titulo}
                     esculachoId={esculacho.id}
                   />

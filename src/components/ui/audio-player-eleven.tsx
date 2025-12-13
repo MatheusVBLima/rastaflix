@@ -14,7 +14,7 @@ import {
   useState,
 } from "react"
 import * as SliderPrimitive from "@radix-ui/react-slider"
-import { Check, PauseIcon, PlayIcon, Settings, Volume2, VolumeX, RotateCcw } from "lucide-react"
+import { Check, PauseIcon, PlayIcon, Settings, Volume2, Volume1, VolumeX, RotateCcw } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -572,17 +572,45 @@ export function AudioPlayerComplete<TData = unknown>({
   showSpeedControl = false,
 }: AudioPlayerCompleteProps<TData>) {
   const player = useAudioPlayer<TData>()
-  const [isMuted, setIsMuted] = useState(false)
+  const [volume, setVolume] = useState(1)
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false)
+  const volumeContainerRef = useRef<HTMLDivElement>(null)
   const isActive = player.isItemActive(item.id)
   const isPlaying = isActive && player.isPlaying
-  const isLoading = isActive && player.isBuffering && player.isPlaying
 
-  const handleMute = useCallback(() => {
-    if (!player.ref.current) return
-    const newMuted = !isMuted
-    player.ref.current.muted = newMuted
-    setIsMuted(newMuted)
-  }, [isMuted, player])
+  // Sincronizar volume com o elemento de áudio
+  useEffect(() => {
+    if (player.ref.current) {
+      player.ref.current.volume = volume
+    }
+  }, [volume, player.ref])
+
+  // Fechar slider ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (volumeContainerRef.current && !volumeContainerRef.current.contains(event.target as Node)) {
+        setShowVolumeSlider(false)
+      }
+    }
+    
+    if (showVolumeSlider) {
+      document.addEventListener("mousedown", handleClickOutside)
+      return () => document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [showVolumeSlider])
+
+  const handleVolumeChange = useCallback((values: number[]) => {
+    const newVolume = values[0]
+    setVolume(newVolume)
+    if (player.ref.current) {
+      player.ref.current.volume = newVolume
+      player.ref.current.muted = newVolume === 0
+    }
+  }, [player.ref])
+
+  const handleVolumeToggle = useCallback(() => {
+    setShowVolumeSlider(prev => !prev)
+  }, [])
 
   const handleRestart = useCallback(() => {
     if (!isActive) return
@@ -591,6 +619,9 @@ export function AudioPlayerComplete<TData = unknown>({
       player.play(item)
     }
   }, [isActive, isPlaying, item, player])
+
+  // Ícone de volume baseado no nível
+  const VolumeIcon = volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2
 
   return (
     <div className={cn("flex items-center gap-3 p-3 rounded-lg bg-muted/50", className)}>
@@ -624,21 +655,38 @@ export function AudioPlayerComplete<TData = unknown>({
         <RotateCcw className="h-4 w-4" />
       </Button>
 
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 shrink-0"
-        onClick={handleMute}
-        disabled={!isActive}
-        aria-label={isMuted ? "Ativar som" : "Silenciar"}
-      >
-        {isMuted ? (
-          <VolumeX className="h-4 w-4" />
-        ) : (
-          <Volume2 className="h-4 w-4" />
+      {/* Controle de volume */}
+      <div ref={volumeContainerRef} className="relative flex items-center">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0"
+          onClick={handleVolumeToggle}
+          aria-label="Ajustar volume"
+        >
+          <VolumeIcon className="h-4 w-4" />
+        </Button>
+        
+        {showVolumeSlider && (
+          <div className="absolute right-0 bottom-full mb-2 p-2 bg-popover border rounded-md shadow-md z-50">
+            <SliderPrimitive.Root
+              value={[volume]}
+              onValueChange={handleVolumeChange}
+              min={0}
+              max={1}
+              step={0.05}
+              orientation="vertical"
+              className="relative flex w-4 h-24 touch-none select-none flex-col items-center"
+            >
+              <SliderPrimitive.Track className="relative w-1 h-full grow overflow-hidden rounded-full bg-muted">
+                <SliderPrimitive.Range className="absolute w-full bg-primary" />
+              </SliderPrimitive.Track>
+              <SliderPrimitive.Thumb className="block h-3 w-3 rounded-full border border-primary/50 bg-background shadow transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
+            </SliderPrimitive.Root>
+          </div>
         )}
-      </Button>
+      </div>
 
       {showSpeedControl && (
         <AudioPlayerSpeed size="icon" className="h-8 w-8 shrink-0" />

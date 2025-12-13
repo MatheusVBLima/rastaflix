@@ -88,7 +88,7 @@ export interface Esculacho {
   descricao?: string | null;
   conteudo: string;
   autor?: string | null;
-  audio_data?: string | null; // Base64 do áudio WAV
+  audio_url?: string | null; // URL do áudio no Supabase Storage
   created_at: string;
 }
 

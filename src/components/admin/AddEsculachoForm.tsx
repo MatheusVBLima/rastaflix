@@ -24,8 +24,7 @@ import { useQueryClient } from "@tanstack/react-query";
 export default function AddEsculachoForm() {
   const [isPending, startTransition] = useTransition();
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
-  const [audioBase64, setAudioBase64] = useState<string | null>(null);
-  const [audioMimeType, setAudioMimeType] = useState<string>("audio/wav");
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const form = useForm<EsculachoFormData>({
@@ -63,8 +62,7 @@ export default function AddEsculachoForm() {
         throw new Error(data.error || "Erro ao gerar áudio");
       }
 
-      setAudioBase64(data.audio);
-      setAudioMimeType(data.mimeType || "audio/wav");
+      setAudioUrl(data.audioUrl);
       toast.success("Áudio gerado com sucesso! Ouça o preview abaixo.");
     } catch (error) {
       console.error("Erro ao gerar áudio:", error);
@@ -77,7 +75,7 @@ export default function AddEsculachoForm() {
   };
 
   const onSubmit = async (data: EsculachoFormData) => {
-    if (!audioBase64) {
+    if (!audioUrl) {
       toast.error("Gere o áudio antes de publicar o esculacho.");
       return;
     }
@@ -88,14 +86,13 @@ export default function AddEsculachoForm() {
       formDataToSubmit.append("conteudo", data.conteudo);
       formDataToSubmit.append("descricao", data.descricao);
       formDataToSubmit.append("autor", data.autor);
-      formDataToSubmit.append("audioBase64", audioBase64);
+      formDataToSubmit.append("audioUrl", audioUrl);
 
       const result = await addEsculacho(formDataToSubmit);
       if (result.success) {
         toast.success(result.message || "Esculacho adicionado com sucesso!");
         form.reset();
-        setAudioBase64(null);
-        setAudioMimeType("audio/wav");
+        setAudioUrl(null);
         queryClient.invalidateQueries({ queryKey: ["esculachos"] });
       } else {
         toast.error(result.message || "Erro ao adicionar esculacho.", {
@@ -107,9 +104,7 @@ export default function AddEsculachoForm() {
     });
   };
 
-  const audioSrc = audioBase64
-    ? `data:${audioMimeType};base64,${audioBase64}`
-    : null;
+  const audioSrc = audioUrl;
 
   return (
     <Form {...form}>
@@ -157,7 +152,7 @@ export default function AddEsculachoForm() {
             <h3 className="text-sm font-medium">Áudio do Esculacho</h3>
             <Button
               type="button"
-              variant={audioBase64 ? "outline" : "default"}
+              variant={audioUrl ? "outline" : "default"}
               size="sm"
               onClick={handleGenerateAudio}
               disabled={isGeneratingAudio || !conteudo || conteudo.trim().length === 0}
@@ -167,7 +162,7 @@ export default function AddEsculachoForm() {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Gerando...
                 </>
-              ) : audioBase64 ? (
+              ) : audioUrl ? (
                 <>
                   <RotateCcw className="mr-2 h-4 w-4" />
                   Regenerar Áudio
@@ -225,7 +220,7 @@ export default function AddEsculachoForm() {
 
         <Button
           type="submit"
-          disabled={isPending || !audioBase64}
+          disabled={isPending || !audioUrl}
           className="w-full"
         >
           {isPending ? (
@@ -237,7 +232,7 @@ export default function AddEsculachoForm() {
           )}
         </Button>
 
-        {!audioBase64 && (
+        {!audioUrl && (
           <p className="text-xs text-center text-muted-foreground">
             Você precisa gerar o áudio antes de publicar o esculacho.
           </p>

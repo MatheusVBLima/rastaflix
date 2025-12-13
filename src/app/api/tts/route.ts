@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { clerkClient, getAuth } from "@clerk/nextjs/server";
+import { createClient } from "@supabase/supabase-js";
 
 // Modelo Pro para melhor qualidade de áudio
 const GEMINI_API_URL =
@@ -11,17 +12,29 @@ interface TTSRequest {
 }
 
 interface TTSResponse {
-  audio?: string;
-  mimeType?: string;
+  audioUrl?: string;
   error?: string;
+}
+
+// Cliente Supabase com service role para upload
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error("Supabase URL ou Service Role Key não configurados");
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey);
 }
 
 /**
  * Handles POST requests to generate audio from text using Google Gemini TTS.
+ * Uploads the audio to Supabase Storage and returns the public URL.
  * Only authenticated admin users can access this endpoint.
  *
  * @param request - The incoming HTTP request with { text: string, voice?: string }
- * @returns A JSON response with base64 audio data or error message
+ * @returns A JSON response with audioUrl or error message
  */
 export async function POST(request: Request): Promise<NextResponse<TTSResponse>> {
   // Verificar autenticação
@@ -143,16 +156,22 @@ export async function POST(request: Request): Promise<NextResponse<TTSResponse>>
       );
     }
 
-    // Se é PCM raw (L16), converter para WAV adicionando header
-    let finalAudio = audioData;
-    let finalMimeType = originalMimeType;
+    // Converter base64 para Buffer
+    let audioBuffer: Buffer;
+    let contentType: string;
 
     if (originalMimeType.includes("L16") || originalMimeType.includes("pcm")) {
-      // Decodificar base64 para bytes
-      const pcmBytes = Uint8Array.from(atob(audioData), c => c.charCodeAt(0));
+      // Se é PCM raw (L16), converter para WAV adicionando header
+      const pcmBytes = Buffer.from(audioData, "base64");
 
-      // Criar WAV header (PCM 16-bit, mono, 24000Hz)
-      const sampleRate = 24000;
+      // Extrair taxa de amostragem do mimeType (ex: audio/L16;rate=24000)
+      let sampleRate = 24000;
+      const rateMatch = originalMimeType.match(/rate=(\d+)/i);
+      if (rateMatch) {
+        sampleRate = parseInt(rateMatch[1], 10);
+      }
+
+      // Criar WAV header
       const numChannels = 1;
       const bitsPerSample = 16;
       const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
@@ -160,45 +179,62 @@ export async function POST(request: Request): Promise<NextResponse<TTSResponse>>
       const dataSize = pcmBytes.length;
       const fileSize = 36 + dataSize;
 
-      const wavHeader = new ArrayBuffer(44);
-      const view = new DataView(wavHeader);
-
+      const wavHeader = Buffer.alloc(44);
+      
       // RIFF header
-      view.setUint32(0, 0x52494646, false); // "RIFF"
-      view.setUint32(4, fileSize, true); // file size - 8
-      view.setUint32(8, 0x57415645, false); // "WAVE"
-
+      wavHeader.write("RIFF", 0);
+      wavHeader.writeUInt32LE(fileSize, 4);
+      wavHeader.write("WAVE", 8);
+      
       // fmt chunk
-      view.setUint32(12, 0x666d7420, false); // "fmt "
-      view.setUint32(16, 16, true); // chunk size
-      view.setUint16(20, 1, true); // audio format (PCM)
-      view.setUint16(22, numChannels, true);
-      view.setUint32(24, sampleRate, true);
-      view.setUint32(28, byteRate, true);
-      view.setUint16(32, blockAlign, true);
-      view.setUint16(34, bitsPerSample, true);
-
+      wavHeader.write("fmt ", 12);
+      wavHeader.writeUInt32LE(16, 16); // chunk size
+      wavHeader.writeUInt16LE(1, 20); // audio format (PCM)
+      wavHeader.writeUInt16LE(numChannels, 22);
+      wavHeader.writeUInt32LE(sampleRate, 24);
+      wavHeader.writeUInt32LE(byteRate, 28);
+      wavHeader.writeUInt16LE(blockAlign, 32);
+      wavHeader.writeUInt16LE(bitsPerSample, 34);
+      
       // data chunk
-      view.setUint32(36, 0x64617461, false); // "data"
-      view.setUint32(40, dataSize, true);
+      wavHeader.write("data", 36);
+      wavHeader.writeUInt32LE(dataSize, 40);
 
       // Combinar header + PCM data
-      const wavBytes = new Uint8Array(44 + pcmBytes.length);
-      wavBytes.set(new Uint8Array(wavHeader), 0);
-      wavBytes.set(pcmBytes, 44);
-
-      // Converter para base64
-      let binary = '';
-      for (let i = 0; i < wavBytes.length; i++) {
-        binary += String.fromCharCode(wavBytes[i]);
-      }
-      finalAudio = btoa(binary);
-      finalMimeType = "audio/wav";
+      audioBuffer = Buffer.concat([wavHeader, pcmBytes]);
+      contentType = "audio/wav";
+    } else {
+      // Já é um formato válido (WAV, MP3, etc)
+      audioBuffer = Buffer.from(audioData, "base64");
+      contentType = originalMimeType.split(";")[0]; // Remove parâmetros extras
     }
 
+    // Fazer upload para Supabase Storage
+    const supabase = getSupabaseAdmin();
+    const fileName = `${crypto.randomUUID()}.wav`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("esculacho-audios")
+      .upload(fileName, audioBuffer, {
+        contentType,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error("Erro ao fazer upload para Supabase Storage:", uploadError);
+      return NextResponse.json(
+        { error: `Erro ao salvar áudio: ${uploadError.message}` },
+        { status: 500 }
+      );
+    }
+
+    // Obter URL pública
+    const { data: urlData } = supabase.storage
+      .from("esculacho-audios")
+      .getPublicUrl(fileName);
+
     return NextResponse.json({
-      audio: finalAudio,
-      mimeType: finalMimeType,
+      audioUrl: urlData.publicUrl,
     });
   } catch (error) {
     console.error("Erro ao chamar API Gemini:", error);

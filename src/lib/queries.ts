@@ -240,7 +240,7 @@ export async function fetchEsculachos(): Promise<Esculacho[]> {
 
   const { data, error } = await supabase
     .from("esculachos")
-    .select("id, titulo, descricao, conteudo, autor, audio_data, created_at")
+    .select("id, titulo, descricao, conteudo, autor, audio_url, created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -259,7 +259,7 @@ export async function fetchEsculachos(): Promise<Esculacho[]> {
     conteudo: item.conteudo || "",
     descricao: item.descricao,
     autor: item.autor,
-    audio_data: item.audio_data,
+    audio_url: item.audio_url,
   }));
 }
 
@@ -274,7 +274,7 @@ export async function fetchEsculachoById(
     const supabase = getSupabaseClientDirect();
     const { data, error } = await supabase
       .from("esculachos")
-      .select("id, titulo, descricao, conteudo, autor, audio_data, created_at")
+      .select("id, titulo, descricao, conteudo, autor, audio_url, created_at")
       .eq("id", id)
       .single();
 
@@ -292,7 +292,7 @@ export async function fetchEsculachoById(
       descricao: data.descricao,
       conteudo: data.conteudo,
       autor: data.autor,
-      audio_data: data.audio_data,
+      audio_url: data.audio_url,
       created_at: data.created_at,
     };
 
