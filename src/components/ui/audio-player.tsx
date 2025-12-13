@@ -116,10 +116,10 @@ function AudioPlayer({ src, className }: AudioPlayerProps) {
     try {
       if (isPlaying) {
         audio.pause();
-        setIsPlaying(false);
+        // Estado será atualizado pelo listener handlePause
       } else {
         await audio.play();
-        setIsPlaying(true);
+        // Estado será atualizado pelo listener handlePlay
       }
     } catch (error) {
       console.error("Erro ao reproduzir áudio:", error);
@@ -143,15 +143,20 @@ function AudioPlayer({ src, className }: AudioPlayerProps) {
     setCurrentTime(value[0]);
   };
 
-  const handleRestart = () => {
+  const handleRestart = async () => {
     const audio = audioRef.current;
     if (!audio) return;
 
     audio.currentTime = 0;
     setCurrentTime(0);
     if (!isPlaying) {
-      audio.play();
-      setIsPlaying(true);
+      try {
+        await audio.play();
+        // Estado será atualizado pelo listener handlePlay
+      } catch (error) {
+        console.error("Erro ao reiniciar áudio:", error);
+        setError("Erro ao reiniciar áudio");
+      }
     }
   };
 

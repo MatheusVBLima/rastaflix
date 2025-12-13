@@ -394,7 +394,7 @@ export const AudioPlayerDuration = ({
     >
       {player.duration !== null &&
       player.duration !== undefined &&
-      !Number.isFinite(player.duration)
+      Number.isFinite(player.duration)
         ? formatTime(player.duration)
         : "--:--"}
     </span>
@@ -616,7 +616,11 @@ export function AudioPlayerComplete<TData = unknown>({
     if (!isActive) return
     player.seek(0)
     if (!isPlaying) {
-      player.play(item)
+      // play() retorna Promise que pode rejeitar, mas já é tratada internamente
+      // Adicionamos catch silencioso para evitar unhandled promise rejection warnings
+      player.play(item).catch(() => {
+        // Erro já é tratado internamente pelo player
+      })
     }
   }, [isActive, isPlaying, item, player])
 

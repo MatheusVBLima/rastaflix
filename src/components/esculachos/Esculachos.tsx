@@ -24,6 +24,7 @@ interface EsculachosProps {
 }
 
 // Componente simplificado para áudio - usa URL direta do Supabase Storage
+// IMPORTANTE: Este componente deve estar dentro de um AudioPlayerProvider
 function EsculachoAudio({ 
   audioUrl, 
   titulo, 
@@ -33,6 +34,8 @@ function EsculachoAudio({
   titulo: string; 
   esculachoId: string;
 }) {
+  // AudioPlayerComplete usa useAudioPlayer() hook que requer AudioPlayerProvider
+  // Este componente é renderizado dentro de Esculachos que já tem o provider
   return (
     <div className="w-full space-y-2">
       <AudioPlayerComplete
