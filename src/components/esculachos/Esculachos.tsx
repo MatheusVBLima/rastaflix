@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchEsculachos } from "@/lib/queries";
 import { Esculacho } from "@/lib/types";
@@ -15,15 +15,9 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Loader2, PlayCircle, Square } from "lucide-react";
+import { Download } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AudioPlayer } from "@/components/ui/audio-player";
 
 interface EsculachosProps {
   initialEsculachos: Esculacho[];
@@ -31,19 +25,7 @@ interface EsculachosProps {
 
 export function Esculachos({ initialEsculachos }: EsculachosProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [availableVoices, setAvailableVoices] = useState<
-    SpeechSynthesisVoice[]
-  >([]);
-  const [selectedVoiceURI, setSelectedVoiceURI] = useState<string | undefined>(
-    undefined
-  );
-  const [speakingEsculachoId, setSpeakingEsculachoId] = useState<string | null>(
-    null
-  );
-  const [isLoadingVoices, setIsLoadingVoices] = useState(true);
 
-  // Usar useQuery com a mesma queryKey usada no prefetch
-  // A queryFn usa fetchEsculachos real para que invalidateQueries funcione corretamente
   const {
     data: esculachos,
     isLoading,
@@ -57,23 +39,6 @@ export function Esculachos({ initialEsculachos }: EsculachosProps) {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
-
-  useEffect(() => {
-    const loadVoices = () => {
-      const voices = window.speechSynthesis.getVoices();
-      if (voices.length > 0) {
-        setAvailableVoices(voices);
-        setSelectedVoiceURI(voices[0]?.voiceURI);
-        setIsLoadingVoices(false);
-      }
-    };
-    loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-    return () => {
-      window.speechSynthesis.onvoiceschanged = null;
-      window.speechSynthesis.cancel();
-    };
-  }, []);
 
   const filteredEsculachos = useMemo(() => {
     if (!esculachos) {
@@ -95,29 +60,6 @@ export function Esculachos({ initialEsculachos }: EsculachosProps) {
     );
   }, [searchTerm, esculachos]);
 
-  const handleSpeak = (esculacho: Esculacho) => {
-    if (speakingEsculachoId === esculacho.id) {
-      window.speechSynthesis.cancel();
-      setSpeakingEsculachoId(null);
-      return;
-    }
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(esculacho.conteudo);
-    const selectedVoice = availableVoices.find(
-      (v) => v.voiceURI === selectedVoiceURI
-    );
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
-    }
-    utterance.onstart = () => setSpeakingEsculachoId(esculacho.id);
-    utterance.onend = () => setSpeakingEsculachoId(null);
-    utterance.onerror = () => {
-      setSpeakingEsculachoId(null);
-      console.error("Erro ao tentar reproduzir o áudio do esculacho.");
-    };
-    window.speechSynthesis.speak(utterance);
-  };
-
   if (error) {
     return <p>Erro ao carregar esculachos: {error.message}</p>;
   }
@@ -133,34 +75,6 @@ export function Esculachos({ initialEsculachos }: EsculachosProps) {
           className="max-w-sm"
           disabled={isLoading}
         />
-        {availableVoices.length > 0 && (
-          <Select
-            value={selectedVoiceURI}
-            onValueChange={setSelectedVoiceURI}
-            disabled={isLoadingVoices || isLoading}
-          >
-            <SelectTrigger className="w-full sm:w-[280px]">
-              <SelectValue
-                placeholder={
-                  isLoadingVoices ? "Carregando vozes..." : "Selecione uma voz"
-                }
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {isLoadingVoices ? (
-                <SelectItem value="loading" disabled>
-                  Carregando...
-                </SelectItem>
-              ) : (
-                availableVoices.map((voice) => (
-                  <SelectItem key={voice.voiceURI} value={voice.voiceURI}>
-                    {voice.name} ({voice.lang})
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-        )}
       </div>
 
       {!isLoading && filteredEsculachos.length === 0 && !searchTerm && (
@@ -212,31 +126,33 @@ export function Esculachos({ initialEsculachos }: EsculachosProps) {
                   {esculacho.conteudo}
                 </p>
               </CardContent>
-              <CardFooter className="flex flex-col items-start gap-2 pt-4">
+              <CardFooter className="flex flex-col items-start gap-3 pt-4">
                 <div className="flex flex-wrap gap-2">
                   {esculacho.autor && (
                     <Badge variant="outline">Autor: {esculacho.autor}</Badge>
                   )}
                 </div>
-                <Button
-                  onClick={() => handleSpeak(esculacho)}
-                  className="w-full mt-2"
-                  variant={
-                    speakingEsculachoId === esculacho.id
-                      ? "destructive"
-                      : "default"
-                  }
-                >
-                  {speakingEsculachoId === esculacho.id ? (
-                    <>
-                      <Square className="mr-2 h-4 w-4" /> Parar
-                    </>
-                  ) : (
-                    <>
-                      <PlayCircle className="mr-2 h-4 w-4" /> Ouvir Esculacho
-                    </>
-                  )}
-                </Button>
+                {esculacho.audio_data ? (
+                  <div className="w-full space-y-2">
+                    <AudioPlayer
+                      src={`data:audio/wav;base64,${esculacho.audio_data}`}
+                      className="w-full"
+                    />
+                    <Button variant="outline" size="sm" className="w-full" asChild>
+                      <a
+                        href={`data:audio/wav;base64,${esculacho.audio_data}`}
+                        download={`${esculacho.titulo.replace(/[^a-zA-Z0-9]/g, "_")}.wav`}
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Baixar Áudio
+                      </a>
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground w-full text-center">
+                    Áudio não disponível
+                  </p>
+                )}
               </CardFooter>
             </Card>
           ))}

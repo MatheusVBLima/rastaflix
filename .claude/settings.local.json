@@ -15,13 +15,14 @@
       "Bash(npx shadcn@latest add radio-group --yes)",
       "Bash(echo:*)",
       "Bash(dir:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npx @elevenlabs/cli@latest components add:*)"
     ],
     "deny": [],
     "ask": []
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "supabase"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

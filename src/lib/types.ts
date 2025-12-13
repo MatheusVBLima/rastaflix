@@ -88,6 +88,7 @@ export interface Esculacho {
   descricao?: string | null;
   conteudo: string;
   autor?: string | null;
+  audio_data?: string | null; // Base64 do áudio WAV
   created_at: string;
 }
 

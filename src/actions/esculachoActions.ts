@@ -36,11 +36,15 @@ export async function addEsculacho(
     autor: formData.get("autor") as string | null,
   };
 
+  // Audio base64 vem separado - salvar diretamente no banco
+  const audioBase64 = formData.get("audioBase64") as string | null;
+
   try {
     const validatedData = EsculachoSchema.parse(rawData);
 
     const supabase = await getSupabaseClient();
-    const { error } = await supabase
+
+    const { error: insertError } = await supabase
       .from("esculachos")
       .insert([
         {
@@ -48,20 +52,20 @@ export async function addEsculacho(
           descricao: validatedData.descricao,
           conteudo: validatedData.conteudo,
           autor: validatedData.autor,
+          audio_data: audioBase64, // Salva base64 diretamente no banco
         },
-      ])
-      .select(); // .select() pode não ser necessário aqui se não usar o 'data' retornado
+      ]);
 
-    if (error) {
-      console.error("Erro Supabase ao adicionar esculacho:", error);
+    if (insertError) {
+      console.error("Erro Supabase ao adicionar esculacho:", insertError);
       return {
         success: false,
-        message: `Erro ao salvar esculacho: ${error.message}`,
+        message: `Erro ao salvar esculacho: ${insertError.message}`,
       };
     }
 
-    revalidatePath("/esculachos"); // Rota da página de visualização pública
-    revalidatePath("/admin/esculachos"); // Rota da página de admin
+    revalidatePath("/esculachos");
+    revalidatePath("/admin/esculachos");
 
     return {
       success: true,
@@ -106,18 +110,36 @@ export async function editEsculacho(
     autor: formData.get("autor") as string | null,
   };
 
+  // Audio base64 vem separado (novo áudio gerado) - salvar diretamente no banco
+  const audioBase64 = formData.get("audioBase64") as string | null;
+
   try {
     const validatedData = EditEsculachoSchema.parse(rawData);
 
     const supabase = await getSupabaseClient();
+
+    // Dados para atualizar
+    const updateData: {
+      titulo: string;
+      descricao: string | null | undefined;
+      conteudo: string;
+      autor: string | null | undefined;
+      audio_data?: string;
+    } = {
+      titulo: validatedData.titulo,
+      descricao: validatedData.descricao,
+      conteudo: validatedData.conteudo,
+      autor: validatedData.autor,
+    };
+
+    // Se tem novo áudio, adicionar ao update
+    if (audioBase64) {
+      updateData.audio_data = audioBase64;
+    }
+
     const { error } = await supabase
       .from("esculachos")
-      .update({
-        titulo: validatedData.titulo,
-        descricao: validatedData.descricao,
-        conteudo: validatedData.conteudo,
-        autor: validatedData.autor,
-      })
+      .update(updateData)
       .eq("id", validatedData.id);
 
     if (error) {
@@ -130,8 +152,6 @@ export async function editEsculacho(
 
     revalidatePath("/esculachos");
     revalidatePath("/admin/esculachos");
-    // Se tiver uma página de detalhe do esculacho, revalidar também:
-    // revalidatePath(`/esculachos/${validatedData.id}`);
 
     return {
       success: true,

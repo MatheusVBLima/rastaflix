@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "10mb", // Aumentar limite para áudios grandes
+    },
+  },
   images: {
     domains: [
       "i.ytimg.com",

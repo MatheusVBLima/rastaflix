@@ -4,10 +4,10 @@ import React, { useState, useTransition, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { editEsculacho } from "@/actions/esculachoActions"; // Atualizado
+import { editEsculacho } from "@/actions/esculachoActions";
 import { fetchEsculachoById, fetchEsculachos } from "@/lib/queries";
-import type { Esculacho, ActionResponse, EsculachoFormData } from "@/lib/types"; // Atualizado
-import { EditEsculachoSchema } from "@/lib/types"; // Atualizado
+import type { Esculacho, ActionResponse } from "@/lib/types";
+import { EditEsculachoSchema } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -18,10 +18,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea"; // Adicionado
+import { Textarea } from "@/components/ui/textarea";
 import { useFormState } from "react-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal, PencilIcon } from "lucide-react";
+import { Terminal, PencilIcon, Loader2, Volume2, RotateCcw } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -35,7 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton"; // Adicionado para loading da tabela
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Pagination,
   PaginationContent,
@@ -44,8 +44,8 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { AudioPlayer } from "@/components/ui/audio-player";
 
-// Zod schema para o formulário de edição
 const FormSchema = EditEsculachoSchema;
 type FormValues = z.infer<typeof FormSchema>;
 
@@ -56,6 +56,13 @@ export function EditEsculachoForm() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Estados para áudio
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+  const [audioBase64, setAudioBase64] = useState<string | null>(null);
+  const [audioMimeType, setAudioMimeType] = useState<string>("audio/wav");
+  const [currentAudioData, setCurrentAudioData] = useState<string | null>(null);
+  const [originalConteudo, setOriginalConteudo] = useState<string>("");
 
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -83,7 +90,6 @@ export function EditEsculachoForm() {
   } = useQuery<Esculacho[]>({
     queryKey: ["esculachos"],
     queryFn: fetchEsculachos,
-    // staleTime: Infinity, // Removido ou ajustado conforme necessidade de refetch
   });
 
   const form = useForm<FormValues>({
@@ -97,6 +103,45 @@ export function EditEsculachoForm() {
     },
     mode: "onChange",
   });
+
+  const conteudo = form.watch("conteudo");
+  const conteudoChanged = conteudo !== originalConteudo && originalConteudo !== "";
+
+  const handleGenerateAudio = async () => {
+    const conteudoValue = form.getValues("conteudo");
+    if (!conteudoValue || conteudoValue.trim().length === 0) {
+      toast.error("Preencha o conteúdo antes de gerar o áudio.");
+      return;
+    }
+
+    setIsGeneratingAudio(true);
+    try {
+      const response = await fetch("/api/tts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: conteudoValue }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao gerar áudio");
+      }
+
+      setAudioBase64(data.audio);
+      setAudioMimeType(data.mimeType || "audio/wav");
+      toast.success("Áudio gerado com sucesso! Ouça o preview abaixo.");
+    } catch (error) {
+      console.error("Erro ao gerar áudio:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Erro ao gerar áudio"
+      );
+    } finally {
+      setIsGeneratingAudio(false);
+    }
+  };
 
   const handleLoadEsculacho = useCallback(
     async (idToLoad?: string) => {
@@ -117,6 +162,10 @@ export function EditEsculachoForm() {
       }
       setIsLoadingEsculacho(true);
       setLoadError(null);
+      setAudioBase64(null);
+      setAudioMimeType("audio/wav");
+      setCurrentAudioData(null);
+      setOriginalConteudo("");
       form.reset({
         id: currentId,
         titulo: "",
@@ -136,6 +185,8 @@ export function EditEsculachoForm() {
             conteudo: result.esculacho.conteudo,
             autor: result.esculacho.autor || "",
           });
+          setOriginalConteudo(result.esculacho.conteudo);
+          setCurrentAudioData(result.esculacho.audio_data || null);
           if (esculachoIdToEdit !== result.esculacho.id) {
             setEsculachoIdToEdit(result.esculacho.id);
           }
@@ -154,9 +205,7 @@ export function EditEsculachoForm() {
       toast.success(editState.message || "Esculacho atualizado com sucesso!");
       router.refresh();
       queryClient.invalidateQueries({ queryKey: ["esculachos"] });
-      // queryClient.invalidateQueries({ queryKey: ['esculacho', esculachoIdToEdit] }); // Se houver query para single item
-      // form.reset(); // Opcional: limpar formulário após edição bem-sucedida
-      // setEsculachoIdToEdit(""); // Opcional: limpar ID do input
+      setAudioBase64(null);
     } else if (editState?.message && !editState.success) {
       toast.error(editState.message || "Erro ao editar esculacho.", {
         description: editState.errors
@@ -172,6 +221,13 @@ export function EditEsculachoForm() {
         toast.error("Erro", { description: "ID do esculacho está faltando." });
         return;
       }
+
+      // Se o conteúdo mudou e não tem novo áudio gerado
+      if (conteudoChanged && !audioBase64) {
+        toast.error("O conteúdo foi alterado. Gere um novo áudio antes de salvar.");
+        return;
+      }
+
       startEditTransition(() => {
         const formData = new FormData();
         formData.append("id", values.id);
@@ -179,10 +235,16 @@ export function EditEsculachoForm() {
         formData.append("conteudo", values.conteudo);
         formData.append("descricao", values.descricao);
         formData.append("autor", values.autor);
+
+        // Adicionar áudio se foi gerado um novo
+        if (audioBase64) {
+          formData.append("audioBase64", audioBase64);
+        }
+
         dispatchEditFormAction(formData);
       });
     },
-    [dispatchEditFormAction]
+    [dispatchEditFormAction, conteudoChanged, audioBase64]
   );
 
   // Lógica de paginação
@@ -205,8 +267,14 @@ export function EditEsculachoForm() {
     ? Math.ceil(filteredEsculachos.length / itemsPerPage)
     : 0;
 
-  // Função para mudar de página
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
+  // Determinar qual áudio mostrar (novo gerado ou existente do banco)
+  const audioSrc = audioBase64
+    ? `data:${audioMimeType};base64,${audioBase64}`
+    : currentAudioData
+    ? `data:audio/wav;base64,${currentAudioData}`
+    : null;
 
   return (
     <div className="space-y-6 p-4 border rounded-md mt-4">
@@ -285,9 +353,60 @@ export function EditEsculachoForm() {
                     />
                   </FormControl>
                   <FormMessage />
+                  {conteudoChanged && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      O conteúdo foi alterado. Gere um novo áudio antes de salvar.
+                    </p>
+                  )}
                 </FormItem>
               )}
             />
+
+            {/* Seção de Áudio */}
+            <div className="space-y-3 p-4 border rounded-md bg-muted/30">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium">Áudio do Esculacho</h3>
+                <Button
+                  type="button"
+                  variant={conteudoChanged ? "default" : "outline"}
+                  size="sm"
+                  onClick={handleGenerateAudio}
+                  disabled={isGeneratingAudio || !conteudo || conteudo.trim().length === 0}
+                >
+                  {isGeneratingAudio ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Gerando...
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      {audioBase64 ? "Regenerar Áudio" : "Gerar Novo Áudio"}
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {audioSrc ? (
+                <div className="space-y-2">
+                  {audioBase64 ? (
+                    <p className="text-xs text-muted-foreground">
+                      Preview do novo áudio gerado.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Áudio atual do esculacho.
+                    </p>
+                  )}
+                  <AudioPlayer src={audioSrc} />
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Este esculacho ainda não possui áudio. Clique em &quot;Gerar Novo Áudio&quot; para criar.
+                </p>
+              )}
+            </div>
+
             <FormField
               control={form.control}
               name="descricao"
@@ -320,7 +439,7 @@ export function EditEsculachoForm() {
             />
             <Button
               type="submit"
-              disabled={isEditPending || isLoadingEsculacho}
+              disabled={isEditPending || isLoadingEsculacho || (conteudoChanged && !audioBase64)}
             >
               {isEditPending ? "Salvando..." : "Salvar Alterações"}
             </Button>
@@ -346,6 +465,7 @@ export function EditEsculachoForm() {
               <TableRow>
                 <TableHead className="w-[200px]">Título</TableHead>
                 <TableHead className="w-[150px]">Autor</TableHead>
+                <TableHead className="w-[80px]">Áudio</TableHead>
                 <TableHead>ID</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -361,6 +481,9 @@ export function EditEsculachoForm() {
                       <Skeleton className="h-5 w-3/5" />
                     </TableCell>
                     <TableCell>
+                      <Skeleton className="h-5 w-12" />
+                    </TableCell>
+                    <TableCell>
                       <Skeleton className="h-5 w-full" />
                     </TableCell>
                     <TableCell className="text-right">
@@ -371,7 +494,7 @@ export function EditEsculachoForm() {
               ) : listError ? (
                 <TableRow>
                   <TableCell
-                    colSpan={4}
+                    colSpan={5}
                     className="text-center text-destructive py-8"
                   >
                     Erro ao carregar esculachos: {(listError as Error).message}
@@ -382,6 +505,18 @@ export function EditEsculachoForm() {
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.titulo}</TableCell>
                     <TableCell>{item.autor || "-"}</TableCell>
+                    <TableCell>
+                      {item.audio_data ? (
+                        <Badge variant="default" className="text-xs">
+                          <Volume2 className="h-3 w-3 mr-1" />
+                          Sim
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs">
+                          Não
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="font-mono text-xs">
                         {item.id}
@@ -404,7 +539,7 @@ export function EditEsculachoForm() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={4}
+                    colSpan={5}
                     className="text-center py-4 text-muted-foreground"
                   >
                     Nenhum esculacho encontrado.
