@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { clerkClient, getAuth } from "@clerk/nextjs/server";
 
+// Modelo Pro para melhor qualidade de áudio
 const GEMINI_API_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent";
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-tts:generateContent";
 
 interface TTSRequest {
   text: string;

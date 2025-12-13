@@ -28,13 +28,26 @@ function AudioPlayer({ src, className }: AudioPlayerProps) {
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
+  // Resetar estado quando src mudar
+  React.useEffect(() => {
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setIsLoading(true);
+    setError(null);
+  }, [src]);
+
   React.useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
+    // Resetar áudio quando src mudar
+    audio.load();
+
     const handleLoadedMetadata = () => {
       setDuration(audio.duration);
       setIsLoading(false);
+      setError(null);
     };
 
     const handleTimeUpdate = () => {
@@ -46,13 +59,35 @@ function AudioPlayer({ src, className }: AudioPlayerProps) {
       setCurrentTime(0);
     };
 
-    const handleError = () => {
-      setError("Erro ao carregar áudio");
+    const handleError = (e: Event) => {
+      const audioElement = e.target as HTMLAudioElement;
+      const errorCode = audioElement.error?.code;
+      let errorMessage = "Erro ao carregar áudio";
+      
+      if (errorCode === 4) {
+        errorMessage = "Formato de áudio não suportado";
+      } else if (errorCode === 3) {
+        errorMessage = "Erro ao decodificar áudio";
+      } else if (errorCode === 2) {
+        errorMessage = "Erro de rede ao carregar áudio";
+      }
+      
+      console.error("Erro no áudio:", errorCode, audioElement.error);
+      setError(errorMessage);
       setIsLoading(false);
     };
 
     const handleCanPlay = () => {
       setIsLoading(false);
+      setError(null);
+    };
+
+    const handlePlay = () => {
+      setIsPlaying(true);
+    };
+
+    const handlePause = () => {
+      setIsPlaying(false);
     };
 
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
@@ -60,6 +95,8 @@ function AudioPlayer({ src, className }: AudioPlayerProps) {
     audio.addEventListener("ended", handleEnded);
     audio.addEventListener("error", handleError);
     audio.addEventListener("canplay", handleCanPlay);
+    audio.addEventListener("play", handlePlay);
+    audio.addEventListener("pause", handlePause);
 
     return () => {
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
@@ -67,19 +104,27 @@ function AudioPlayer({ src, className }: AudioPlayerProps) {
       audio.removeEventListener("ended", handleEnded);
       audio.removeEventListener("error", handleError);
       audio.removeEventListener("canplay", handleCanPlay);
+      audio.removeEventListener("play", handlePlay);
+      audio.removeEventListener("pause", handlePause);
     };
   }, [src]);
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    if (isPlaying) {
-      audio.pause();
-    } else {
-      audio.play();
+    try {
+      if (isPlaying) {
+        audio.pause();
+        setIsPlaying(false);
+      } else {
+        await audio.play();
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      console.error("Erro ao reproduzir áudio:", error);
+      setError("Erro ao reproduzir áudio");
     }
-    setIsPlaying(!isPlaying);
   };
 
   const toggleMute = () => {
