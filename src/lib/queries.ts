@@ -12,6 +12,9 @@ import {
   CategoryWithResults,
   CategoryWithNominees,
   VotingData,
+  Clipe,
+  ClipePlatform,
+  StreamerConfig,
 } from "./types";
 
 /**
@@ -625,4 +628,105 @@ export async function fetchAllCategoriesWithResults(
   );
 
   return categoriesWithResults;
+}
+
+// ========================================
+// CLIPES
+// ========================================
+
+/**
+ * Buscar todos os clipes (ordenados por data de criação DESC)
+ */
+export async function fetchClipes(): Promise<Clipe[]> {
+  const supabase = getSupabaseClientDirect();
+
+  const { data, error } = await supabase
+    .from("clipes")
+    .select("id, titulo, url, thumbnail_url, plataforma, created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Erro ao buscar clipes do Supabase:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+/**
+ * Buscar clipes por plataforma
+ */
+export async function fetchClipesByPlatform(
+  platform: ClipePlatform
+): Promise<Clipe[]> {
+  const supabase = getSupabaseClientDirect();
+
+  const { data, error } = await supabase
+    .from("clipes")
+    .select("id, titulo, url, thumbnail_url, plataforma, created_at")
+    .eq("plataforma", platform)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(`Erro ao buscar clipes da plataforma ${platform}:`, error);
+    return [];
+  }
+
+  return data || [];
+}
+
+/**
+ * Buscar clipe por ID
+ */
+export async function fetchClipeById(
+  id: string
+): Promise<{ clipe?: Clipe; error?: string }> {
+  if (!id) {
+    return { error: "ID do clipe não fornecido" };
+  }
+
+  try {
+    const supabase = getSupabaseClientDirect();
+    const { data, error } = await supabase
+      .from("clipes")
+      .select("id, titulo, url, thumbnail_url, plataforma, created_at")
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      return { error: error.message };
+    }
+
+    if (!data) {
+      return { error: "Clipe não encontrado" };
+    }
+
+    return { clipe: data };
+  } catch (error) {
+    console.error("Erro ao buscar clipe por ID:", error);
+    return { error: "Erro ao buscar clipe" };
+  }
+}
+
+// ========================================
+// STREAMER CONFIG (Live Status)
+// ========================================
+
+/**
+ * Buscar configuração/status do streamer
+ */
+export async function fetchStreamerStatus(): Promise<StreamerConfig | null> {
+  const supabase = getSupabaseClientDirect();
+
+  const { data, error } = await supabase
+    .from("streamer_config")
+    .select("*")
+    .single();
+
+  if (error) {
+    console.error("Erro ao buscar status do streamer:", error);
+    return null;
+  }
+
+  return data;
 }

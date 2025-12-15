@@ -43,7 +43,9 @@ import {
   Gamepad,
   Trophy,
   Lock,
+  Film,
 } from "lucide-react";
+import { LiveIndicator } from "./LiveIndicator";
 
 const criarDescobrirComponents: {
   title: string;
@@ -68,6 +70,12 @@ const criarDescobrirComponents: {
     href: "/esculachos",
     description: "Momentos épicos da live",
     icon: <Zap className="h-6 w-6 text-red-600 mb-2" />,
+  },
+  {
+    title: "Clipes",
+    href: "/clipes",
+    description: "Melhores momentos das lives",
+    icon: <Film className="h-6 w-6 text-purple-500 mb-2" />,
   },
 ];
 
@@ -139,6 +147,12 @@ const adminComponents: {
     description: "Gerencie os inimigos existentes.",
     icon: <Users className="h-6 w-6 text-red-600 mb-2" />,
   },
+  {
+    title: "Gerenciar Clipes",
+    href: "/admin/clipes",
+    description: "Gerencie os clipes das lives.",
+    icon: <Film className="h-6 w-6 text-purple-500 mb-2" />,
+  },
 ];
 
 /**
@@ -203,7 +217,8 @@ export function Header() {
 
         {/* Navegação no centro com NavigationMenu */}
         <div className="hidden md:flex items-center">
-          <NavigationMenu className="mr-4">
+          <LiveIndicator />
+          <NavigationMenu className="mr-4 ml-2">
             <NavigationMenuList>
               <NavigationMenuItem>
                 <NavigationMenuTrigger>Conta Aquela</NavigationMenuTrigger>
@@ -309,6 +324,10 @@ export function Header() {
 
         {/* UserButton e Tema à direita */}
         <div className="flex items-center gap-4">
+          {/* Live Indicator Mobile */}
+          <div className="md:hidden">
+            <LiveIndicator />
+          </div>
           {/* Menu Mobile */}
           <div className="md:hidden">
             <Sheet>
