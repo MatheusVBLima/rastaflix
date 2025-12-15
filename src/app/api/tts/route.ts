@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { clerkClient, getAuth } from "@clerk/nextjs/server";
+import { clerkClient, auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
 
 // Modelo Pro para melhor qualidade de áudio
@@ -38,7 +38,7 @@ function getSupabaseAdmin() {
  */
 export async function POST(request: Request): Promise<NextResponse<TTSResponse>> {
   // Verificar autenticação
-  const { userId } = getAuth(request as any);
+  const { userId } = await auth();
 
   if (!userId) {
     return NextResponse.json(

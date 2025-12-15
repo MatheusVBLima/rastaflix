@@ -344,3 +344,60 @@ export interface VoteActionResponse extends ActionResponse {
   vote?: AwardVote;
   voted?: boolean;
 }
+
+// ============================================
+// STREAMER CONFIG & CLIPES - Types & Schemas
+// ============================================
+
+// ========== Streamer Config (Live Status) ==========
+export interface StreamerConfig {
+  id: string;
+  twitch_username: string;
+  kick_username: string;
+  twitch_user_id?: string | null;
+  is_live_twitch: boolean;
+  is_live_kick: boolean;
+  twitch_stream_title?: string | null;
+  kick_stream_title?: string | null;
+  twitch_viewer_count?: number | null;
+  kick_viewer_count?: number | null;
+  twitch_thumbnail_url?: string | null;
+  kick_thumbnail_url?: string | null;
+  last_twitch_update?: string | null;
+  last_kick_update?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// ========== Clipes ==========
+export type ClipePlatform = "twitch" | "kick";
+
+export interface Clipe {
+  id: string;
+  titulo: string;
+  url: string;
+  thumbnail_url?: string | null;
+  plataforma: ClipePlatform;
+  created_at?: string;
+}
+
+export const ClipeSchema = z.object({
+  titulo: z.string().min(1, { message: "Título é obrigatório." }),
+  url: z.string().url({ message: "URL inválida." }),
+  thumbnail_url: z.string().url({ message: "URL da thumbnail inválida." }).optional().or(z.literal("")),
+  plataforma: z.enum(["twitch", "kick"], {
+    errorMap: () => ({ message: "Plataforma deve ser twitch ou kick." }),
+  }),
+});
+
+export const EditClipeSchema = ClipeSchema.extend({
+  id: z.string().uuid({ message: "ID do clipe é obrigatório e deve ser um UUID válido." }),
+});
+
+export type ClipeFormData = z.infer<typeof ClipeSchema>;
+export type EditClipeFormData = z.infer<typeof EditClipeSchema>;
+
+export interface ClipeActionResponse extends ActionResponse {
+  clipeId?: string;
+  clipe?: Clipe;
+}
