@@ -50,7 +50,7 @@ export async function GET() {
     if (!response.ok) {
       // Se der erro 404, o canal não existe ou está com problema
       if (response.status === 404) {
-        await updateKickStatus(supabase, false, null, null, null);
+        await updateKickStatus(supabase, kickUsername, false, null, null, null);
         return NextResponse.json({
           is_live: false,
           message: "Canal não encontrado"
@@ -68,7 +68,7 @@ export async function GET() {
     const thumbnailUrl = data.livestream?.thumbnail?.url ?? null;
 
     // Atualizar no banco
-    await updateKickStatus(supabase, isLive, streamTitle, viewerCount, thumbnailUrl);
+    await updateKickStatus(supabase, kickUsername, isLive, streamTitle, viewerCount, thumbnailUrl);
 
     return NextResponse.json({
       is_live: isLive,
@@ -88,6 +88,7 @@ export async function GET() {
 
 async function updateKickStatus(
   supabase: ReturnType<typeof getSupabaseClient>,
+  kickUsername: string,
   isLive: boolean,
   streamTitle: string | null,
   viewerCount: number | null,
@@ -103,7 +104,7 @@ async function updateKickStatus(
       last_kick_update: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq("kick_username", "OvelheraM");
+    .eq("kick_username", kickUsername);
 
   if (error) {
     console.error("Erro ao atualizar status da Kick no banco:", error);
