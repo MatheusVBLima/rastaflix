@@ -370,7 +370,7 @@ export interface StreamerConfig {
 }
 
 // ========== Clipes ==========
-export type ClipePlatform = "twitch" | "kick" | "youtube";
+export type ClipePlatform = "twitch" | "kick";
 
 export interface Clipe {
   id: string;
@@ -385,8 +385,8 @@ export const ClipeSchema = z.object({
   titulo: z.string().min(1, { message: "Título é obrigatório." }),
   url: z.string().url({ message: "URL inválida." }),
   thumbnail_url: z.string().url({ message: "URL da thumbnail inválida." }).optional().or(z.literal("")),
-  plataforma: z.enum(["twitch", "kick", "youtube"], {
-    errorMap: () => ({ message: "Plataforma deve ser twitch, kick ou youtube." }),
+  plataforma: z.enum(["twitch", "kick"], {
+    errorMap: () => ({ message: "Plataforma deve ser twitch ou kick." }),
   }),
 });
 

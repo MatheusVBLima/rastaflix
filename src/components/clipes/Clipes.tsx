@@ -44,7 +44,7 @@ export function Clipes({ initialClipes }: ClipesProps) {
   // Contadores de cada plataforma (independentes do filtro de plataforma selecionada)
   const platformCounts = useMemo(() => {
     if (!clipes || !Array.isArray(clipes)) {
-      return { all: 0, twitch: 0, kick: 0, youtube: 0 };
+      return { all: 0, twitch: 0, kick: 0 };
     }
 
     const filteredBySearch = clipes.filter((clipe: Clipe) =>
@@ -55,7 +55,6 @@ export function Clipes({ initialClipes }: ClipesProps) {
       all: filteredBySearch.length,
       twitch: filteredBySearch.filter((c) => c.plataforma === "twitch").length,
       kick: filteredBySearch.filter((c) => c.plataforma === "kick").length,
-      youtube: filteredBySearch.filter((c) => c.plataforma === "youtube").length,
     };
   }, [clipes, searchTerm]);
 
@@ -80,8 +79,6 @@ export function Clipes({ initialClipes }: ClipesProps) {
         return "bg-purple-500/20 text-purple-400 border-purple-500/50";
       case "kick":
         return "bg-green-500/20 text-green-400 border-green-500/50";
-      case "youtube":
-        return "bg-red-500/20 text-red-400 border-red-500/50";
       default:
         return "";
     }
@@ -101,12 +98,6 @@ export function Clipes({ initialClipes }: ClipesProps) {
             <path d="M1.333 0v24h5.334V12l5.333 5.333V24h5.333V12L24 18.667V5.333L17.333 12V0H12v6.667L6.667 12V0z" />
           </svg>
         );
-      case "youtube":
-        return (
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-          </svg>
-        );
       default:
         return <Play className="w-4 h-4" />;
     }
@@ -122,7 +113,6 @@ export function Clipes({ initialClipes }: ClipesProps) {
   // Filtrar clipes por plataforma para exibição nas abas
   const twitchClipes = filteredClipes.filter((c) => c.plataforma === "twitch");
   const kickClipes = filteredClipes.filter((c) => c.plataforma === "kick");
-  const youtubeClipes = filteredClipes.filter((c) => c.plataforma === "youtube");
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">

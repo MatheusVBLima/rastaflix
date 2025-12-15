@@ -57,27 +57,6 @@ export default function AddClipeForm() {
         try {
           const urlObj = new URL(currentUrlValue);
 
-          // YouTube
-          if (
-            urlObj.hostname.includes("youtube.com") ||
-            urlObj.hostname.includes("youtu.be")
-          ) {
-            let videoId = urlObj.searchParams.get("v");
-            if (!videoId && urlObj.hostname.includes("youtu.be")) {
-              videoId = urlObj.pathname.substring(1);
-            }
-            if (videoId) {
-              const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-              form.setValue("thumbnail_url", thumbnailUrl, { shouldValidate: true });
-              // Auto-detect platform
-              if (currentPlatform !== "youtube") {
-                form.setValue("plataforma", "youtube");
-              }
-              setIsFetchingPreview(false);
-              return;
-            }
-          }
-
           // Twitch Clips
           if (urlObj.hostname.includes("twitch.tv") && urlObj.pathname.includes("/clip/")) {
             // Para clipes da Twitch, a thumbnail precisa ser buscada via API
@@ -178,7 +157,7 @@ export default function AddClipeForm() {
               <FormLabel>URL do Clipe</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="https://www.youtube.com/watch?v=... ou https://clips.twitch.tv/..."
+                  placeholder="https://clips.twitch.tv/... ou https://kick.com/..."
                   {...field}
                 />
               </FormControl>
@@ -202,7 +181,6 @@ export default function AddClipeForm() {
                 <SelectContent>
                   <SelectItem value="twitch">Twitch</SelectItem>
                   <SelectItem value="kick">Kick</SelectItem>
-                  <SelectItem value="youtube">YouTube</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -218,7 +196,7 @@ export default function AddClipeForm() {
               <FormLabel>URL da Thumbnail (opcional)</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="https://... (preenchido automaticamente para YouTube)"
+                  placeholder="https://... (adicione manualmente)"
                   {...field}
                 />
               </FormControl>
