@@ -63,9 +63,9 @@ export async function GET() {
     const data: KickChannelResponse = await response.json();
 
     const isLive = data.livestream !== null;
-    const streamTitle = data.livestream?.session_title || null;
-    const viewerCount = data.livestream?.viewer_count || null;
-    const thumbnailUrl = data.livestream?.thumbnail?.url || null;
+    const streamTitle = data.livestream?.session_title ?? null;
+    const viewerCount = data.livestream?.viewer_count ?? null;
+    const thumbnailUrl = data.livestream?.thumbnail?.url ?? null;
 
     // Atualizar no banco
     await updateKickStatus(supabase, isLive, streamTitle, viewerCount, thumbnailUrl);

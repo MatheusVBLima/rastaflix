@@ -41,6 +41,24 @@ export function Clipes({ initialClipes }: ClipesProps) {
     refetchOnReconnect: false,
   });
 
+  // Contadores de cada plataforma (independentes do filtro de plataforma selecionada)
+  const platformCounts = useMemo(() => {
+    if (!clipes || !Array.isArray(clipes)) {
+      return { all: 0, twitch: 0, kick: 0, youtube: 0 };
+    }
+
+    const filteredBySearch = clipes.filter((clipe: Clipe) =>
+      clipe.titulo.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return {
+      all: filteredBySearch.length,
+      twitch: filteredBySearch.filter((c) => c.plataforma === "twitch").length,
+      kick: filteredBySearch.filter((c) => c.plataforma === "kick").length,
+      youtube: filteredBySearch.filter((c) => c.plataforma === "youtube").length,
+    };
+  }, [clipes, searchTerm]);
+
   const filteredClipes = useMemo(() => {
     if (!clipes || !Array.isArray(clipes)) {
       return [];
@@ -101,8 +119,10 @@ export function Clipes({ initialClipes }: ClipesProps) {
     return <p>Erro ao carregar clipes: {error.message}</p>;
   }
 
+  // Filtrar clipes por plataforma para exibição nas abas
   const twitchClipes = filteredClipes.filter((c) => c.plataforma === "twitch");
   const kickClipes = filteredClipes.filter((c) => c.plataforma === "kick");
+  const youtubeClipes = filteredClipes.filter((c) => c.plataforma === "youtube");
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">
@@ -126,19 +146,19 @@ export function Clipes({ initialClipes }: ClipesProps) {
       <Tabs defaultValue="all" onValueChange={setSelectedPlatform}>
         <TabsList className="mb-6">
           <TabsTrigger value="all">
-            Todos ({filteredClipes.length})
+            Todos ({platformCounts.all})
           </TabsTrigger>
           <TabsTrigger value="twitch" className="gap-2">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
               <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
             </svg>
-            Twitch ({twitchClipes.length})
+            Twitch ({platformCounts.twitch})
           </TabsTrigger>
           <TabsTrigger value="kick" className="gap-2">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
               <path d="M1.333 0v24h5.334V12l5.333 5.333V24h5.333V12L24 18.667V5.333L17.333 12V0H12v6.667L6.667 12V0z" />
             </svg>
-            Kick ({kickClipes.length})
+            Kick ({platformCounts.kick})
           </TabsTrigger>
         </TabsList>
 

@@ -43,9 +43,9 @@ async function checkAndUpdateKickStatus(kickUsername: string, lastUpdate: string
 
     const result = {
       is_live: isLive,
-      title: data.livestream?.session_title || null,
-      viewers: data.livestream?.viewer_count || null,
-      thumbnail: data.livestream?.thumbnail?.url || null,
+      title: data.livestream?.session_title ?? null,
+      viewers: data.livestream?.viewer_count ?? null,
+      thumbnail: data.livestream?.thumbnail?.url ?? null,
     };
 
     // Atualizar no banco em background
