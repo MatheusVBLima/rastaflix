@@ -6,7 +6,8 @@ export const dynamic = "force-dynamic"; // Sempre dinâmico
 export const revalidate = 0; // Não cachear no edge
 
 const KICK_API_URL = "https://kick.com/api/v2/channels";
-const KICK_CHECK_INTERVAL_MS = 2 * 60 * 1000; // 2 minutos
+const TWITCH_API_URL = "https://api.twitch.tv/helix";
+const CHECK_INTERVAL_MS = 2 * 60 * 1000; // 2 minutos
 
 function getSupabaseClient() {
   return createClient(
@@ -15,12 +16,84 @@ function getSupabaseClient() {
   );
 }
 
+async function getTwitchAccessToken(): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&grant_type=client_credentials`,
+      { method: "POST" }
+    );
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.access_token;
+  } catch {
+    return null;
+  }
+}
+
+async function checkAndUpdateTwitchStatus(twitchUsername: string, lastUpdate: string | null) {
+  // Verificar se precisa atualizar (última verificação > 2 minutos)
+  if (lastUpdate) {
+    const lastUpdateTime = new Date(lastUpdate).getTime();
+    const now = Date.now();
+    if (now - lastUpdateTime < CHECK_INTERVAL_MS) {
+      return null; // Não precisa atualizar ainda
+    }
+  }
+
+  try {
+    const accessToken = await getTwitchAccessToken();
+    if (!accessToken) return null;
+
+    const response = await fetch(
+      `${TWITCH_API_URL}/streams?user_login=${twitchUsername}`,
+      {
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Client-Id": process.env.TWITCH_CLIENT_ID!,
+        },
+      }
+    );
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const stream = data.data?.[0];
+    const isLive = !!stream;
+
+    const result = {
+      is_live: isLive,
+      title: stream?.title ?? null,
+      viewers: stream?.viewer_count ?? null,
+      thumbnail: stream?.thumbnail_url?.replace("{width}", "320").replace("{height}", "180") ?? null,
+    };
+
+    // Atualizar no banco
+    const supabase = getSupabaseClient();
+    await supabase
+      .from("streamer_config")
+      .update({
+        is_live_twitch: result.is_live,
+        twitch_stream_title: result.title,
+        twitch_viewer_count: result.viewers,
+        twitch_thumbnail_url: result.thumbnail,
+        last_twitch_update: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("twitch_username", twitchUsername);
+
+    return result;
+  } catch (error) {
+    console.error("Erro ao verificar Twitch:", error);
+    return null;
+  }
+}
+
 async function checkAndUpdateKickStatus(kickUsername: string, lastUpdate: string | null) {
   // Verificar se precisa atualizar (última verificação > 2 minutos)
   if (lastUpdate) {
     const lastUpdateTime = new Date(lastUpdate).getTime();
     const now = Date.now();
-    if (now - lastUpdateTime < KICK_CHECK_INTERVAL_MS) {
+    if (now - lastUpdateTime < CHECK_INTERVAL_MS) {
       return null; // Não precisa atualizar ainda
     }
   }
@@ -81,13 +154,26 @@ export async function GET() {
       );
     }
 
-    // Lazy polling: verificar Kick se última atualização foi há mais de 2 min
-    const kickUpdate = await checkAndUpdateKickStatus(
-      status.kick_username,
-      status.last_kick_update ?? null
-    );
+    // Lazy polling: verificar ambas plataformas se última atualização foi há mais de 2 min
+    const [twitchUpdate, kickUpdate] = await Promise.all([
+      checkAndUpdateTwitchStatus(
+        status.twitch_username,
+        status.last_twitch_update ?? null
+      ),
+      checkAndUpdateKickStatus(
+        status.kick_username,
+        status.last_kick_update ?? null
+      ),
+    ]);
 
-    // Usar dados atualizados da Kick se disponíveis
+    // Usar dados atualizados se disponíveis
+    const twitchData = twitchUpdate || {
+      is_live: status.is_live_twitch,
+      title: status.twitch_stream_title,
+      viewers: status.twitch_viewer_count,
+      thumbnail: status.twitch_thumbnail_url,
+    };
+
     const kickData = kickUpdate || {
       is_live: status.is_live_kick,
       title: status.kick_stream_title,
@@ -96,13 +182,13 @@ export async function GET() {
     };
 
     return NextResponse.json({
-      is_live_twitch: status.is_live_twitch,
+      is_live_twitch: twitchData.is_live,
       is_live_kick: kickData.is_live,
-      twitch_stream_title: status.twitch_stream_title,
+      twitch_stream_title: twitchData.title,
       kick_stream_title: kickData.title,
-      twitch_viewer_count: status.twitch_viewer_count,
+      twitch_viewer_count: twitchData.viewers,
       kick_viewer_count: kickData.viewers,
-      twitch_thumbnail_url: status.twitch_thumbnail_url,
+      twitch_thumbnail_url: twitchData.thumbnail,
       kick_thumbnail_url: kickData.thumbnail,
       twitch_username: status.twitch_username,
       kick_username: status.kick_username,

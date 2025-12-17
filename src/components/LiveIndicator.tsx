@@ -32,7 +32,9 @@ export function LiveIndicator() {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const response = await fetch("/api/live-status");
+        const response = await fetch("/api/live-status", {
+          cache: "no-store",
+        });
         if (response.ok) {
           const data = await response.json();
           setStatus(data);
