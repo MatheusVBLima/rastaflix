@@ -16,7 +16,8 @@
       "Bash(echo:*)",
       "Bash(dir:*)",
       "Bash(find:*)",
-      "Bash(npx @elevenlabs/cli@latest components add:*)"
+      "Bash(npx @elevenlabs/cli@latest components add:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []
