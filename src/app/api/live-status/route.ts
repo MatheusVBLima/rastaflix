@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { fetchStreamerStatus } from "@/lib/queries";
 import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic"; // Sempre dinâmico
@@ -9,10 +8,17 @@ const KICK_API_URL = "https://kick.com/api/v2/channels";
 const TWITCH_API_URL = "https://api.twitch.tv/helix";
 const CHECK_INTERVAL_MS = 2 * 60 * 1000; // 2 minutos
 
+// Cliente Supabase sem autenticação para acesso público
 function getSupabaseClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
   );
 }
 
@@ -145,9 +151,15 @@ async function checkAndUpdateKickStatus(kickUsername: string, lastUpdate: string
 
 export async function GET() {
   try {
-    const status = await fetchStreamerStatus();
+    // Buscar status diretamente usando cliente público (sem autenticação)
+    const supabase = getSupabaseClient();
+    const { data: status, error } = await supabase
+      .from("streamer_config")
+      .select("*")
+      .single();
 
-    if (!status) {
+    if (error || !status) {
+      console.error("Erro ao buscar status do streamer:", error);
       return NextResponse.json(
         { error: "Streamer config not found" },
         { status: 404 }
