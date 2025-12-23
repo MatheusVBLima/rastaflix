@@ -31,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider dynamic>
-      <html lang="en" suppressHydrationWarning>
+      <html lang="pt-BR" suppressHydrationWarning>
         <head>
           <link rel="icon" href="/favicon.png" sizes="32" />
           <meta httpEquiv="Permissions-Policy" content="interest-cohort=()" />

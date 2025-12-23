@@ -32,6 +32,9 @@ export default function Home() {
           alt="Foto de Gabriel 'Givaldo' Scutasu comendo açaí"
           width={900}
           height={600}
+          priority
+          placeholder="blur"
+          blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mM8c+ZMPQAHPgLI8aPJrAAAAABJRU5ErkJggg=="
           className="max-h-[calc(100vh-5.2rem)] w-full object-cover brightness-[0.4] grayscale"
         />
       </div>

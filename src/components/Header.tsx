@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
-  UserButton,
   SignedIn,
   SignedOut,
   useUser,
@@ -46,6 +45,7 @@ import {
   Film,
 } from "lucide-react";
 import { LiveIndicator } from "./LiveIndicator";
+import { UserMenu } from "./UserMenu";
 
 const criarDescobrirComponents: {
   title: string;
@@ -402,7 +402,7 @@ export function Header() {
                     <SignedIn>
                       <SheetClose asChild>
                         <Link
-                          href="/user-profile"
+                          href="/perfil"
                           className="block py-2 px-3 mx-2 rounded-md hover:bg-accent text-sm font-medium"
                         >
                           Meu Perfil
@@ -432,7 +432,7 @@ export function Header() {
 
           <SignedIn>
             <ClerkLoaded>
-              <UserButton afterSignOutUrl="/" />
+              <UserMenu />
             </ClerkLoaded>
           </SignedIn>
           <SignedOut>
