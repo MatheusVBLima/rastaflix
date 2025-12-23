@@ -18,7 +18,7 @@ import twemoji from "twemoji";
 
 type VerificarPalpiteType =
   | "Verificar"
-  | "Jogar Novamente"
+  | "Próxima Fase"
   | "Fim das histórias";
 type TentativasPorFase = Record<number, number>;
 
@@ -61,7 +61,7 @@ export function DLE() {
   }, [emojisVisiveis, historiaAtual, fasesCompletas]);
 
   useEffect(() => {
-    if (botaoVerificarPalpite === "Jogar Novamente" && botaoRef.current) {
+    if (botaoVerificarPalpite === "Próxima Fase" && botaoRef.current) {
       botaoRef.current.focus();
     }
   }, [botaoVerificarPalpite]);
@@ -78,8 +78,22 @@ export function DLE() {
     setTentativasCorretas([]);
   };
 
+  const reiniciarDoZero = () => {
+    setHistoriaAtual(0);
+    setEmojisVisiveis(1);
+    setPalpite("");
+    setMensagem("");
+    setTentativas([]);
+    setAcertou(false);
+    setBotaoVerificarPalpite("Verificar");
+    setTentativasCorretas([]);
+    setTentativasPorFase({});
+    setFasesCompletas([]);
+    setEmojisReveladosPorFase({});
+  };
+
   const verificarPalpite = () => {
-    if (botaoVerificarPalpite === "Jogar Novamente") {
+    if (botaoVerificarPalpite === "Próxima Fase") {
       resetarJogo();
       return;
     }
@@ -108,7 +122,7 @@ export function DLE() {
       setBotaoVerificarPalpite(
         historiaAtual === historias.length - 1
           ? "Fim das histórias"
-          : "Jogar Novamente"
+          : "Próxima Fase"
       );
 
       // Atualizar tentativas por fase e fases completas
@@ -166,7 +180,7 @@ export function DLE() {
               e.preventDefault();
               if (botaoVerificarPalpite === "Verificar") {
                 verificarPalpite();
-              } else if (botaoVerificarPalpite === "Jogar Novamente") {
+              } else if (botaoVerificarPalpite === "Próxima Fase") {
                 resetarJogo();
               }
             }}
@@ -182,14 +196,25 @@ export function DLE() {
             <Button
               type="submit"
               className={`w-full px-4 py-2 font-bold cursor-pointer ${
-                botaoVerificarPalpite === "Jogar Novamente"
+                botaoVerificarPalpite === "Próxima Fase"
                   ? "bg-green-600 hover:bg-green-700"
                   : ""
               }`}
               ref={botaoRef}
+              disabled={botaoVerificarPalpite === "Fim das histórias"}
             >
               {botaoVerificarPalpite}
             </Button>
+            {botaoVerificarPalpite === "Fim das histórias" && (
+              <Button
+                type="button"
+                onClick={reiniciarDoZero}
+                variant="default"
+                className="w-full px-4 py-2 font-bold cursor-pointer"
+              >
+                Jogar Novamente
+              </Button>
+            )}
           </form>
           {mensagem && (
             <p
