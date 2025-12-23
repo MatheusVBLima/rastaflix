@@ -18,7 +18,8 @@
       "Bash(find:*)",
       "Bash(npx @elevenlabs/cli@latest components add:*)",
       "Bash(curl:*)",
-      "Bash(npx shadcn:*)"
+      "Bash(npx shadcn:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []

@@ -330,18 +330,38 @@ export async function getAllTags(historias: Story[]): Promise<string[]> {
  */
 export async function fetchActiveSeason(): Promise<AwardSeason | null> {
   const supabase = getSupabaseClientDirect();
-  const { data, error } = await supabase
+
+  // Primeiro tenta buscar temporada ativa
+  const { data: activeSeason, error: activeError } = await supabase
     .from("award_seasons")
     .select("*")
     .eq("status", "active")
     .maybeSingle();
 
-  if (error) {
-    console.error("Erro ao buscar temporada ativa:", error);
+  if (activeError) {
+    console.error("Erro ao buscar temporada ativa:", activeError);
+  }
+
+  // Se encontrou temporada ativa, retorna
+  if (activeSeason) {
+    return activeSeason;
+  }
+
+  // Se não encontrou ativa, busca a mais recente fechada
+  const { data: closedSeason, error: closedError } = await supabase
+    .from("award_seasons")
+    .select("*")
+    .eq("status", "closed")
+    .order("end_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (closedError) {
+    console.error("Erro ao buscar temporada fechada:", closedError);
     return null;
   }
 
-  return data;
+  return closedSeason;
 }
 
 /**
