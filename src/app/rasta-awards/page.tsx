@@ -1,6 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
-import { fetchActiveSeason, fetchVotingData } from "@/lib/queries";
+import { fetchActiveSeason, fetchVotingData, fetchAllCategoriesWithResults } from "@/lib/queries";
 import { RastaAwardsVoting } from "@/components/awards/RastaAwardsVoting";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -28,6 +28,14 @@ export default async function RastaAwardsPage() {
         queryKey: ["votingData", activeSeason.id],
         queryFn: () => fetchVotingData(activeSeason.id),
       });
+
+      // 3. Se a temporada está encerrada, prefetch dos resultados
+      if (activeSeason.status === "closed") {
+        await queryClient.prefetchQuery({
+          queryKey: ["awardsResults", activeSeason.id],
+          queryFn: () => fetchAllCategoriesWithResults(activeSeason.id),
+        });
+      }
     }
     // Nota: O userId e userVotes são gerenciados no cliente via useAuth()
     // para garantir funcionamento correto em produção

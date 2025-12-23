@@ -3,15 +3,16 @@
 import React, { useState, useTransition } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
-import { fetchActiveSeason, fetchVotingData, fetchUserVotes } from "@/lib/queries";
+import { fetchActiveSeason, fetchVotingData, fetchUserVotes, fetchAllCategoriesWithResults } from "@/lib/queries";
 import { submitVote } from "@/actions/awardActions";
-import { AwardSeason, VotingData, AwardVote } from "@/lib/types";
+import { AwardSeason, VotingData, AwardVote, CategoryWithResults } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { Loader2, Trophy, Lock, CheckCircle2, Calendar, Info, Award } from "lucide-react";
+import { Loader2, Trophy, Lock, CheckCircle2, Calendar, Info, Award, Users } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
@@ -40,6 +41,14 @@ export function RastaAwardsVoting() {
     queryKey: ["userVotes", userId, activeSeason?.id],
     queryFn: () => userId && activeSeason ? fetchUserVotes(userId, activeSeason.id) : [],
     enabled: !!userId && !!activeSeason,
+  });
+
+  // Buscar resultados quando votação estiver encerrada
+  const { data: resultsData } = useQuery<CategoryWithResults[]>({
+    queryKey: ["awardsResults", activeSeason?.id],
+    queryFn: () => activeSeason ? fetchAllCategoriesWithResults(activeSeason.id) : Promise.resolve([]),
+    enabled: !!activeSeason && activeSeason.status === "closed",
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
 
   async function handleVote(categoryId: string, nomineeId: string) {
@@ -171,99 +180,154 @@ export function RastaAwardsVoting() {
 
       {/* Categorias */}
       <div className="space-y-6">
-        {votingData.categories.map((category) => {
-          const userVote = getUserVoteForCategory(category.id);
-          const isVoting = votingCategoryId === category.id;
+        {isClosed && resultsData ? (
+          // === EXIBIR RESULTADOS ===
+          resultsData.map((category) => {
+            const sortedNominees = [...category.nominees].sort((a, b) =>
+              (b.vote_count || 0) - (a.vote_count || 0)
+            );
 
-          return (
-            <Card key={category.id}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  {category.name}
-                  {userVote && (
+            return (
+              <Card key={category.id}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    {category.name}
                     <Badge variant="outline" className="ml-auto">
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                      Você votou
+                      <Users className="h-3 w-3 mr-1" />
+                      {category.total_votes} votos
                     </Badge>
+                  </CardTitle>
+                  {category.description && (
+                    <CardDescription>{category.description}</CardDescription>
                   )}
-                </CardTitle>
-                {category.description && (
-                  <CardDescription>{category.description}</CardDescription>
-                )}
-              </CardHeader>
-              <CardContent>
-                <RadioGroup
-                  value={userVote || undefined}
-                  onValueChange={(nomineeId: string) => handleVote(category.id, nomineeId)}
-                  disabled={!userId || !isActive || isVoting}
-                >
-                  <div className="space-y-3">
-                    {category.nominees.map((nominee) => (
-                      <div
-                        key={nominee.id}
-                        className={`flex items-start space-x-3 rounded-lg border p-4 transition-colors ${
-                          userVote === nominee.id
-                            ? "border-primary bg-primary/5"
-                            : "hover:bg-accent"
-                        }`}
-                      >
-                        <RadioGroupItem
-                          value={nominee.id}
-                          id={nominee.id}
-                          disabled={!userId || !isActive || isVoting}
-                        />
-                        <Label
-                          htmlFor={nominee.id}
-                          className="flex-1 cursor-pointer space-y-1"
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {sortedNominees.map((nominee, index) => {
+                      const isWinner = index === 0 && (nominee.vote_count || 0) > 0;
+                      return (
+                        <div key={nominee.id} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {isWinner && <Trophy className="h-4 w-4 text-yellow-500" />}
+                              <span className={isWinner ? "font-bold" : ""}>
+                                {nominee.title}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted-foreground">
+                                {nominee.vote_count || 0} votos
+                              </span>
+                              <Badge variant="secondary">
+                                {nominee.percentage?.toFixed(1) || 0}%
+                              </Badge>
+                            </div>
+                          </div>
+                          <Progress value={nominee.percentage || 0} className="h-2" />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        ) : (
+          // === EXIBIR VOTAÇÃO ===
+          votingData.categories.map((category) => {
+            const userVote = getUserVoteForCategory(category.id);
+            const isVoting = votingCategoryId === category.id;
+
+            return (
+              <Card key={category.id}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    {category.name}
+                    {userVote && (
+                      <Badge variant="outline" className="ml-auto">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Você votou
+                      </Badge>
+                    )}
+                  </CardTitle>
+                  {category.description && (
+                    <CardDescription>{category.description}</CardDescription>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <RadioGroup
+                    value={userVote || undefined}
+                    onValueChange={(nomineeId: string) => handleVote(category.id, nomineeId)}
+                    disabled={!userId || !isActive || isVoting}
+                  >
+                    <div className="space-y-3">
+                      {category.nominees.map((nominee) => (
+                        <div
+                          key={nominee.id}
+                          className={`flex items-start space-x-3 rounded-lg border p-4 transition-colors ${
+                            userVote === nominee.id
+                              ? "border-primary bg-primary/5"
+                              : "hover:bg-accent"
+                          }`}
                         >
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{nominee.title}</span>
-                            {userVote === nominee.id && (
-                              <CheckCircle2 className="h-4 w-4 text-primary" />
+                          <RadioGroupItem
+                            value={nominee.id}
+                            id={nominee.id}
+                            disabled={!userId || !isActive || isVoting}
+                          />
+                          <Label
+                            htmlFor={nominee.id}
+                            className="flex-1 cursor-pointer space-y-1"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{nominee.title}</span>
+                              {userVote === nominee.id && (
+                                <CheckCircle2 className="h-4 w-4 text-primary" />
+                              )}
+                            </div>
+                            {nominee.description && (
+                              <p className="text-sm text-muted-foreground">
+                                {nominee.description}
+                              </p>
                             )}
-                          </div>
-                          {nominee.description && (
-                            <p className="text-sm text-muted-foreground">
-                              {nominee.description}
-                            </p>
+                            {nominee.content_link && (
+                              <a
+                                href={nominee.content_link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-primary hover:underline"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                Ver conteúdo →
+                              </a>
+                            )}
+                          </Label>
+                          {nominee.image_url && (
+                            <div className="relative w-16 h-16 rounded overflow-hidden">
+                              <Image
+                                src={nominee.image_url}
+                                alt={nominee.title}
+                                fill
+                                className="object-cover"
+                                unoptimized
+                              />
+                            </div>
                           )}
-                          {nominee.content_link && (
-                            <a
-                              href={nominee.content_link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-primary hover:underline"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              Ver conteúdo →
-                            </a>
-                          )}
-                        </Label>
-                        {nominee.image_url && (
-                          <div className="relative w-16 h-16 rounded overflow-hidden">
-                            <Image
-                              src={nominee.image_url}
-                              alt={nominee.title}
-                              fill
-                              className="object-cover"
-                              unoptimized
-                            />
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </RadioGroup>
-                {isVoting && (
-                  <div className="flex items-center justify-center mt-4 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Registrando voto...
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
+                        </div>
+                      ))}
+                    </div>
+                  </RadioGroup>
+                  {isVoting && (
+                    <div className="flex items-center justify-center mt-4 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Registrando voto...
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
       </div>
     </div>
   );

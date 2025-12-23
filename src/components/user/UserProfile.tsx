@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useUser } from "@clerk/nextjs";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,33 +10,28 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { User, Mail, Calendar, Shield, Clock } from "lucide-react";
 
-export function UserProfile() {
+interface UserProfileProps {
+  isAdmin: boolean;
+}
+
+export function UserProfile({ isAdmin: initialIsAdmin }: UserProfileProps) {
   const { user, isLoaded } = useUser();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isCheckingAdmin, setIsCheckingAdmin] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      const checkAdminStatus = async () => {
-        try {
-          const response = await fetch("/api/check-admin");
-          if (response.ok) {
-            const data = await response.json();
-            setIsAdmin(data.isAdmin);
-          }
-        } catch (error) {
-          console.error("Erro ao verificar status de admin:", error);
-        } finally {
-          setIsCheckingAdmin(false);
-        }
-      };
-      checkAdminStatus();
-    } else {
-      setIsCheckingAdmin(false);
-    }
-  }, [user]);
+  // Usar useQuery para manter reatividade e consistência com o prefetch
+  const { data: isAdmin } = useQuery({
+    queryKey: ["userAdminStatus"],
+    queryFn: async () => {
+      const response = await fetch("/api/check-admin");
+      const data = await response.json();
+      return data.isAdmin;
+    },
+    initialData: initialIsAdmin,
+    staleTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
 
-  if (!isLoaded || isCheckingAdmin) {
+  if (!isLoaded) {
     return (
       <div className="container mx-auto py-12 px-4 max-w-4xl">
         <div className="space-y-6">
