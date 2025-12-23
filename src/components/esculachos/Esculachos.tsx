@@ -128,7 +128,7 @@ export function Esculachos({ initialEsculachos }: EsculachosProps) {
       )}
 
       {isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {Array.from({ length: 6 }).map((_, index) => (
             <Card
               key={`skeleton-${index}`}
@@ -149,7 +149,7 @@ export function Esculachos({ initialEsculachos }: EsculachosProps) {
       )}
 
       {!isLoading && esculachos && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredEsculachos.map((esculacho) => (
             <Card key={esculacho.id} className="flex flex-col">
               <CardHeader>
