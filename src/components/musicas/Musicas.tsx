@@ -10,6 +10,8 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Music } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Music2, Search } from "lucide-react";
 
 interface MusicasProps {
   initialMusicas: Music[];
@@ -65,7 +67,7 @@ export function Musicas({ initialMusicas, isAdmin }: MusicasProps) {
             disabled
           />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, index) => (
             <Card
               key={`skeleton-${index}`}
@@ -102,12 +104,18 @@ export function Musicas({ initialMusicas, isAdmin }: MusicasProps) {
       </div>
 
       {filteredMusicas.length === 0 && !isLoading && (
-        <p className="text-center text-muted-foreground">
-          Nenhuma música encontrada com os filtros atuais.
-        </p>
+        <EmptyState
+          icon={musicas && musicas.length > 0 && searchTerm ? Search : Music2}
+          title={musicas && musicas.length > 0 && searchTerm ? "Nenhuma música encontrada" : "Nenhuma música cadastrada"}
+          description={
+            musicas && musicas.length > 0 && searchTerm
+              ? `Não encontramos músicas que correspondam a "${searchTerm}". Tente pesquisar com outros termos.`
+              : "Ainda não há músicas cadastradas no sistema. Fique atento para novas adições!"
+          }
+        />
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredMusicas.map((music: Music) => (
           <Link
             href={music.url}

@@ -24,7 +24,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Story } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { ClipboardCopyIcon, CheckIcon } from "lucide-react";
+import { ClipboardCopyIcon, CheckIcon, Search, BookOpen } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface HistoriasProps {
   initialHistorias: Story[];
@@ -115,9 +116,19 @@ export function Historias({
       </div>
 
       {filteredHistorias.length === 0 && !isLoading && (
-        <p className="text-center text-muted-foreground">
-          Nenhuma história encontrada com os filtros atuais.
-        </p>
+        <EmptyState
+          icon={historias && historias.length > 0 && (searchTerm || selectedTag !== "todas") ? Search : BookOpen}
+          title={
+            historias && historias.length > 0 && (searchTerm || selectedTag !== "todas")
+              ? "Nenhuma história encontrada"
+              : "Nenhuma história cadastrada"
+          }
+          description={
+            historias && historias.length > 0 && (searchTerm || selectedTag !== "todas")
+              ? `Não encontramos histórias que correspondam aos filtros atuais.${searchTerm ? ` Termo pesquisado: "${searchTerm}".` : ""}${selectedTag !== "todas" ? ` Tag selecionada: ${selectedTag}.` : ""} Tente ajustar os filtros.`
+              : "Ainda não há histórias cadastradas no sistema. Fique atento para novas adições!"
+          }
+        />
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
