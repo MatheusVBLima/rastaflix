@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Clock, Skull } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export function Inimigos() {
   // Usar useQuery que vai se hidratar com os dados pré-buscados no server
@@ -93,13 +94,13 @@ export function Inimigos() {
 
   if (!inimigos || inimigos.length === 0) {
     return (
-      <Alert className="max-w-2xl mx-auto">
-        <AlertTitle>Mural de Inimigos Vazio</AlertTitle>
-        <AlertDescription>
-          Nenhum inimigo foi adicionado à lista ainda. Ou talvez todos já foram
-          perdoados?
-        </AlertDescription>
-      </Alert>
+      <div className="max-w-2xl mx-auto">
+        <EmptyState
+          icon={Skull}
+          title="Mural de Inimigos Vazio"
+          description="Nenhum inimigo foi adicionado à lista ainda. Ou talvez todos já foram perdoados?"
+        />
+      </div>
     );
   }
 

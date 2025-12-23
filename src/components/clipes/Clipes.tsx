@@ -17,7 +17,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Clipe, ClipePlatform } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Play } from "lucide-react";
+import { ExternalLink, Play, Search } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface ClipesProps {
   initialClipes: Clipe[];
@@ -153,15 +154,33 @@ export function Clipes({ initialClipes }: ClipesProps) {
         </TabsList>
 
         <TabsContent value="all">
-          <ClipesGrid clipes={filteredClipes} getPlatformBadgeColor={getPlatformBadgeColor} getPlatformIcon={getPlatformIcon} />
+          <ClipesGrid 
+            clipes={filteredClipes} 
+            allClipes={clipes || []}
+            hasFilters={!!searchTerm || selectedPlatform !== "all"}
+            getPlatformBadgeColor={getPlatformBadgeColor} 
+            getPlatformIcon={getPlatformIcon} 
+          />
         </TabsContent>
 
         <TabsContent value="twitch">
-          <ClipesGrid clipes={twitchClipes} getPlatformBadgeColor={getPlatformBadgeColor} getPlatformIcon={getPlatformIcon} />
+          <ClipesGrid 
+            clipes={twitchClipes} 
+            allClipes={clipes || []}
+            hasFilters={!!searchTerm || selectedPlatform !== "all"}
+            getPlatformBadgeColor={getPlatformBadgeColor} 
+            getPlatformIcon={getPlatformIcon} 
+          />
         </TabsContent>
 
         <TabsContent value="kick">
-          <ClipesGrid clipes={kickClipes} getPlatformBadgeColor={getPlatformBadgeColor} getPlatformIcon={getPlatformIcon} />
+          <ClipesGrid 
+            clipes={kickClipes} 
+            allClipes={clipes || []}
+            hasFilters={!!searchTerm || selectedPlatform !== "all"}
+            getPlatformBadgeColor={getPlatformBadgeColor} 
+            getPlatformIcon={getPlatformIcon} 
+          />
         </TabsContent>
       </Tabs>
     </div>
@@ -170,16 +189,24 @@ export function Clipes({ initialClipes }: ClipesProps) {
 
 interface ClipesGridProps {
   clipes: Clipe[];
+  allClipes: Clipe[];
+  hasFilters: boolean;
   getPlatformBadgeColor: (platform: string) => string;
   getPlatformIcon: (platform: string) => React.ReactNode;
 }
 
-function ClipesGrid({ clipes, getPlatformBadgeColor, getPlatformIcon }: ClipesGridProps) {
+function ClipesGrid({ clipes, allClipes, hasFilters, getPlatformBadgeColor, getPlatformIcon }: ClipesGridProps) {
   if (clipes.length === 0) {
     return (
-      <p className="text-center text-muted-foreground py-8">
-        Nenhum clipe encontrado.
-      </p>
+      <EmptyState
+        icon={allClipes.length > 0 && hasFilters ? Search : Play}
+        title={allClipes.length > 0 && hasFilters ? "Nenhum clipe encontrado" : "Nenhum clipe cadastrado"}
+        description={
+          allClipes.length > 0 && hasFilters
+            ? "Não encontramos clipes que correspondam aos filtros selecionados. Tente ajustar a pesquisa ou selecionar outra plataforma."
+            : "Ainda não há clipes cadastrados no sistema. Fique atento para novas adições!"
+        }
+      />
     );
   }
 

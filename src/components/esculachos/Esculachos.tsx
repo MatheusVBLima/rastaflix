@@ -15,9 +15,10 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Download } from "lucide-react";
+import { Download, Search, Mic } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AudioPlayerComplete, AudioPlayerProvider } from "@/components/ui/audio-player-eleven";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface EsculachosProps {
   initialEsculachos: Esculacho[];
@@ -114,15 +115,16 @@ export function Esculachos({ initialEsculachos }: EsculachosProps) {
         />
       </div>
 
-      {!isLoading && filteredEsculachos.length === 0 && !searchTerm && (
-        <p className="text-center text-gray-500 dark:text-gray-400">
-          Nenhum esculacho encontrado.
-        </p>
-      )}
-      {!isLoading && filteredEsculachos.length === 0 && searchTerm && (
-        <p className="text-center text-gray-500 dark:text-gray-400">
-          Nenhum esculacho encontrado para &quot;{searchTerm}&quot;.
-        </p>
+      {!isLoading && filteredEsculachos.length === 0 && (
+        <EmptyState
+          icon={esculachos && esculachos.length > 0 && searchTerm ? Search : Mic}
+          title={esculachos && esculachos.length > 0 && searchTerm ? "Nenhum esculacho encontrado" : "Nenhum esculacho cadastrado"}
+          description={
+            esculachos && esculachos.length > 0 && searchTerm
+              ? `Não encontramos esculachos que correspondam a "${searchTerm}". Tente pesquisar com outros termos.`
+              : "Ainda não há esculachos cadastrados no sistema. Fique atento para novas adições!"
+          }
+        />
       )}
 
       {isLoading && (
