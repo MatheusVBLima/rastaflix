@@ -55,7 +55,9 @@ export function ResultsViewer() {
         <div className="space-y-6">
           {categoriesWithResults.map((category) => {
             const sortedNominees = [...category.nominees].sort((a, b) => (b.vote_count || 0) - (a.vote_count || 0));
-            const winner = sortedNominees[0];
+
+            // Find the highest vote count
+            const maxVotes = sortedNominees.length > 0 ? (sortedNominees[0].vote_count || 0) : 0;
 
             return (
               <Card key={category.id}>
@@ -73,8 +75,9 @@ export function ResultsViewer() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {sortedNominees.map((nominee, index) => {
-                      const isWinner = index === 0 && (nominee.vote_count || 0) > 0;
+                    {sortedNominees.map((nominee) => {
+                      // Winner: has the max vote count and it's greater than 0
+                      const isWinner = (nominee.vote_count || 0) === maxVotes && maxVotes > 0;
                       return (
                         <div key={nominee.id} className="space-y-2">
                           <div className="flex items-center justify-between">
