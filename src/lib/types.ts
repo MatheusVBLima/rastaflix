@@ -346,6 +346,30 @@ export interface VoteActionResponse extends ActionResponse {
 }
 
 // ============================================
+// USER ACHIEVEMENTS - Types & Schemas
+// ============================================
+
+export type AchievementType = "rasta_awards_voter" | "other";
+
+export interface UserAchievement {
+  id: string;
+  user_id: string;
+  achievement_type: AchievementType;
+  achievement_year: number;
+  achievement_data?: {
+    season_id?: string;
+    season_title?: string;
+    [key: string]: unknown;
+  } | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserAchievementActionResponse extends ActionResponse {
+  achievement?: UserAchievement;
+}
+
+// ============================================
 // STREAMER CONFIG & CLIPES - Types & Schemas
 // ============================================
 
