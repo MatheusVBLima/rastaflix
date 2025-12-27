@@ -8,7 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { User, Mail, Calendar, Shield, Clock } from "lucide-react";
+import { User, Mail, Calendar, Shield, Clock, Award } from "lucide-react";
+import { fetchUserAchievements } from "@/lib/queries";
+import Image from "next/image";
 
 interface UserProfileProps {
   isAdmin: boolean;
@@ -29,6 +31,14 @@ export function UserProfile({ isAdmin: initialIsAdmin }: UserProfileProps) {
     staleTime: Infinity,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
+  });
+
+  // Fetch user achievements
+  const { data: achievements = [] } = useQuery({
+    queryKey: ["userAchievements", user?.id],
+    queryFn: () => (user?.id ? fetchUserAchievements(user.id) : Promise.resolve([])),
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   if (!isLoaded) {
@@ -172,26 +182,51 @@ export function UserProfile({ isAdmin: initialIsAdmin }: UserProfileProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Estatísticas</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5" />
+              Conquistas
+            </CardTitle>
             <CardDescription>
-              Em breve você poderá ver suas atividades e contribuições na plataforma
+              Badges e conquistas que você ganhou na plataforma
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 border rounded-lg">
-                <p className="text-sm text-muted-foreground">Histórias Favoritas</p>
-                <p className="text-2xl font-bold mt-1">Em breve</p>
+            {achievements.length === 0 ? (
+              <div className="text-center py-8">
+                <Award className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                <p className="text-muted-foreground">
+                  Você ainda não tem conquistas. Participe do Rasta Awards para ganhar sua primeira badge!
+                </p>
               </div>
-              <div className="p-4 border rounded-lg">
-                <p className="text-sm text-muted-foreground">Votos em Awards</p>
-                <p className="text-2xl font-bold mt-1">Em breve</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {achievements.map((achievement) => {
+                  // Determine badge image and title based on achievement type
+                  let badgeImage = "/awards/rasta-awards-2025.png";
+                  let badgeTitle = "Rasta Awards";
+
+                  if (achievement.achievement_type === "rasta_awards_voter") {
+                    badgeImage = `/awards/rasta-awards-${achievement.achievement_year}.png`;
+                    badgeTitle = `Rasta Awards ${achievement.achievement_year}`;
+                  }
+
+                  return (
+                    <div
+                      key={achievement.id}
+                      className="relative w-full aspect-[3/4] rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
+                    >
+                      <Image
+                        src={badgeImage}
+                        alt={badgeTitle}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                  );
+                })}
               </div>
-              <div className="p-4 border rounded-lg">
-                <p className="text-sm text-muted-foreground">Conquistas</p>
-                <p className="text-2xl font-bold mt-1">Em breve</p>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>

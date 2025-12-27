@@ -18,12 +18,14 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import Image from "next/image";
 import { EmptyState } from "@/components/ui/empty-state";
+import { LoginDialog } from "./LoginDialog";
 
 export function RastaAwardsVoting() {
   // Usar hook do Clerk diretamente no cliente para garantir autenticação correta em produção
   const { userId, isLoaded } = useAuth();
   const [isPending, startTransition] = useTransition();
   const [votingCategoryId, setVotingCategoryId] = useState<string | null>(null);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: activeSeason } = useQuery<AwardSeason | null>({
@@ -53,7 +55,7 @@ export function RastaAwardsVoting() {
 
   async function handleVote(categoryId: string, nomineeId: string) {
     if (!userId) {
-      toast.error("Você precisa estar logado para votar");
+      setShowLoginDialog(true);
       return;
     }
 
@@ -258,27 +260,26 @@ export function RastaAwardsVoting() {
                   <RadioGroup
                     value={userVote || undefined}
                     onValueChange={(nomineeId: string) => handleVote(category.id, nomineeId)}
-                    disabled={!userId || !isActive || isVoting}
+                    disabled={!isActive || isVoting}
                   >
                     <div className="space-y-3">
                       {category.nominees.map((nominee) => (
                         <div
                           key={nominee.id}
+                          onClick={() => handleVote(category.id, nominee.id)}
                           className={`flex items-start space-x-3 rounded-lg border p-4 transition-colors ${
                             userVote === nominee.id
                               ? "border-primary bg-primary/5"
                               : "hover:bg-accent"
-                          }`}
+                          } ${!isActive || isVoting ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
                         >
                           <RadioGroupItem
                             value={nominee.id}
                             id={nominee.id}
-                            disabled={!userId || !isActive || isVoting}
+                            disabled={!isActive || isVoting}
+                            className="pointer-events-none"
                           />
-                          <Label
-                            htmlFor={nominee.id}
-                            className="flex-1 cursor-pointer space-y-1"
-                          >
+                          <div className="flex-1 space-y-1">
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{nominee.title}</span>
                               {userVote === nominee.id && (
@@ -301,7 +302,7 @@ export function RastaAwardsVoting() {
                                 Ver conteúdo →
                               </a>
                             )}
-                          </Label>
+                          </div>
                           {nominee.image_url && (
                             <div className="relative w-16 h-16 rounded overflow-hidden">
                               <Image
@@ -329,6 +330,8 @@ export function RastaAwardsVoting() {
           })
         )}
       </div>
+
+      <LoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} />
     </div>
   );
 }

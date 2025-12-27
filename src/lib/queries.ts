@@ -15,6 +15,7 @@ import {
   Clipe,
   ClipePlatform,
   StreamerConfig,
+  UserAchievement,
 } from "./types";
 
 /**
@@ -749,4 +750,34 @@ export async function fetchStreamerStatus(): Promise<StreamerConfig | null> {
   }
 
   return data;
+}
+
+// ========================================
+// USER ACHIEVEMENTS
+// ========================================
+
+/**
+ * Fetch user achievements by user ID
+ */
+export async function fetchUserAchievements(
+  userId: string
+): Promise<UserAchievement[]> {
+  if (!userId) {
+    return [];
+  }
+
+  const supabase = getSupabaseClientDirect();
+
+  const { data, error } = await supabase
+    .from("user_achievements")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Erro ao buscar conquistas do usuário:", error);
+    return [];
+  }
+
+  return data || [];
 }

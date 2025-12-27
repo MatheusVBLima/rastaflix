@@ -19,7 +19,9 @@
       "Bash(npx @elevenlabs/cli@latest components add:*)",
       "Bash(curl:*)",
       "Bash(npx shadcn:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(findstr:*)",
+      "Bash(npx shadcn@latest add dialog:*)"
     ],
     "deny": [],
     "ask": []

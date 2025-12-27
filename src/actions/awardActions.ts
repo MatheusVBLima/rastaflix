@@ -578,7 +578,7 @@ export async function submitVote(
     // 2. Verificar se a temporada está ativa
     const { data: season, error: seasonError } = await supabase
       .from("award_seasons")
-      .select("status")
+      .select("status, year, title")
       .eq("id", validatedData.season_id)
       .single();
 
@@ -620,7 +620,32 @@ export async function submitVote(
       };
     }
 
+    // 4. Award achievement badge for voting in Rasta Awards
+    const { error: achievementError } = await supabase
+      .from("user_achievements")
+      .upsert(
+        {
+          user_id: userId,
+          achievement_type: "rasta_awards_voter",
+          achievement_year: season.year || new Date().getFullYear(),
+          achievement_data: {
+            season_id: validatedData.season_id,
+            season_title: season.title || `Rasta Awards ${season.year || new Date().getFullYear()}`,
+          },
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "user_id,achievement_type,achievement_year",
+        }
+      );
+
+    if (achievementError) {
+      console.error("Erro ao conceder conquista:", achievementError);
+      // Don't fail the vote if achievement fails, just log it
+    }
+
     revalidatePath("/rasta-awards");
+    revalidatePath("/perfil");
 
     return {
       success: true,
