@@ -21,7 +21,8 @@
       "Bash(npx shadcn:*)",
       "Bash(npm run dev:*)",
       "Bash(findstr:*)",
-      "Bash(npx shadcn@latest add dialog:*)"
+      "Bash(npx shadcn@latest add dialog:*)",
+      "Bash(npx supabase:*)"
     ],
     "deny": [],
     "ask": []

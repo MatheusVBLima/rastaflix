@@ -213,21 +213,51 @@ export function RastaAwardsVoting() {
                       const isWinner = (nominee.vote_count || 0) === maxVotes && maxVotes > 0;
                       return (
                         <div key={nominee.id} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              {isWinner && <Trophy className="h-4 w-4 text-yellow-500" />}
-                              <span className={isWinner ? "font-bold" : ""}>
-                                {nominee.title}
-                              </span>
+                          <div className="flex items-start space-x-3 rounded-lg border p-4">
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  {isWinner && <Trophy className="h-4 w-4 text-yellow-500" />}
+                                  <span className={isWinner ? "font-bold" : "font-medium"}>
+                                    {nominee.title}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-muted-foreground">
+                                    {nominee.vote_count || 0} votos
+                                  </span>
+                                  <Badge variant="secondary">
+                                    {nominee.percentage?.toFixed(1) || 0}%
+                                  </Badge>
+                                </div>
+                              </div>
+                              {nominee.description && (
+                                <p className="text-sm text-muted-foreground">
+                                  {nominee.description}
+                                </p>
+                              )}
+                              {nominee.content_link && (
+                                <a
+                                  href={nominee.content_link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-primary hover:underline"
+                                >
+                                  Ver conteúdo →
+                                </a>
+                              )}
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-muted-foreground">
-                                {nominee.vote_count || 0} votos
-                              </span>
-                              <Badge variant="secondary">
-                                {nominee.percentage?.toFixed(1) || 0}%
-                              </Badge>
-                            </div>
+                            {nominee.image_url && (
+                              <div className="relative w-16 h-16 rounded overflow-hidden flex-shrink-0">
+                                <Image
+                                  src={nominee.image_url}
+                                  alt={nominee.title}
+                                  fill
+                                  className="object-cover"
+                                  unoptimized
+                                />
+                              </div>
+                            )}
                           </div>
                           <Progress value={nominee.percentage || 0} className="h-2" />
                         </div>
