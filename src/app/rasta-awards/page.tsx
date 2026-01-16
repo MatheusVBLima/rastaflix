@@ -1,57 +1,7 @@
-import { QueryClient } from "@tanstack/react-query";
-import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
-import { fetchActiveSeason, fetchVotingData, fetchAllCategoriesWithResults } from "@/lib/queries";
-import { RastaAwardsVoting } from "@/components/awards/RastaAwardsVoting";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { redirect } from "next/navigation";
 
-export default async function RastaAwardsPage() {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: Infinity,
-      },
-    },
-  });
+export const dynamic = "force-dynamic";
 
-  let activeSeason: any = null;
-
-  try {
-    // 1. Buscar temporada ativa
-    activeSeason = await queryClient.fetchQuery({
-      queryKey: ["activeSeason"],
-      queryFn: fetchActiveSeason,
-    });
-
-    // 2. Se houver temporada ativa, buscar dados de votação
-    if (activeSeason) {
-      await queryClient.prefetchQuery({
-        queryKey: ["votingData", activeSeason.id],
-        queryFn: () => fetchVotingData(activeSeason.id),
-      });
-
-      // 3. Se a temporada está encerrada, prefetch dos resultados
-      if (activeSeason.status === "closed") {
-        await queryClient.prefetchQuery({
-          queryKey: ["awardsResults", activeSeason.id],
-          queryFn: () => fetchAllCategoriesWithResults(activeSeason.id),
-        });
-      }
-    }
-    // Nota: O userId e userVotes são gerenciados no cliente via useAuth()
-    // para garantir funcionamento correto em produção
-  } catch (error) {
-    console.error("❌ Erro no prefetch de Rasta Awards:", error);
-  }
-
-  const dehydratedState = dehydrate(queryClient);
-
-  return (
-    <ErrorBoundary>
-      <HydrationBoundary state={dehydratedState}>
-        <div className="container mx-auto py-10 min-h-screen">
-          <RastaAwardsVoting />
-        </div>
-      </HydrationBoundary>
-    </ErrorBoundary>
-  );
+export default function RastaAwardsPage() {
+  redirect("/");
 }

@@ -1,9 +1,7 @@
-import { DLE } from "@/components/dle/DLE";
+import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 
 export default function page() {
-  return (
-    <div className="container mx-auto py-10 min-h-screen">
-      <DLE />
-    </div>
-  );
+  redirect("/");
 }
