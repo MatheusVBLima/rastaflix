@@ -1,42 +1,19 @@
-import { Badge } from "@/components/ui/badge";
-import { nicknames } from "@/data/nicknames";
-import Image from "next/image";
-
-/**
- * Renders the homepage with a centered introduction and a list of nicknames for Gabriel Scutasu, alongside a hero image on large screens.
- *
- * Displays a two-column layout on large screens: the left column features the title, descriptive text, and a static set of nickname badges; the right column shows a themed image, visible only on large screens.
- */
 export default function Home() {
   return (
-    <div className="lg:grid lg:grid-cols-2">
-      <div className="flex items-center justify-center py-12">
-        <div className="mx-auto grid w-[350px] gap-6">
-          <h1 className="text-center text-3xl font-bold">Rastaflix</h1>
-          <p className="text-center text-lg">
-            Acompanhe as histórias do nosso querido Gabriel Scutasu
-          </p>
-          <p className="text-center text-lg">Também conhecido como</p>
-          <div className="flex flex-wrap gap-4 items-center justify-center">
-            {nicknames.map((n) => (
-              <Badge key={n} variant="outline">
-                {n}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="hidden bg-muted lg:flex">
-        <Image
-          src="/hero.png"
-          alt="Foto de Gabriel 'Givaldo' Scutasu comendo açaí"
-          width={900}
-          height={600}
-          priority
-          placeholder="blur"
-          blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mM8c+ZMPQAHPgLI8aPJrAAAAABJRU5ErkJggg=="
-          className="max-h-[calc(100vh-5.2rem)] w-full object-cover brightness-[0.4] grayscale"
-        />
+    <div className="fixed inset-0 bg-black flex items-center justify-center">
+      <div className="text-center px-8 max-w-4xl">
+        <p className="text-white text-xl md:text-2xl mb-8 leading-relaxed">
+          Peço desculpa a todos da família M, a quem tenho o prazer de chamar de amigos, por ter patrocinado parte desse momento tão triste para todos. Acreditei que ciclos sempre se repetem, mas parece que dessa vez isso foi rompido. Espero que vocês me perdoem algum dia.
+        </p>
+        <p className="text-white/80 text-base md:text-lg mb-8">
+          — Nayark
+        </p>
+        <p className="text-white/70 text-base md:text-lg italic">
+          Quando digo que te amo, quero dizer que vou sofrer ao ver você partir.
+        </p>
+        <p className="text-white/60 text-sm md:text-base mt-4">
+          — Leonardo Cestari
+        </p>
       </div>
     </div>
   );
