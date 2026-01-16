@@ -1,11 +1,7 @@
-import { Bingo } from "@/components/bingo/Bingo";
-import { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Bingo Rastafari | Rastaflix",
-  description: "Bingo Rastafari com os momentos mais icônicos das lives.",
-};
+export const dynamic = "force-dynamic";
 
 export default function BingoPage() {
-  return <Bingo />;
+  redirect("/");
 }
