@@ -9,6 +9,13 @@ import { getIsAdmin } from "@/lib/auth";
 import { getQueryClient } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
 import { fetchHistorias, getAllTags } from "@/lib/queries";
+import { pageMetadata } from "@/lib/site-metadata";
+
+export const metadata = pageMetadata(
+  "Histórias",
+  "Histórias que o dog tenta esconder - explore, filtre e compartilhe.",
+  "/historias"
+);
 
 /**
  * Render the "Histórias" page layout with a header and a Suspense boundary for content.

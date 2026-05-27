@@ -1,4 +1,11 @@
 import { DLE } from "@/components/dle/DLE";
+import { pageMetadata } from "@/lib/site-metadata";
+
+export const metadata = pageMetadata(
+  "Ovelhera DLE",
+  "Adivinhe o personagem do universo Ovelhera.",
+  "/ovelhera-dle"
+);
 
 /**
  * Renders the page layout that hosts the DLE component.

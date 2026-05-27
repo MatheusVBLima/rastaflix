@@ -9,6 +9,13 @@ import { getIsAdmin } from "@/lib/auth";
 import { getQueryClient } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
 import { fetchMusicas } from "@/lib/queries";
+import { pageMetadata } from "@/lib/site-metadata";
+
+export const metadata = pageMetadata(
+  "Músicas",
+  "Descubra e compartilhe as músicas da comunidade.",
+  "/musicas"
+);
 
 /**
  * Render the Músicas page with a header and suspense-wrapped music content.

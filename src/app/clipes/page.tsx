@@ -8,6 +8,13 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { getQueryClient } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
 import { fetchClipes } from "@/lib/queries";
+import { pageMetadata } from "@/lib/site-metadata";
+
+export const metadata = pageMetadata(
+  "Clipes",
+  "Melhores momentos das lives na Twitch e na Kick.",
+  "/clipes"
+);
 
 /**
  * Render the "Clipes" page layout with a header and Suspense-wrapped content.

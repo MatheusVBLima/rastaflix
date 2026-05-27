@@ -8,6 +8,13 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { getQueryClient } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
 import { fetchEsculachos } from "@/lib/queries";
+import { pageMetadata } from "@/lib/site-metadata";
+
+export const metadata = pageMetadata(
+  "Esculachos",
+  "Momentos épicos da live - ouça e baixe os melhores trechos.",
+  "/esculachos"
+);
 
 /**
  * Render the Esculachos page layout with a header and lazy-loaded content.

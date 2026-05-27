@@ -8,6 +8,13 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { getQueryClient } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
 import { fetchInimigos } from "@/lib/queries";
+import { pageMetadata } from "@/lib/site-metadata";
+
+export const metadata = pageMetadata(
+  "Mural de Inimigos",
+  "Conheça os antagonistas dessa jornada rastafari.",
+  "/inimigos"
+);
 
 /**
  * Page component that displays the "Mural de Inimigos" header and its prefetched content with a Suspense fallback.

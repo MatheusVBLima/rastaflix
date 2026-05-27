@@ -39,11 +39,29 @@ export const siteMetadata: Metadata = {
     siteName: SITE_NAME,
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Rastaflix - Universo Ovelhera",
+        type: "image/png",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
+    images: [
+      {
+        url: "/twitter-image",
+        width: 1200,
+        height: 630,
+        alt: "Rastaflix - Universo Ovelhera",
+        type: "image/png",
+      },
+    ],
   },
   robots: {
     index: true,
@@ -53,14 +71,19 @@ export const siteMetadata: Metadata = {
 
 export function pageMetadata(
   title: string,
-  description: string
+  description: string,
+  path?: `/${string}`
 ): Metadata {
+  const url = path ? new URL(path, getSiteUrl()).toString() : undefined;
+
   return {
     title,
     description,
+    alternates: url ? { canonical: url } : undefined,
     openGraph: {
       title,
       description,
+      url,
     },
     twitter: {
       title,

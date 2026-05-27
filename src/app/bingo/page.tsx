@@ -3,7 +3,8 @@ import { pageMetadata } from "@/lib/site-metadata";
 
 export const metadata = pageMetadata(
   "Bingo Rastafari",
-  "Bingo Rastafari com os momentos mais icônicos das lives."
+  "Bingo Rastafari com os momentos mais icônicos das lives.",
+  "/bingo"
 );
 
 /**

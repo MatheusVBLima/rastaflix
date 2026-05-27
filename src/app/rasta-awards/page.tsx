@@ -8,6 +8,13 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { getQueryClient } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
 import { fetchActiveSeason, fetchVotingData } from "@/lib/queries";
+import { pageMetadata } from "@/lib/site-metadata";
+
+export const metadata = pageMetadata(
+  "Rasta Awards",
+  "Vote nos melhores momentos e conteúdos do ano.",
+  "/rasta-awards"
+);
 
 /**
  * Render the Rasta Awards page with a header and lazy-loaded voting content.
