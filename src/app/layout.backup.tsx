@@ -24,6 +24,15 @@ export const metadata: Metadata = {
   description: "Acompanhe a saga do nosso rastafari mineiro",
 };
 
+/**
+ * Wraps the application with global providers, theme configuration, header, and layout structure.
+ *
+ * Renders authentication/provider wrappers, theme support, global fonts, a persistent Header (non-admin),
+ * the main content area where `children` are mounted, a toast container, and performance tooling.
+ *
+ * @param children - The page or route content to render inside the layout's main area
+ * @returns The root React element composing app-wide providers and the page layout
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -56,7 +65,7 @@ export default function RootLayout({
               ]}
             >
               <div className="flex flex-col min-h-screen">
-                <Header />
+                <Header isAdmin={false} />
                 <main className="flex-1">{children}</main>
               </div>
               <Toaster />

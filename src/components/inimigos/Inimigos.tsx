@@ -3,6 +3,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchInimigos } from "@/lib/queries";
+import { queryKeys } from "@/lib/query-keys";
 import { Inimigo } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -20,21 +21,25 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { Clock, Skull } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 
+/**
+ * Render the Inimigos UI: fetch and display a list of enemies with appropriate loading, error, empty, and responsive states.
+ *
+ * Displays skeleton placeholders while loading, a destructive alert on fetch error, an empty state when there are no enemies,
+ * a vertical list of cards on narrow viewports, and a table layout on wider viewports. Each enemy entry shows its name and
+ * a status badge that reflects the revenge status.
+ *
+ * @returns The JSX element for the Inimigos component UI
+ */
 export function Inimigos() {
   // Usar useQuery que vai se hidratar com os dados pré-buscados no server
   const {
-    data: inimigos,
+    data: inimigos = [],
     isLoading,
     isError,
     error,
   } = useQuery<Inimigo[], Error>({
-    queryKey: ["inimigos"],
+    queryKey: queryKeys.inimigos.list(),
     queryFn: fetchInimigos,
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
   });
 
   const isMobile = useMediaQuery("(max-width: 767px)");

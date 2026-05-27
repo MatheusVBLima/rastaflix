@@ -2,50 +2,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AddClipeForm from "@/components/admin/AddClipeForm";
 import { EditClipeForm } from "@/components/admin/EditClipeForm";
 import { DeleteClipeForm } from "@/components/admin/DeleteClipeForm";
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
-import { QueryClient } from "@tanstack/react-query";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { fetchClipes } from "@/lib/queries";
+import { requireAdmin } from "@/lib/auth";
+import { getQueryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 
-async function verificarAdminServerPage(): Promise<boolean> {
-  const authState = await auth();
-  if (!authState.userId) return false;
-  try {
-    const client = await clerkClient();
-    const user = await client.users.getUser(authState.userId);
-    return user.privateMetadata?.is_admin === true;
-  } catch {
-    return false;
-  }
-}
-
+/**
+ * Render the admin "Gerenciamento de Clipes" page with tabbed sections for adding, editing, and deleting clipes.
+ *
+ * Ensures the current user has admin access, prefetches clipes into the React Query cache for client hydration, and returns the page UI wrapped with the dehydrated state.
+ *
+ * @returns The React element for the admin clipes management page with a hydration-ready React Query state.
+ */
 export default async function AdminClipesPage() {
-  const isAdmin = await verificarAdminServerPage();
-  if (!isAdmin) {
-    redirect("/");
-  }
+  await requireAdmin();
 
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: Infinity,
-      },
-    },
-  });
-
-  const queryKey = ["clipes"];
+  const queryClient = getQueryClient();
 
   try {
-    await queryClient.prefetchQuery({
-      queryKey: queryKey,
-      queryFn: async () => {
-        const clipes = await fetchClipes();
-        return clipes;
-      },
+    await queryClient.fetchQuery({
+      queryKey: queryKeys.clipes.list(),
+      queryFn: fetchClipes,
     });
   } catch (error) {
-    console.error(`Erro no prefetch de ${queryKey[0]} para admin:`, error);
+    console.error("Erro no prefetch de clipes para admin:", error);
   }
 
   const dehydratedState = dehydrate(queryClient);

@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import Image from "next/image";
 import { fetchMusicas } from "@/lib/queries";
+import { queryKeys } from "@/lib/query-keys";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Music } from "@/lib/types";
@@ -14,27 +15,30 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Music2, Search } from "lucide-react";
 
 interface MusicasProps {
-  initialMusicas: Music[];
   isAdmin?: boolean;
 }
 
-export function Musicas({ initialMusicas, isAdmin }: MusicasProps) {
+/**
+ * Renders a searchable, responsive grid of music cards that link to each music's URL.
+ *
+ * Displays a search input to filter music by title, an appropriate empty state when there are no matches
+ * or no music available, and a grid of cards showing each music's thumbnail, title, and a button to play.
+ *
+ * @param isAdmin - Optional flag indicating admin privileges (provided prop; not used by the component's current UI).
+ * @returns A JSX element containing the search input, optional empty-state message, and a responsive grid of linked music cards.
+ */
+export function Musicas({ isAdmin }: MusicasProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Usar useQuery com a mesma queryKey usada no prefetch
   // A queryFn usa fetchMusicas real para que invalidateQueries funcione corretamente
   const {
-    data: musicas,
+    data: musicas = [],
     isLoading,
     error,
   } = useQuery<Music[], Error>({
-    queryKey: ["musicas"],
+    queryKey: queryKeys.musicas.list(),
     queryFn: fetchMusicas,
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
   });
 
   const filteredMusicas = useMemo(() => {
@@ -54,37 +58,8 @@ export function Musicas({ initialMusicas, isAdmin }: MusicasProps) {
     return result;
   }, [musicas, searchTerm]);
 
-  if (isLoading && !initialMusicas?.length) {
-    return (
-      <div className="container mx-auto py-8 px-4 md:px-6">
-        <div className="mb-8 flex flex-col md:flex-row gap-4 items-center">
-          <Input
-            type="text"
-            placeholder="Pesquisar por nome..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-sm"
-            disabled
-          />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Card
-              key={`skeleton-${index}`}
-              className="flex flex-col h-full overflow-hidden"
-            >
-              <Skeleton className="relative w-full pt-[56.25%]" />
-              <CardContent className="p-4 flex-grow">
-                <Skeleton className="h-6 w-3/4 mb-2" />
-              </CardContent>
-              <CardFooter className="p-4 pt-0 mt-auto">
-                <Skeleton className="h-10 w-full" />
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
+  if (isLoading && !musicas?.length) {
+    return <p>Carregando músicas...</p>;
   }
 
   if (error) {
@@ -92,8 +67,8 @@ export function Musicas({ initialMusicas, isAdmin }: MusicasProps) {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 md:px-6">
-      <div className="mb-8 flex flex-col md:flex-row gap-4 items-start">
+    <>
+      <div className="flex flex-col md:flex-row gap-4 items-start">
         <Input
           type="text"
           placeholder="Pesquisar por nome..."
@@ -194,6 +169,6 @@ export function Musicas({ initialMusicas, isAdmin }: MusicasProps) {
           </Link>
         ))}
       </div>
-    </div>
+    </>
   );
 }

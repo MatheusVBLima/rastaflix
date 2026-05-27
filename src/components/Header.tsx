@@ -7,7 +7,6 @@ import Image from "next/image";
 import {
   SignedIn,
   SignedOut,
-  useUser,
   ClerkLoading,
   ClerkLoaded,
 } from "@clerk/nextjs";
@@ -46,6 +45,7 @@ import {
 } from "lucide-react";
 import { LiveIndicator } from "./LiveIndicator";
 import { UserMenu } from "./UserMenu";
+import { prefetchRouteData } from "@/lib/prefetch";
 
 const criarDescobrirComponents: {
   title: string;
@@ -160,44 +160,54 @@ const adminComponents: {
  *
  * Displays categorized navigation menus, a logo, theme switcher, and user authentication controls. Admin-specific menu items are shown only for authenticated users with admin privileges, determined asynchronously. The header adapts for mobile devices with a collapsible menu.
  *
- * @remark Admin menu visibility is determined by fetching `/api/check-admin` whenever the user changes. If the check fails or the user is not authenticated, admin controls are hidden.
  */
-export function Header() {
-  const { user } = useUser();
+interface HeaderProps {
+  isAdmin: boolean;
+}
+
+/**
+ * Render the top site header containing navigation, mobile menu, theme and user controls.
+ *
+ * The header includes desktop dropdown navigation, a mobile slide-over menu, Clerk-based
+ * auth controls, an optional admin menu when `isAdmin` is true, and hover/focus route
+ * prefetching for navigation links.
+ *
+ * @param isAdmin - If `true`, render admin navigation items and links.
+ * @returns The header JSX element containing the site navigation, controls, and menus.
+ */
+export function Header({ isAdmin }: HeaderProps) {
   const router = useRouter();
-  const [isAdmin, setIsAdmin] = React.useState(false);
-  const [isCheckingAdmin, setIsCheckingAdmin] = React.useState(false);
+  const prefetchTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined
+  );
 
-  // Prefetch da rota no hover para navegação mais rápida
-  const handlePrefetch = React.useCallback((href: string) => {
-    router.prefetch(href);
-  }, [router]);
+  const runPrefetch = React.useCallback(
+    (href: string) => {
+      router.prefetch(href);
+      void prefetchRouteData(href);
+    },
+    [router]
+  );
 
-  React.useEffect(() => {
-    if (user) {
-      setIsCheckingAdmin(true);
-      const checkAdminStatus = async () => {
-        try {
-          const response = await fetch("/api/check-admin");
-          if (response.ok) {
-            const data = await response.json();
-            setIsAdmin(data.isAdmin);
-          } else {
-            setIsAdmin(false);
-          }
-          setIsCheckingAdmin(false);
-        } catch (error) {
-          console.error("Erro ao verificar status de admin:", error);
-          setIsAdmin(false);
-          setIsCheckingAdmin(false);
-        }
-      };
-      checkAdminStatus();
-    } else {
-      setIsAdmin(false);
-      setIsCheckingAdmin(false);
-    }
-  }, [user]);
+  const handlePrefetch = React.useCallback(
+    (href: string) => {
+      if (prefetchTimeoutRef.current) {
+        clearTimeout(prefetchTimeoutRef.current);
+      }
+      prefetchTimeoutRef.current = setTimeout(() => runPrefetch(href), 300);
+    },
+    [runPrefetch]
+  );
+
+  const handlePrefetchImmediate = React.useCallback(
+    (href: string) => {
+      if (prefetchTimeoutRef.current) {
+        clearTimeout(prefetchTimeoutRef.current);
+      }
+      runPrefetch(href);
+    },
+    [runPrefetch]
+  );
 
   return (
     <header className="py-4 px-6 border-b sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -257,6 +267,7 @@ export function Header() {
                         backgroundImage="/Sweeping Light Arc.jpeg"
                         className="bg-cover bg-center"
                         onPrefetch={handlePrefetch}
+                        onPrefetchFocus={handlePrefetchImmediate}
                       >
                         {component.description}
                       </ListItem>
@@ -276,6 +287,7 @@ export function Header() {
                         icon={component.icon}
                         backgroundImage="/Glowing Star Abstract.jpeg"
                         onPrefetch={handlePrefetch}
+                        onPrefetchFocus={handlePrefetchImmediate}
                       >
                         {component.description}
                       </ListItem>
@@ -290,9 +302,7 @@ export function Header() {
           </ClerkLoading>
 
           <SignedIn>
-            {isCheckingAdmin ? (
-              <Skeleton className="h-8 w-20" />
-            ) : isAdmin ? (
+            {isAdmin ? (
               <ClerkLoaded>
                 <NavigationMenu>
                   <NavigationMenuList>
@@ -308,6 +318,7 @@ export function Header() {
                               icon={component.icon}
                               backgroundImage="/Glowing Star Abstract.jpeg"
                               onPrefetch={handlePrefetch}
+                        onPrefetchFocus={handlePrefetchImmediate}
                             >
                               {component.description}
                             </ListItem>
@@ -351,6 +362,8 @@ export function Header() {
                       <Link
                         href={item.href}
                         className="block py-2 px-3 mx-2 rounded-md hover:bg-accent"
+                        onMouseEnter={() => handlePrefetch(item.href)}
+                        onFocus={() => handlePrefetchImmediate(item.href)}
                       >
                         {item.title}
                       </Link>
@@ -365,6 +378,8 @@ export function Header() {
                       <Link
                         href={item.href}
                         className="block py-2 px-3 mx-2 rounded-md hover:bg-accent"
+                        onMouseEnter={() => handlePrefetch(item.href)}
+                        onFocus={() => handlePrefetchImmediate(item.href)}
                       >
                         {item.title}
                       </Link>
@@ -456,11 +471,12 @@ interface ListItemProps extends Omit<React.ComponentPropsWithoutRef<typeof Link>
   icon?: React.ReactNode;
   backgroundImage?: string;
   onPrefetch?: (href: string) => void;
+  onPrefetchFocus?: (href: string) => void;
 }
 
 const ListItem = React.forwardRef<React.ElementRef<"a">, ListItemProps>(
   (
-    { className, title, children, href, icon, backgroundImage, onPrefetch, ...props },
+    { className, title, children, href, icon, backgroundImage, onPrefetch, onPrefetchFocus, ...props },
     ref
   ) => {
     return (
@@ -470,7 +486,7 @@ const ListItem = React.forwardRef<React.ElementRef<"a">, ListItemProps>(
             href={href}
             ref={ref}
             onMouseEnter={() => onPrefetch?.(href)}
-            onFocus={() => onPrefetch?.(href)}
+            onFocus={() => (onPrefetchFocus ?? onPrefetch)?.(href)}
             className={cn(
               "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:shadow-lg hover:scale-[1.02] bg-card",
               className

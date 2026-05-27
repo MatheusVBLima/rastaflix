@@ -1,15 +1,30 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { fetchKickChannelStatus } from "@/lib/kick";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
-export const dynamic = "force-dynamic"; // Sempre dinâmico
-export const revalidate = 0; // Não cachear no edge
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-const KICK_API_URL = "https://kick.com/api/v2/channels";
 const TWITCH_API_URL = "https://api.twitch.tv/helix";
-const CHECK_INTERVAL_MS = 2 * 60 * 1000; // 2 minutos
+const CHECK_INTERVAL_MS = 2 * 60 * 1000;
 
-// Cliente Supabase sem autenticação para acesso público
-function getSupabaseClient() {
+type StreamStatusResult = {
+  is_live: boolean;
+  title: string | null;
+  viewers: number | null;
+  thumbnail: string | null;
+};
+
+/**
+ * Creates a Supabase client for anonymous/public access.
+ *
+ * The client is configured using NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
+ * and has auth token auto-refresh and session persistence disabled.
+ *
+ * @returns A Supabase client configured for anonymous access with autoRefreshToken and persistSession set to `false`
+ */
+function getSupabaseAnon() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -22,6 +37,22 @@ function getSupabaseClient() {
   );
 }
 
+/**
+ * Determines whether the cached status should be refreshed based on the provided last update timestamp.
+ *
+ * @param lastUpdate - ISO 8601 timestamp of the last refresh, or `null` if the status has never been refreshed
+ * @returns `true` if a refresh should be performed (when `lastUpdate` is `null` or older than CHECK_INTERVAL_MS), `false` otherwise
+ */
+function shouldRefresh(lastUpdate: string | null): boolean {
+  if (!lastUpdate) return true;
+  return Date.now() - new Date(lastUpdate).getTime() >= CHECK_INTERVAL_MS;
+}
+
+/**
+ * Fetches a Twitch app access token using the client credentials grant.
+ *
+ * @returns The access token string on success, or `null` if the request fails or the token cannot be obtained.
+ */
 async function getTwitchAccessToken(): Promise<string | null> {
   try {
     const response = await fetch(
@@ -36,15 +67,20 @@ async function getTwitchAccessToken(): Promise<string | null> {
   }
 }
 
-async function checkAndUpdateTwitchStatus(twitchUsername: string, lastUpdate: string | null) {
-  // Verificar se precisa atualizar (última verificação > 2 minutos)
-  if (lastUpdate) {
-    const lastUpdateTime = new Date(lastUpdate).getTime();
-    const now = Date.now();
-    if (now - lastUpdateTime < CHECK_INTERVAL_MS) {
-      return null; // Não precisa atualizar ainda
-    }
-  }
+/**
+ * Determines the current Twitch stream status for a username, updates the corresponding `streamer_config` row, and returns a normalized status object.
+ *
+ * @param configId - The `streamer_config` row `id` to update.
+ * @param twitchUsername - The Twitch username whose stream status will be checked.
+ * @param lastUpdate - ISO timestamp of the last Twitch check; used to decide whether to refresh the status.
+ * @returns A `StreamStatusResult` with `is_live`, `title`, `viewers`, and `thumbnail`, or `null` if the status was not refreshed or could not be retrieved.
+ */
+async function checkAndUpdateTwitchStatus(
+  configId: string,
+  twitchUsername: string,
+  lastUpdate: string | null
+): Promise<StreamStatusResult | null> {
+  if (!shouldRefresh(lastUpdate)) return null;
 
   try {
     const accessToken = await getTwitchAccessToken();
@@ -54,7 +90,7 @@ async function checkAndUpdateTwitchStatus(twitchUsername: string, lastUpdate: st
       `${TWITCH_API_URL}/streams?user_login=${twitchUsername}`,
       {
         headers: {
-          "Authorization": `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
           "Client-Id": process.env.TWITCH_CLIENT_ID!,
         },
       }
@@ -64,18 +100,18 @@ async function checkAndUpdateTwitchStatus(twitchUsername: string, lastUpdate: st
 
     const data = await response.json();
     const stream = data.data?.[0];
-    const isLive = !!stream;
-
-    const result = {
-      is_live: isLive,
+    const result: StreamStatusResult = {
+      is_live: !!stream,
       title: stream?.title ?? null,
       viewers: stream?.viewer_count ?? null,
-      thumbnail: stream?.thumbnail_url?.replace("{width}", "320").replace("{height}", "180") ?? null,
+      thumbnail:
+        stream?.thumbnail_url
+          ?.replace("{width}", "320")
+          .replace("{height}", "180") ?? null,
     };
 
-    // Atualizar no banco
-    const supabase = getSupabaseClient();
-    await supabase
+    const supabase = getSupabaseAdmin();
+    const { error } = await supabase
       .from("streamer_config")
       .update({
         is_live_twitch: result.is_live,
@@ -85,7 +121,11 @@ async function checkAndUpdateTwitchStatus(twitchUsername: string, lastUpdate: st
         last_twitch_update: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .eq("twitch_username", twitchUsername);
+      .eq("id", configId);
+
+    if (error) {
+      console.error("Erro ao atualizar Twitch no banco:", error);
+    }
 
     return result;
   } catch (error) {
@@ -94,42 +134,34 @@ async function checkAndUpdateTwitchStatus(twitchUsername: string, lastUpdate: st
   }
 }
 
-async function checkAndUpdateKickStatus(kickUsername: string, lastUpdate: string | null) {
-  // Verificar se precisa atualizar (última verificação > 2 minutos)
-  if (lastUpdate) {
-    const lastUpdateTime = new Date(lastUpdate).getTime();
-    const now = Date.now();
-    if (now - lastUpdateTime < CHECK_INTERVAL_MS) {
-      return null; // Não precisa atualizar ainda
-    }
-  }
+/**
+ * Checks Kick channel status for a username, updates the corresponding streamer_config row, and returns a normalized status object.
+ *
+ * @param configId - ID of the `streamer_config` row to update
+ * @param kickUsername - Kick channel username to query
+ * @param lastUpdate - ISO timestamp of the last Kick status update, or `null`
+ * @returns A `StreamStatusResult` containing live state, title, viewer count, and thumbnail, or `null` if the status was not refreshed or could not be retrieved
+ */
+async function checkAndUpdateKickStatus(
+  configId: string,
+  kickUsername: string,
+  lastUpdate: string | null
+): Promise<StreamStatusResult | null> {
+  if (!shouldRefresh(lastUpdate)) return null;
 
   try {
-    const response = await fetch(`${KICK_API_URL}/${kickUsername}`, {
-      headers: {
-        "Accept": "application/json",
-        "User-Agent": "Rastaflix/1.0",
-      },
-      next: { revalidate: 0 },
-    });
+    const kickStatus = await fetchKickChannelStatus(kickUsername);
+    if (kickStatus === null) return null;
 
-    if (!response.ok) {
-      return { is_live: false, title: null, viewers: null, thumbnail: null };
-    }
-
-    const data = await response.json();
-    const isLive = data.livestream !== null;
-
-    const result = {
-      is_live: isLive,
-      title: data.livestream?.session_title ?? null,
-      viewers: data.livestream?.viewer_count ?? null,
-      thumbnail: data.livestream?.thumbnail?.url ?? null,
+    const result: StreamStatusResult = {
+      is_live: kickStatus.isLive,
+      title: kickStatus.title,
+      viewers: kickStatus.viewers,
+      thumbnail: kickStatus.thumbnail,
     };
 
-    // Atualizar no banco em background
-    const supabase = getSupabaseClient();
-    supabase
+    const supabase = getSupabaseAdmin();
+    const { error } = await supabase
       .from("streamer_config")
       .update({
         is_live_kick: result.is_live,
@@ -139,8 +171,11 @@ async function checkAndUpdateKickStatus(kickUsername: string, lastUpdate: string
         last_kick_update: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .eq("kick_username", kickUsername)
-      .then(() => {});
+      .eq("id", configId);
+
+    if (error) {
+      console.error("Erro ao atualizar Kick no banco:", error);
+    }
 
     return result;
   } catch (error) {
@@ -149,10 +184,22 @@ async function checkAndUpdateKickStatus(kickUsername: string, lastUpdate: string
   }
 }
 
+/**
+ * Handles GET requests for the streamer's status by reading the stored configuration,
+ * optionally refreshing Twitch and Kick statuses when due, and returning a combined status payload.
+ *
+ * @returns A NextResponse JSON payload. On success, an object with:
+ * - `is_live_twitch`, `is_live_kick` (booleans)
+ * - `twitch_stream_title`, `kick_stream_title` (string | null)
+ * - `twitch_viewer_count`, `kick_viewer_count` (number | null)
+ * - `twitch_thumbnail_url`, `kick_thumbnail_url` (string | null)
+ * - `twitch_username`, `kick_username` (string | null).
+ * If the streamer configuration is not found, returns `{ error: "Streamer config not found" }` with status 404.
+ * If an unexpected error occurs, returns `{ error: "Internal server error" }` with status 500.
+ */
 export async function GET() {
   try {
-    // Buscar status diretamente usando cliente público (sem autenticação)
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAnon();
     const { data: status, error } = await supabase
       .from("streamer_config")
       .select("*")
@@ -166,27 +213,27 @@ export async function GET() {
       );
     }
 
-    // Lazy polling: verificar ambas plataformas se última atualização foi há mais de 2 min
     const [twitchUpdate, kickUpdate] = await Promise.all([
       checkAndUpdateTwitchStatus(
+        status.id,
         status.twitch_username,
         status.last_twitch_update ?? null
       ),
       checkAndUpdateKickStatus(
+        status.id,
         status.kick_username,
         status.last_kick_update ?? null
       ),
     ]);
 
-    // Usar dados atualizados se disponíveis
-    const twitchData = twitchUpdate || {
+    const twitchData = twitchUpdate ?? {
       is_live: status.is_live_twitch,
       title: status.twitch_stream_title,
       viewers: status.twitch_viewer_count,
       thumbnail: status.twitch_thumbnail_url,
     };
 
-    const kickData = kickUpdate || {
+    const kickData = kickUpdate ?? {
       is_live: status.is_live_kick,
       title: status.kick_stream_title,
       viewers: status.kick_viewer_count,

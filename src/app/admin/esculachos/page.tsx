@@ -1,56 +1,36 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
-import {
-  HydrationBoundary,
-  QueryClient,
-  dehydrate,
-} from "@tanstack/react-query";
+import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import AddEsculachoForm from "@/components/admin/AddEsculachoForm";
 import { EditEsculachoForm } from "@/components/admin/EditEsculachoForm";
 import { DeleteEsculachoForm } from "@/components/admin/DeleteEsculachoForm";
-import { fetchEsculachos } from "@/lib/queries"; // Para prefetch
+import { fetchEsculachos } from "@/lib/queries";
+import { requireAdmin } from "@/lib/auth";
+import { getQueryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 
+/**
+ * Admin page component that enforces admin access, prefetches the esculachos list,
+ * and renders the management UI with tabbed forms for adding, editing, and deleting.
+ *
+ * The function awaits `requireAdmin()` before proceeding, attempts to prefetch the
+ * admin esculachos list into the React Query client (logging any prefetch error),
+ * and returns a hydrated React element whose state includes the prefetched query data.
+ *
+ * @returns The React element for the admin esculachos management page, hydrated with prefetched query state.
+ */
 export default async function AdminEsculachosPage() {
-  // 1. Criar QueryClient no Server Component
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: Infinity, // Dados pré-buscados ficam "frescos" eternamente
-      },
-    },
-  });
-  const authResult = await auth();
-  const userId = authResult.userId;
+  await requireAdmin();
 
-  if (!userId) {
-    return redirect("/");
-  }
-
-  const client = await clerkClient();
-  const user = await client.users.getUser(userId);
-
-  const isAdmin = user?.privateMetadata?.is_admin || false;
-
-  if (!isAdmin) {
-    return redirect("/");
-  }
-
-  // Pré-busca dos dados de esculachos para popular o cache do React Query
-  const queryKey = ["esculachos"];
-  const startTime = Date.now();
+  const queryClient = getQueryClient();
 
   try {
-    // 2. Pré-buscar os dados
-    await queryClient.prefetchQuery({
-      queryKey: queryKey,
+    await queryClient.fetchQuery({
+      queryKey: queryKeys.esculachos.list(),
       queryFn: fetchEsculachos,
     });
   } catch (error) {
-    console.error(`❌ Erro no prefetch de ${queryKey[0]} para admin:`, error);
+    console.error("Erro no prefetch de esculachos para admin:", error);
   }
-
-  // 3. Desidratar o cache é feito diretamente no return com <HydrationBoundary state={dehydrate(queryClient)}>
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

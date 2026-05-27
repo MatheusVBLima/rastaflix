@@ -1,27 +1,26 @@
-import React from 'react';
-import { redirect } from 'next/navigation';
-import { auth, clerkClient } from '@clerk/nextjs/server';
-import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import {
+  Card,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Music, Zap, Users } from "lucide-react";
+import { BookOpen, Film, Music, Trophy, Users, Zap } from "lucide-react";
+import { requireAdmin } from "@/lib/auth";
 
-async function verificarAdminServerPage(): Promise<boolean> {
-  const authState = await auth();
-  if (!authState.userId) return false;
-  try {
-    const client = await clerkClient();
-    const user = await client.users.getUser(authState.userId);
-    return user.privateMetadata?.is_admin === true;
-  } catch { return false; }
-}
-
+/**
+ * Renders the administration landing page with a responsive grid of admin modules.
+ *
+ * Calls `requireAdmin()` to enforce admin access before rendering and then renders a header,
+ * welcome text, and a card grid where each card links to an admin module (title, description, icon).
+ *
+ * @returns The admin page JSX containing the header, welcome text, and a grid of module cards.
+ */
 export default async function AdminPage() {
-  const isAdmin = await verificarAdminServerPage();
-  if (!isAdmin) {
-    redirect('/'); // Ou para uma página de "acesso negado"
-  }
-  
+  await requireAdmin();
+
   const adminModules = [
     {
       title: "Gerenciar Histórias",
@@ -47,16 +46,28 @@ export default async function AdminPage() {
       icon: <Users className="h-8 w-8 text-blue-600" />,
       href: "/admin/inimigos",
     },
+    {
+      title: "Gerenciar Clipes",
+      description: "Adicionar, editar e excluir clipes das lives.",
+      icon: <Film className="h-8 w-8 text-purple-500" />,
+      href: "/admin/clipes",
+    },
+    {
+      title: "Gerenciar Awards",
+      description: "Temporadas, categorias e nominados.",
+      icon: <Trophy className="h-8 w-8 text-yellow-500" />,
+      href: "/admin/rasta-awards",
+    },
   ];
-  
+
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-3xl font-bold mb-6">Painel de Administração</h1>
       <p className="text-muted-foreground mb-8">
         Bem-vindo ao painel de administração. Selecione um módulo para gerenciar:
       </p>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {adminModules.map((module) => (
           <Card key={module.title} className="flex flex-col h-full">
             <CardHeader>

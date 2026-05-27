@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { parseAsString } from "nuqs";
+import { useDebouncedQueryState } from "@/hooks/use-debounced-query-state";
 import { fetchEsculachos } from "@/lib/queries";
+import { queryKeys } from "@/lib/query-keys";
 import { Esculacho } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,64 +20,29 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Download, Search, Mic } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AudioPlayerComplete, AudioPlayerProvider } from "@/components/ui/audio-player-eleven";
+import { AudioPlayerProvider } from "@/components/ui/audio-player-eleven";
+import { EsculachoAudioPlayer } from "@/components/esculachos/EsculachoAudioPlayer";
 import { EmptyState } from "@/components/ui/empty-state";
 
-interface EsculachosProps {
-  initialEsculachos: Esculacho[];
-}
-
-// Componente simplificado para áudio - usa URL direta do Supabase Storage
-// IMPORTANTE: Este componente deve estar dentro de um AudioPlayerProvider
-function EsculachoAudio({ 
-  audioUrl, 
-  titulo, 
-  esculachoId 
-}: { 
-  audioUrl: string; 
-  titulo: string; 
-  esculachoId: string;
-}) {
-  // AudioPlayerComplete usa useAudioPlayer() hook que requer AudioPlayerProvider
-  // Este componente é renderizado dentro de Esculachos que já tem o provider
-  return (
-    <div className="w-full space-y-2">
-      <AudioPlayerComplete
-        item={{
-          id: esculachoId,
-          src: audioUrl,
-        }}
-        className="w-full"
-        showSpeedControl={true}
-      />
-      <Button variant="outline" size="sm" className="w-full" asChild>
-        <a
-          href={audioUrl}
-          download={`${titulo.replace(/[^a-zA-Z0-9]/g, "_")}.wav`}
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Baixar Áudio
-        </a>
-      </Button>
-    </div>
+/**
+ * Renders the Esculachos page: a debounced search tied to the "busca" query parameter, fetches esculachos, and displays an error message, an empty state, loading skeletons, or a responsive grid of cards showing each esculacho's title, description, content, author badge and an audio player when available.
+ *
+ * @returns The rendered Esculachos page component tree.
+ */
+export function Esculachos() {
+  const [searchTerm, setSearchTerm] = useDebouncedQueryState(
+    "busca",
+    parseAsString.withDefault("").withOptions({ clearOnDefault: true }),
+    300
   );
-}
-
-export function Esculachos({ initialEsculachos }: EsculachosProps) {
-  const [searchTerm, setSearchTerm] = useState("");
 
   const {
-    data: esculachos,
+    data: esculachos = [],
     isLoading,
     error,
   } = useQuery<Esculacho[], Error>({
-    queryKey: ["esculachos"],
+    queryKey: queryKeys.esculachos.list(),
     queryFn: fetchEsculachos,
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
   });
 
   const filteredEsculachos = useMemo(() => {
@@ -103,7 +71,7 @@ export function Esculachos({ initialEsculachos }: EsculachosProps) {
 
   return (
     <AudioPlayerProvider>
-      <div className="container mx-auto py-8 px-4 md:px-6 space-y-6">
+      <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4">
         <Input
           type="text"
@@ -172,7 +140,7 @@ export function Esculachos({ initialEsculachos }: EsculachosProps) {
                   )}
                 </div>
                 {esculacho.audio_url ? (
-                  <EsculachoAudio 
+                  <EsculachoAudioPlayer 
                     audioUrl={esculacho.audio_url} 
                     titulo={esculacho.titulo}
                     esculachoId={esculacho.id}

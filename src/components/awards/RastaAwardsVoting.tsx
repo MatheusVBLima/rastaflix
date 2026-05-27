@@ -4,6 +4,7 @@ import React, { useState, useTransition } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 import { fetchActiveSeason, fetchVotingData, fetchUserVotes, fetchAllCategoriesWithResults } from "@/lib/queries";
+import { queryKeys } from "@/lib/query-keys";
 import { submitVote } from "@/actions/awardActions";
 import { AwardSeason, VotingData, AwardVote, CategoryWithResults } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +21,19 @@ import Image from "next/image";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoginDialog } from "./LoginDialog";
 
+/**
+ * Render the Rasta Awards voting interface, handling loading, auth gating, active voting, and closed-season results.
+ *
+ * Renders:
+ * - Skeleton placeholders while auth or data are loading.
+ * - An empty state when no active season exists.
+ * - The active voting UI where authenticated users can submit votes (prompts login when unauthenticated).
+ * - The closed-season results view with vote counts, percentages, and winner highlighting.
+ *
+ * The component also coordinates vote submission and cache invalidation, and exposes a login dialog when needed.
+ *
+ * @returns The React element tree for the Rasta Awards voting UI.
+ */
 export function RastaAwardsVoting() {
   // Usar hook do Clerk diretamente no cliente para garantir autenticação correta em produção
   const { userId, isLoaded } = useAuth();
@@ -29,25 +43,32 @@ export function RastaAwardsVoting() {
   const queryClient = useQueryClient();
 
   const { data: activeSeason } = useQuery<AwardSeason | null>({
-    queryKey: ["activeSeason"],
+    queryKey: queryKeys.rastaAwards.activeSeason(),
     queryFn: fetchActiveSeason,
   });
 
   const { data: votingData } = useQuery<VotingData | null>({
-    queryKey: ["votingData", activeSeason?.id],
-    queryFn: () => activeSeason ? fetchVotingData(activeSeason.id) : null,
+    queryKey: activeSeason
+      ? queryKeys.rastaAwards.votingData(activeSeason.id)
+      : ["votingData", "pending"],
+    queryFn: () => (activeSeason ? fetchVotingData(activeSeason.id) : null),
     enabled: !!activeSeason,
   });
 
   const { data: userVotes = [] } = useQuery<AwardVote[]>({
-    queryKey: ["userVotes", userId, activeSeason?.id],
-    queryFn: () => userId && activeSeason ? fetchUserVotes(userId, activeSeason.id) : [],
+    queryKey:
+      userId && activeSeason
+        ? queryKeys.rastaAwards.userVotes(userId, activeSeason.id)
+        : ["userVotes", "pending"],
+    queryFn: () =>
+      userId && activeSeason ? fetchUserVotes(userId, activeSeason.id) : [],
     enabled: !!userId && !!activeSeason,
   });
 
-  // Buscar resultados quando votação estiver encerrada
   const { data: resultsData } = useQuery<CategoryWithResults[]>({
-    queryKey: ["awardsResults", activeSeason?.id],
+    queryKey: activeSeason
+      ? queryKeys.rastaAwards.results(activeSeason.id)
+      : ["awardsResults", "pending"],
     queryFn: () => activeSeason ? fetchAllCategoriesWithResults(activeSeason.id) : Promise.resolve([]),
     enabled: !!activeSeason && activeSeason.status === "closed",
     staleTime: 5 * 60 * 1000, // 5 minutos

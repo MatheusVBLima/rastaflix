@@ -1,7 +1,14 @@
-import { redirect } from "next/navigation";
+import { DLE } from "@/components/dle/DLE";
 
-export const dynamic = "force-dynamic";
-
+/**
+ * Renders the page layout that hosts the DLE component.
+ *
+ * @returns A JSX element containing a centered container with padding that wraps the `DLE` component
+ */
 export default function page() {
-  redirect("/");
+  return (
+    <div className="container mx-auto py-10 min-h-screen">
+      <DLE />
+    </div>
+  );
 }

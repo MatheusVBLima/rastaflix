@@ -1,17 +1,25 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+// Define as rotas que não exigem autenticação
+const publicRoutes = createRouteMatcher([
+  "/",
+  "/historias(.*)",
+  "/inimigos(.*)",
+  "/musicas(.*)",
+  "/bingo(.*)",
+  "/ovelhera-dle(.*)",
+  "/esculachos(.*)",
+  "/clipes(.*)",
+  "/rasta-awards(.*)",
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+  "/api/webhooks(.*)",
+  "/api/live-status(.*)",
+]);
 
-  // Permite apenas a página principal e rotas de API necessárias
-  if (pathname === "/" || pathname.startsWith("/api/")) {
-    return NextResponse.next();
-  }
-
-  // Redireciona todas as outras rotas para a página principal
-  return NextResponse.redirect(new URL("/", request.url));
-}
+export default clerkMiddleware(async (auth, req) => {
+  if (!publicRoutes(req)) await auth.protect();
+});
 
 export const config = {
   matcher: [

@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import Image from "next/image";
 import { fetchClipes } from "@/lib/queries";
+import { queryKeys } from "@/lib/query-keys";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -20,26 +21,26 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, Play, Search } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 
-interface ClipesProps {
-  initialClipes: Clipe[];
-}
-
-export function Clipes({ initialClipes }: ClipesProps) {
+/**
+ * Renders the clipes listing UI with search, platform tabs, platform-specific counts, and filtered results.
+ *
+ * Displays a search input, tabbed filters for "all", "twitch", and "kick", and a responsive grid of clipes.
+ * Handles data fetching state (loading and error), computes counts filtered by the search term, and supplies
+ * platform badge colors and icons to child components.
+ *
+ * @returns The JSX element for the clipes listing interface.
+ */
+export function Clipes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
 
   const {
-    data: clipes,
+    data: clipes = [],
     isLoading,
     error,
   } = useQuery<Clipe[], Error>({
-    queryKey: ["clipes"],
+    queryKey: queryKeys.clipes.list(),
     queryFn: fetchClipes,
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
   });
 
   // Contadores de cada plataforma (independentes do filtro de plataforma selecionada)
@@ -104,7 +105,7 @@ export function Clipes({ initialClipes }: ClipesProps) {
     }
   };
 
-  if (isLoading && !initialClipes?.length) {
+  if (isLoading && !clipes?.length) {
     return <p>Carregando clipes...</p>;
   }
   if (error) {
@@ -116,14 +117,7 @@ export function Clipes({ initialClipes }: ClipesProps) {
   const kickClipes = filteredClipes.filter((c) => c.plataforma === "kick");
 
   return (
-    <div className="container mx-auto py-8 px-4 md:px-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Clipes</h1>
-        <p className="text-muted-foreground">
-          Os melhores momentos das lives do Ovelhera
-        </p>
-      </div>
-
+    <>
       <div className="mb-6">
         <Input
           type="text"
@@ -183,7 +177,7 @@ export function Clipes({ initialClipes }: ClipesProps) {
           />
         </TabsContent>
       </Tabs>
-    </div>
+    </>
   );
 }
 
