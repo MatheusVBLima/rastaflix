@@ -15,6 +15,10 @@ const publicRoutes = createRouteMatcher([
   "/sign-up(.*)",
   "/api/webhooks(.*)",
   "/api/live-status(.*)",
+  "/opengraph-image(.*)",
+  "/twitter-image(.*)",
+  "/sitemap.xml",
+  "/robots.txt",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
