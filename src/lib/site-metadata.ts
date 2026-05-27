@@ -2,8 +2,24 @@ import type { Metadata } from "next";
 
 export const SITE_NAME = "Rastaflix";
 export const SITE_DESCRIPTION =
-  "Acompanhe a saga do nosso rastafari mineiro — histórias, músicas, esculachos, clipes e o universo Ovelhera.";
-export const SITE_TAGLINE = "Histórias • Músicas • Esculachos • Lives";
+  "Acompanhe a saga do nosso rastafari mineiro - histórias, músicas, esculachos, clipes e o universo Ovelhera.";
+export const SITE_TAGLINE = "Histórias - Músicas - Esculachos - Lives";
+
+const openGraphImage = {
+  url: "/opengraph-image",
+  width: 1200,
+  height: 630,
+  alt: "Rastaflix - Universo Ovelhera",
+  type: "image/png",
+};
+
+const twitterImage = {
+  url: "/twitter-image",
+  width: 1200,
+  height: 630,
+  alt: "Rastaflix - Universo Ovelhera",
+  type: "image/png",
+};
 
 export function getSiteUrl(): URL {
   const fromEnv = process.env.NEXT_PUBLIC_SITE_URL;
@@ -39,29 +55,13 @@ export const siteMetadata: Metadata = {
     siteName: SITE_NAME,
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
-    images: [
-      {
-        url: "/opengraph-image",
-        width: 1200,
-        height: 630,
-        alt: "Rastaflix - Universo Ovelhera",
-        type: "image/png",
-      },
-    ],
+    images: [openGraphImage],
   },
   twitter: {
     card: "summary_large_image",
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
-    images: [
-      {
-        url: "/twitter-image",
-        width: 1200,
-        height: 630,
-        alt: "Rastaflix - Universo Ovelhera",
-        type: "image/png",
-      },
-    ],
+    images: [twitterImage],
   },
   robots: {
     index: true,
@@ -81,13 +81,19 @@ export function pageMetadata(
     description,
     alternates: url ? { canonical: url } : undefined,
     openGraph: {
+      type: "website",
+      locale: "pt_BR",
+      siteName: SITE_NAME,
       title,
       description,
       url,
+      images: [openGraphImage],
     },
     twitter: {
+      card: "summary_large_image",
       title,
       description,
+      images: [twitterImage],
     },
   };
 }
