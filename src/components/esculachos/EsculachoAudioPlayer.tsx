@@ -22,6 +22,14 @@ interface EsculachoAudioPlayerProps {
   esculachoId: string;
 }
 
+/**
+ * Renders an audio player with speed control and a full-width download button for a given audio resource.
+ *
+ * @param audioUrl - The source URL of the audio to play and download.
+ * @param titulo - Title used to generate the downloaded filename; non-alphanumeric characters are replaced with underscores.
+ * @param esculachoId - Identifier assigned to the audio item passed to the player.
+ * @returns A container element that includes the audio player and a download button linking to `audioUrl`.
+ */
 export function EsculachoAudioPlayer({
   audioUrl,
   titulo,

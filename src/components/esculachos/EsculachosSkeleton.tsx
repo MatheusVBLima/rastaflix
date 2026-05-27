@@ -1,6 +1,11 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
+/**
+ * Renders a skeleton-loading placeholder for the Esculachos list and cards layout.
+ *
+ * @returns A JSX element containing a header skeleton and a responsive grid of six cards, each with skeleton blocks for the top, content lines, and footer.
+ */
 export function EsculachosSkeleton() {
   return (
     <div className="space-y-6">

@@ -40,6 +40,15 @@ import { ResultsViewer } from "@/components/admin/awards/ResultsViewer";
 // Preview Button
 import { PreviewButton } from "@/components/admin/awards/PreviewButton";
 
+/**
+ * Render the admin interface for managing Rasta Awards.
+ *
+ * Enforces server-side admin authorization, prefetches seasons into the React Query cache
+ * and provides the dehydrated state to the client before rendering the management UI
+ * (seasons, categories, nominees and results).
+ *
+ * @returns A React element representing the admin management page for Rasta Awards
+ */
 export default async function AdminRastaAwardsPage() {
   await requireAdmin();
 

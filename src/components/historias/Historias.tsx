@@ -35,6 +35,13 @@ interface HistoriasProps {
   isAdmin?: boolean;
 }
 
+/**
+ * Renders a stories listing with title search and tag filtering, handling loading, error, empty-state, and card grid presentations.
+ *
+ * @param tags - Array of tag values used to populate the tag filter UI
+ * @param isAdmin - Optional flag indicating admin mode (currently unused)
+ * @returns The React element that displays the stories UI (filters, empty states, and story cards)
+ */
 export function Historias({ tags, isAdmin }: HistoriasProps) {
   const [searchTerm, setSearchTerm] = useDebouncedQueryState(
     "busca",

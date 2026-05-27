@@ -14,6 +14,17 @@ type PrefetchLinkProps = LinkProps & {
   className?: string;
 };
 
+/**
+ * Render a Next.js Link that prefetches the target route and associated query data on user intent.
+ *
+ * Prefetching is scheduled on mouse enter after a debounce, canceled on mouse leave/blur, and triggered immediately on focus.
+ *
+ * @param queryKey - React Query key used to prefetch the associated data for the target route
+ * @param queryFn - Function that fetches the data for `queryKey` when prefetching
+ * @param prefetchDelay - Delay in milliseconds before initiating prefetch on hover (default: 300)
+ * @param className - Optional CSS class applied to the rendered Link
+ * @returns A Link element that wraps `children` and triggers route and data prefetching on user intent
+ */
 export function PrefetchLink({
   children,
   queryKey,

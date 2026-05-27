@@ -4,6 +4,12 @@ interface TwitchLogoProps {
   className?: string;
 }
 
+/**
+ * Renders the Twitch logo as an inline SVG.
+ *
+ * @param className - Optional CSS class names to apply to the root SVG element
+ * @returns An SVG element containing the Twitch logo
+ */
 export function TwitchLogo({ className }: TwitchLogoProps) {
   return (
     <svg

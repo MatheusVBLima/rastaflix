@@ -9,6 +9,13 @@ import { requireAdmin } from "@/lib/auth";
 import { getQueryClient } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
 
+/**
+ * Render the admin "Gerenciamento de Histórias" page with tabbed interfaces for adding, editing, and deleting stories.
+ *
+ * Ensures the current user has admin access before proceeding and attempts to prefetch the stories list for client-side hydration.
+ *
+ * @returns The React element for the admin "Gerenciamento de Histórias" page (tabbed UI with Add, Edit, and Delete story sections).
+ */
 export default async function AdminHistoriasPage() {
   await requireAdmin();
 

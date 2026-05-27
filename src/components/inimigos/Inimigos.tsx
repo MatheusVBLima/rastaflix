@@ -21,6 +21,15 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { Clock, Skull } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 
+/**
+ * Render the Inimigos UI: fetch and display a list of enemies with appropriate loading, error, empty, and responsive states.
+ *
+ * Displays skeleton placeholders while loading, a destructive alert on fetch error, an empty state when there are no enemies,
+ * a vertical list of cards on narrow viewports, and a table layout on wider viewports. Each enemy entry shows its name and
+ * a status badge that reflects the revenge status.
+ *
+ * @returns The JSX element for the Inimigos component UI
+ */
 export function Inimigos() {
   // Usar useQuery que vai se hidratar com os dados pré-buscados no server
   const {

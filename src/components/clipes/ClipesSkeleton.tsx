@@ -1,6 +1,11 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 
+/**
+ * Renders a skeleton placeholder layout for the Clipes UI.
+ *
+ * @returns The rendered JSX containing two header-like skeletons and a responsive grid of six card-like skeleton placeholders.
+ */
 export function ClipesSkeleton() {
   return (
     <div className="space-y-6">

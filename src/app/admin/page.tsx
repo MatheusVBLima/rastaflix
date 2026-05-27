@@ -10,6 +10,14 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, Film, Music, Trophy, Users, Zap } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
 
+/**
+ * Renders the administration landing page with a responsive grid of admin modules.
+ *
+ * Calls `requireAdmin()` to enforce admin access before rendering and then renders a header,
+ * welcome text, and a card grid where each card links to an admin module (title, description, icon).
+ *
+ * @returns The admin page JSX containing the header, welcome text, and a grid of module cards.
+ */
 export default async function AdminPage() {
   await requireAdmin();
 

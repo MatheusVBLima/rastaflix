@@ -8,6 +8,13 @@ import { requireAdmin } from "@/lib/auth";
 import { getQueryClient } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
 
+/**
+ * Render the admin "Gerenciamento de Clipes" page with tabbed sections for adding, editing, and deleting clipes.
+ *
+ * Ensures the current user has admin access, prefetches clipes into the React Query cache for client hydration, and returns the page UI wrapped with the dehydrated state.
+ *
+ * @returns The React element for the admin clipes management page with a hydration-ready React Query state.
+ */
 export default async function AdminClipesPage() {
   await requireAdmin();
 

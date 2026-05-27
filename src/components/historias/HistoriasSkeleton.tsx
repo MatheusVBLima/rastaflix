@@ -1,6 +1,15 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 
+/**
+ * Renders a responsive skeleton placeholder layout for the Historias section.
+ *
+ * The markup includes a header-like row of two skeleton bars and a grid of six card-shaped skeletons,
+ * each with an image/media placeholder and multiple content lines, adapting to 1/2/3 columns at
+ * different breakpoints.
+ *
+ * @returns A React element containing the header skeletons and six card skeleton placeholders arranged responsively.
+ */
 export function HistoriasSkeleton() {
   return (
     <div className="space-y-6">

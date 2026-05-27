@@ -17,10 +17,22 @@ interface KickApiChannel {
   livestream?: KickApiLivestream | null;
 }
 
+/**
+ * Normalize a Kick channel slug to lowercase and remove surrounding whitespace.
+ *
+ * @param slug - The channel slug to normalize (may contain mixed case or surrounding whitespace)
+ * @returns The normalized slug in lowercase with leading and trailing whitespace removed
+ */
 function normalizeKickSlug(slug: string): string {
   return slug.toLowerCase().trim();
 }
 
+/**
+ * Builds request headers suitable for fetching Kick channel pages or API endpoints.
+ *
+ * @param acceptHtml - When true, sets `Accept` to HTML-like content types; otherwise sets `Accept` to `application/json`.
+ * @returns A `HeadersInit` object preconfigured for requests to `kick.com`.
+ */
 function getKickRequestHeaders(acceptHtml = false): HeadersInit {
   return {
     Accept: acceptHtml
@@ -34,6 +46,12 @@ function getKickRequestHeaders(acceptHtml = false): HeadersInit {
   };
 }
 
+/**
+ * Normalize a Kick API channel payload into a standardized KickChannelStatus.
+ *
+ * @param data - Channel payload from Kick API; may omit `livestream` or contain it as `null`.
+ * @returns A KickChannelStatus where `isLive` is `true` when `livestream` is present, `title` is `livestream.session_title` or `null`, `viewers` is `livestream.viewer_count` or `null`, and `thumbnail` is `livestream.thumbnail.url` or `null`.
+ */
 function parseKickChannelData(data: KickApiChannel): KickChannelStatus {
   const livestream = data.livestream ?? null;
   return {
@@ -44,6 +62,12 @@ function parseKickChannelData(data: KickApiChannel): KickChannelStatus {
   };
 }
 
+/**
+ * Searches a JSON-like structure for an object that contains a `livestream` property and returns that object.
+ *
+ * @param payload - The unknown JSON value (object/array/primitive) to search recursively
+ * @returns The first object found that has a `livestream` property (the property's value may be `null`), or `null` if no such object exists
+ */
 function findChannelInPayload(payload: unknown): KickApiChannel | null {
   if (!payload || typeof payload !== "object") return null;
 
@@ -70,6 +94,14 @@ function findChannelInPayload(payload: unknown): KickApiChannel | null {
   return null;
 }
 
+/**
+ * Fetches and parses channel status from the Kick JSON API for the given channel slug.
+ *
+ * @param slug - The channel identifier to query (e.g., "someStreamer")
+ * @returns A `KickChannelStatus` parsed from the API on success; the offline-but-existing status
+ *          `{ isLive: false, title: null, viewers: null, thumbnail: null }` if the API returns 404;
+ *          `null` for other non-OK responses.
+ */
 async function fetchFromKickApi(slug: string): Promise<KickChannelStatus | null> {
   const response = await fetch(`${KICK_API_BASE}/${slug}`, {
     headers: getKickRequestHeaders(),
@@ -89,6 +121,13 @@ async function fetchFromKickApi(slug: string): Promise<KickChannelStatus | null>
   return parseKickChannelData(data);
 }
 
+/**
+ * Retrieve a Kick channel's status by fetching the channel HTML page and extracting the embedded Next.js `__NEXT_DATA__` payload.
+ *
+ * Attempts to parse the page's `<script id="__NEXT_DATA__" type="application/json">` content, locate a `livestream`-containing object, and normalize it into a `KickChannelStatus`.
+ *
+ * @returns `KickChannelStatus` when a channel object is found and parsed; `null` if the HTTP response is not OK, the embedded data is missing or cannot be parsed, or no channel payload is located.
+ */
 async function fetchFromKickHtml(slug: string): Promise<KickChannelStatus | null> {
   const response = await fetch(`https://kick.com/${slug}`, {
     headers: getKickRequestHeaders(true),
@@ -123,9 +162,10 @@ async function fetchFromKickHtml(slug: string): Promise<KickChannelStatus | null
 }
 
 /**
- * Fetches live status for a Kick channel.
- * Returns null if the request failed (caller should keep cached DB state).
- * Returns isLive: false only when the channel exists but is offline (404 on API).
+ * Retrieve a Kick channel's live status, trying the JSON API first and falling back to HTML extraction.
+ *
+ * @param slug - The channel slug or identifier; it will be normalized before use.
+ * @returns A `KickChannelStatus` with `isLive`, `title`, `viewers`, and `thumbnail`, or `null` if the slug is empty/invalid or network/parse errors prevented retrieval. `isLive: false` specifically indicates the channel exists but is offline (API returned 404).
  */
 export async function fetchKickChannelStatus(
   slug: string

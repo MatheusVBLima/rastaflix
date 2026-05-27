@@ -28,6 +28,12 @@ interface LiveStatus {
   kick_username: string;
 }
 
+/**
+ * Fetches the current live-stream status from the backend endpoint.
+ *
+ * @returns The fetched `LiveStatus` payload.
+ * @throws Error when the network response has a non-ok status.
+ */
 async function fetchLiveStatus(): Promise<LiveStatus> {
   const response = await fetch("/api/live-status", { cache: "no-store" });
   if (!response.ok) {
@@ -36,6 +42,13 @@ async function fetchLiveStatus(): Promise<LiveStatus> {
   return response.json();
 }
 
+/**
+ * Render a live-status control that indicates whether Twitch or Kick streams are live and provides links to each channel.
+ *
+ * When the status is loading, a disabled "Lives" button is shown. Once loaded, a button reflects the overall live state and opens a dropdown with per-provider items that show stream title (when live), viewer count (when available), a live indicator, and an external link to the channel.
+ *
+ * @returns A JSX element: a live indicator button or dropdown containing Twitch and Kick status items with links, titles, and viewer counts.
+ */
 export function LiveIndicator() {
   const { data: status, isLoading } = useQuery({
     queryKey: queryKeys.liveStatus.all(),

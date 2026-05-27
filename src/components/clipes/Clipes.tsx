@@ -21,6 +21,15 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, Play, Search } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 
+/**
+ * Renders the clipes listing UI with search, platform tabs, platform-specific counts, and filtered results.
+ *
+ * Displays a search input, tabbed filters for "all", "twitch", and "kick", and a responsive grid of clipes.
+ * Handles data fetching state (loading and error), computes counts filtered by the search term, and supplies
+ * platform badge colors and icons to child components.
+ *
+ * @returns The JSX element for the clipes listing interface.
+ */
 export function Clipes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState<string>("all");

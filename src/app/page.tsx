@@ -3,9 +3,12 @@ import { nicknames } from "@/data/nicknames";
 import Image from "next/image";
 
 /**
- * Renders the homepage with a centered introduction and a list of nicknames for Gabriel Scutasu, alongside a hero image on large screens.
+ * Homepage component that renders a responsive two-column landing layout for Rastaflix.
  *
- * Displays a two-column layout on large screens: the left column features the title, descriptive text, and a static set of nickname badges; the right column shows a themed image, visible only on large screens.
+ * Left column centers the title, descriptive text, and a list of nickname badges; the right column
+ * displays a themed hero image that is visible only on large screens.
+ *
+ * @returns The homepage JSX element
  */
 export default function Home() {
   return (

@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   description: "Bingo Rastafari com os momentos mais icônicos das lives.",
 };
 
+/**
+ * Page component that renders the Bingo UI.
+ *
+ * @returns The React element for the Bingo page.
+ */
 export default function BingoPage() {
   return <Bingo />;
 }

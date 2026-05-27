@@ -9,6 +9,13 @@ import { requireAdmin } from "@/lib/auth";
 import { getQueryClient } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
 
+/**
+ * Render the admin music management page with tabs to add, edit, and delete music.
+ *
+ * Ensures the current user has admin access, prefetches the music list into the React Query client for client-side hydration (errors during prefetch are logged), and returns the page's React element wrapped with the dehydrated query state.
+ *
+ * @returns The React element for the admin music management UI with dehydrated React Query state for hydration.
+ */
 export default async function AdminMusicasPage() {
   await requireAdmin();
 

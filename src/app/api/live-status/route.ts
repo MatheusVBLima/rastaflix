@@ -16,6 +16,14 @@ type StreamStatusResult = {
   thumbnail: string | null;
 };
 
+/**
+ * Creates a Supabase client for anonymous/public access.
+ *
+ * The client is configured using NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
+ * and has auth token auto-refresh and session persistence disabled.
+ *
+ * @returns A Supabase client configured for anonymous access with autoRefreshToken and persistSession set to `false`
+ */
 function getSupabaseAnon() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,11 +37,22 @@ function getSupabaseAnon() {
   );
 }
 
+/**
+ * Determines whether the cached status should be refreshed based on the provided last update timestamp.
+ *
+ * @param lastUpdate - ISO 8601 timestamp of the last refresh, or `null` if the status has never been refreshed
+ * @returns `true` if a refresh should be performed (when `lastUpdate` is `null` or older than CHECK_INTERVAL_MS), `false` otherwise
+ */
 function shouldRefresh(lastUpdate: string | null): boolean {
   if (!lastUpdate) return true;
   return Date.now() - new Date(lastUpdate).getTime() >= CHECK_INTERVAL_MS;
 }
 
+/**
+ * Fetches a Twitch app access token using the client credentials grant.
+ *
+ * @returns The access token string on success, or `null` if the request fails or the token cannot be obtained.
+ */
 async function getTwitchAccessToken(): Promise<string | null> {
   try {
     const response = await fetch(
@@ -48,6 +67,14 @@ async function getTwitchAccessToken(): Promise<string | null> {
   }
 }
 
+/**
+ * Determines the current Twitch stream status for a username, updates the corresponding `streamer_config` row, and returns a normalized status object.
+ *
+ * @param configId - The `streamer_config` row `id` to update.
+ * @param twitchUsername - The Twitch username whose stream status will be checked.
+ * @param lastUpdate - ISO timestamp of the last Twitch check; used to decide whether to refresh the status.
+ * @returns A `StreamStatusResult` with `is_live`, `title`, `viewers`, and `thumbnail`, or `null` if the status was not refreshed or could not be retrieved.
+ */
 async function checkAndUpdateTwitchStatus(
   configId: string,
   twitchUsername: string,
@@ -107,6 +134,14 @@ async function checkAndUpdateTwitchStatus(
   }
 }
 
+/**
+ * Checks Kick channel status for a username, updates the corresponding streamer_config row, and returns a normalized status object.
+ *
+ * @param configId - ID of the `streamer_config` row to update
+ * @param kickUsername - Kick channel username to query
+ * @param lastUpdate - ISO timestamp of the last Kick status update, or `null`
+ * @returns A `StreamStatusResult` containing live state, title, viewer count, and thumbnail, or `null` if the status was not refreshed or could not be retrieved
+ */
 async function checkAndUpdateKickStatus(
   configId: string,
   kickUsername: string,
@@ -149,6 +184,19 @@ async function checkAndUpdateKickStatus(
   }
 }
 
+/**
+ * Handles GET requests for the streamer's status by reading the stored configuration,
+ * optionally refreshing Twitch and Kick statuses when due, and returning a combined status payload.
+ *
+ * @returns A NextResponse JSON payload. On success, an object with:
+ * - `is_live_twitch`, `is_live_kick` (booleans)
+ * - `twitch_stream_title`, `kick_stream_title` (string | null)
+ * - `twitch_viewer_count`, `kick_viewer_count` (number | null)
+ * - `twitch_thumbnail_url`, `kick_thumbnail_url` (string | null)
+ * - `twitch_username`, `kick_username` (string | null).
+ * If the streamer configuration is not found, returns `{ error: "Streamer config not found" }` with status 404.
+ * If an unexpected error occurs, returns `{ error: "Internal server error" }` with status 500.
+ */
 export async function GET() {
   try {
     const supabase = getSupabaseAnon();

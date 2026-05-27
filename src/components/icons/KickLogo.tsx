@@ -4,6 +4,12 @@ interface KickLogoProps {
   className?: string;
 }
 
+/**
+ * Renders the Kick logo as an inline SVG that inherits the current text color.
+ *
+ * @param className - Optional additional CSS class names applied to the SVG; merged with the component's default sizing class.
+ * @returns The SVG element for the Kick logo
+ */
 export function KickLogo({ className }: KickLogoProps) {
   return (
     <svg

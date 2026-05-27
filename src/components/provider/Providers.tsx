@@ -9,6 +9,12 @@ interface ProvidersProps {
   children: React.ReactNode;
 }
 
+/**
+ * Wraps children with a React Query `QueryClientProvider` and, in development, renders React Query Devtools.
+ *
+ * @param children - Nested React content to render inside the provider.
+ * @returns A React element that provides a `QueryClient` context for `children` and includes React Query Devtools when `process.env.NODE_ENV === "development"`.
+ */
 export default function Providers({ children }: ProvidersProps) {
   const queryClient = getQueryClient();
 

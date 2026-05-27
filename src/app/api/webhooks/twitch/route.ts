@@ -15,6 +15,14 @@ const TWITCH_MESSAGE_TYPE = "twitch-eventsub-message-type";
 
 const HMAC_PREFIX = "sha256=";
 
+/**
+ * Build the EventSub HMAC input by concatenating the message ID, timestamp, and raw body.
+ *
+ * @param messageId - The Twitch EventSub message ID header value
+ * @param timestamp - The Twitch EventSub message timestamp header value
+ * @param body - The raw request body (string)
+ * @returns The concatenated string (messageId + timestamp + body) used as the HMAC input
+ */
 function getHmacMessage(
   messageId: string,
   timestamp: string,
@@ -105,6 +113,16 @@ export async function POST(request: NextRequest) {
   }
 }
 
+/**
+ * Process a Twitch EventSub notification and apply corresponding updates to the streamer_config table in Supabase.
+ *
+ * Handles the following subscription types:
+ * - `stream.online`: marks the streamer as live, updates stream title and Twitch user ID, and sets timestamps.
+ * - `stream.offline`: marks the streamer as offline, clears stream-specific fields, and sets timestamps.
+ * - `channel.update`: updates the stream title and sets timestamps.
+ *
+ * @param body - EventSub payload containing `subscription.type` (the EventSub notification type) and `event` (streamer identifiers and metadata such as `broadcaster_user_login`, `broadcaster_user_name`, `broadcaster_user_id`, `title`, `viewer_count`, and timestamps). The function updates rows in `streamer_config` where `twitch_username` equals `event.broadcaster_user_login.toLowerCase()`.
+ */
 async function handleNotification(body: {
   subscription: { type: string };
   event: {

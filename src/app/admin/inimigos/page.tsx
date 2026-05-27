@@ -8,6 +8,13 @@ import { requireAdmin } from "@/lib/auth";
 import { getQueryClient } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
 
+/**
+ * Admin page for managing "inimigos" that enforces admin access, prefetches the inimigos query cache for client hydration, and renders add/edit/delete forms.
+ *
+ * This server component ensures the current user has admin privileges, attempts to prefetch the inimigos list into a React Query client (swallowing fetch errors), and returns a hydrated React UI that contains forms to add, edit, and delete inimigos.
+ *
+ * @returns A React element rendering the admin interface for managing `inimigos`, with the query cache dehydrated for client-side reuse.
+ */
 export default async function AdminInimigosPage() {
   await requireAdmin();
 

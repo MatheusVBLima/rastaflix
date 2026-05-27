@@ -27,6 +27,15 @@ export const metadata: Metadata = {
   description: "Acompanhe a saga do nosso rastafari mineiro",
 };
 
+/**
+ * Application root layout that wraps pages with global providers, theme configuration, and shared UI chrome.
+ *
+ * Renders the top-level HTML structure including head meta, font variables on the body, authentication and app providers,
+ * the themed UI container with the site header, the `main` region where `children` are rendered, a toast container, and performance insights.
+ *
+ * @param children - The page content to render inside the layout's main region.
+ * @returns The complete root HTML element tree for the application.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{

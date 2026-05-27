@@ -1,5 +1,10 @@
 import { DLE } from "@/components/dle/DLE";
 
+/**
+ * Renders the page layout that hosts the DLE component.
+ *
+ * @returns A JSX element containing a centered container with padding that wraps the `DLE` component
+ */
 export default function page() {
   return (
     <div className="container mx-auto py-10 min-h-screen">

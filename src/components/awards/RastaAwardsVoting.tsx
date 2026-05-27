@@ -21,6 +21,19 @@ import Image from "next/image";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoginDialog } from "./LoginDialog";
 
+/**
+ * Render the Rasta Awards voting interface, handling loading, auth gating, active voting, and closed-season results.
+ *
+ * Renders:
+ * - Skeleton placeholders while auth or data are loading.
+ * - An empty state when no active season exists.
+ * - The active voting UI where authenticated users can submit votes (prompts login when unauthenticated).
+ * - The closed-season results view with vote counts, percentages, and winner highlighting.
+ *
+ * The component also coordinates vote submission and cache invalidation, and exposes a login dialog when needed.
+ *
+ * @returns The React element tree for the Rasta Awards voting UI.
+ */
 export function RastaAwardsVoting() {
   // Usar hook do Clerk diretamente no cliente para garantir autenticação correta em produção
   const { userId, isLoaded } = useAuth();

@@ -17,6 +17,12 @@ interface UserProfileProps {
   isAdmin: boolean;
 }
 
+/**
+ * Render the user's profile page with account details, verification and admin badges, and a gallery of achievements.
+ *
+ * @param isAdmin - When true, displays an "Administrador" badge on the profile header.
+ * @returns The React element for the profile page. Shows loading skeletons while Clerk data is loading, an access-denied card if no user is present, or the full profile (avatar, contact and account info, badges) and achievements when a user is available.
+ */
 export function UserProfile({ isAdmin }: UserProfileProps) {
   const { user, isLoaded } = useUser();
 

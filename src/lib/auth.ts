@@ -15,6 +15,11 @@ export const getIsAdmin = cache(async (): Promise<boolean> => {
   }
 });
 
+/**
+ * Ensure the current user is an admin and redirect to the homepage if not.
+ *
+ * If the caller is not an admin, performs a navigation redirect to `/` to prevent access.
+ */
 export async function requireAdmin(): Promise<void> {
   const isAdmin = await getIsAdmin();
   if (!isAdmin) {

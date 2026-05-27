@@ -165,6 +165,16 @@ interface HeaderProps {
   isAdmin: boolean;
 }
 
+/**
+ * Render the top site header containing navigation, mobile menu, theme and user controls.
+ *
+ * The header includes desktop dropdown navigation, a mobile slide-over menu, Clerk-based
+ * auth controls, an optional admin menu when `isAdmin` is true, and hover/focus route
+ * prefetching for navigation links.
+ *
+ * @param isAdmin - If `true`, render admin navigation items and links.
+ * @returns The header JSX element containing the site navigation, controls, and menus.
+ */
 export function Header({ isAdmin }: HeaderProps) {
   const router = useRouter();
   const prefetchTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(

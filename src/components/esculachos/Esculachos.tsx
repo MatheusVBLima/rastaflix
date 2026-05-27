@@ -24,6 +24,11 @@ import { AudioPlayerProvider } from "@/components/ui/audio-player-eleven";
 import { EsculachoAudioPlayer } from "@/components/esculachos/EsculachoAudioPlayer";
 import { EmptyState } from "@/components/ui/empty-state";
 
+/**
+ * Renders the Esculachos page: a debounced search tied to the "busca" query parameter, fetches esculachos, and displays an error message, an empty state, loading skeletons, or a responsive grid of cards showing each esculacho's title, description, content, author badge and an audio player when available.
+ *
+ * @returns The rendered Esculachos page component tree.
+ */
 export function Esculachos() {
   const [searchTerm, setSearchTerm] = useDebouncedQueryState(
     "busca",

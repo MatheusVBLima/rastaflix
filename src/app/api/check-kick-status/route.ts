@@ -3,6 +3,13 @@ import { createClient } from "@supabase/supabase-js";
 import { fetchKickChannelStatus } from "@/lib/kick";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
+/**
+ * Create a Supabase client configured for public (anon) use.
+ *
+ * Uses the `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` environment variables to configure the client.
+ *
+ * @returns A Supabase client instance configured with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+ */
 function getSupabaseAnon() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,6 +17,19 @@ function getSupabaseAnon() {
   );
 }
 
+/**
+ * Handle GET requests to retrieve a Kick channel's live status and related stream data.
+ *
+ * Queries the stored streamer configuration, attempts to fetch current status from the Kick API,
+ * returns cached values if the Kick API is unavailable, and updates the stored config when fresh
+ * Kick data is obtained.
+ *
+ * @returns A JSON response with one of the following shapes:
+ * - 200 OK (fresh data): `{ is_live: boolean, stream_title: string | null, viewer_count: number | null, thumbnail_url?: string | null, username: string, cached: false }`
+ * - 200 OK (cached data when Kick API unavailable): `{ is_live: boolean | null, stream_title: string | null, viewer_count: number | null, username: string, cached: true, message: string }`
+ * - 404 Not Found: `{ error: "Streamer config not found" }` when no streamer configuration exists
+ * - 500 Internal Server Error: `{ error: "Erro ao verificar status da Kick" }` on unexpected failures
+ */
 export async function GET() {
   try {
     const supabaseAnon = getSupabaseAnon();

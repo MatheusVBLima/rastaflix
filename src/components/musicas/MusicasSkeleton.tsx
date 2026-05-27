@@ -1,6 +1,11 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
+/**
+ * Render a skeleton-loading UI for the music list with a header bar and a responsive grid of placeholder cards.
+ *
+ * @returns A JSX element containing a top skeleton bar and a responsive grid of six card placeholders (image area, title line, and footer) used during loading.
+ */
 export function MusicasSkeleton() {
   return (
     <div className="space-y-6">

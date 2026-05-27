@@ -8,6 +8,16 @@ import { requireAdmin } from "@/lib/auth";
 import { getQueryClient } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
 
+/**
+ * Admin page component that enforces admin access, prefetches the esculachos list,
+ * and renders the management UI with tabbed forms for adding, editing, and deleting.
+ *
+ * The function awaits `requireAdmin()` before proceeding, attempts to prefetch the
+ * admin esculachos list into the React Query client (logging any prefetch error),
+ * and returns a hydrated React element whose state includes the prefetched query data.
+ *
+ * @returns The React element for the admin esculachos management page, hydrated with prefetched query state.
+ */
 export default async function AdminEsculachosPage() {
   await requireAdmin();
 

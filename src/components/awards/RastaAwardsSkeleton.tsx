@@ -1,6 +1,14 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 
+/**
+ * Render a skeleton loading layout for the Rasta Awards list.
+ *
+ * Renders a top placeholder bar and a responsive grid of four card placeholders
+ * (single column on small screens, two columns on medium and up).
+ *
+ * @returns A JSX element containing the skeleton UI for the Rasta Awards view.
+ */
 export function RastaAwardsSkeleton() {
   return (
     <div className="space-y-6">

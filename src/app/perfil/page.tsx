@@ -14,6 +14,14 @@ export const metadata: Metadata = {
   description: "Visualize suas informações e atividades na Rastaflix.",
 };
 
+/**
+ * Renders the "Meu Perfil" page with a header and suspended profile content.
+ *
+ * The page displays a PageHeader and wraps PerfilContent in a Suspense boundary that shows two skeleton
+ * placeholders while the profile data loads.
+ *
+ * @returns The profile page as a React element.
+ */
 export default function PerfilPage() {
   return (
     <div className="container mx-auto py-10 min-h-screen space-y-6">
@@ -36,6 +44,11 @@ export default function PerfilPage() {
   );
 }
 
+/**
+ * Fetches the current user's admin status into a React Query client and renders the user profile with hydrated query state.
+ *
+ * @returns A React element that wraps `UserProfile` (with its `isAdmin` prop set to the fetched admin status) in a `HydrationBoundary` populated from the query client's dehydrated state.
+ */
 async function PerfilContent() {
   const queryClient = getQueryClient();
 

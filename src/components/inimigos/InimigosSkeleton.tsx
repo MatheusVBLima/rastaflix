@@ -8,6 +8,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+/**
+ * Render a centered, bordered table skeleton used as a placeholder for an enemies list.
+ *
+ * The table includes a header with "Nome do Inimigo" and "Status da Vinganca" and five body rows
+ * containing skeleton placeholders for the enemy name and vengeance status.
+ *
+ * @returns A JSX element containing the skeleton table with five placeholder rows.
+ */
 export function InimigosSkeleton() {
   return (
     <div className="border rounded-md p-4 max-w-2xl mx-auto">

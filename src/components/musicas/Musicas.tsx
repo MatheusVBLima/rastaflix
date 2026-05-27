@@ -18,6 +18,15 @@ interface MusicasProps {
   isAdmin?: boolean;
 }
 
+/**
+ * Renders a searchable, responsive grid of music cards that link to each music's URL.
+ *
+ * Displays a search input to filter music by title, an appropriate empty state when there are no matches
+ * or no music available, and a grid of cards showing each music's thumbnail, title, and a button to play.
+ *
+ * @param isAdmin - Optional flag indicating admin privileges (provided prop; not used by the component's current UI).
+ * @returns A JSX element containing the search input, optional empty-state message, and a responsive grid of linked music cards.
+ */
 export function Musicas({ isAdmin }: MusicasProps) {
   const [searchTerm, setSearchTerm] = useState("");
 

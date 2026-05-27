@@ -4,7 +4,13 @@ import { createClient } from "@supabase/supabase-js";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { getIsAdmin } from "@/lib/auth";
 
-// Helper para criar cliente Supabase em Server Actions/Server Components
+/**
+ * Create a Supabase client configured for server-side use and Clerk integration.
+ *
+ * The client's `auth.accessToken` will attempt to obtain a Clerk token for authenticated requests; if token acquisition fails, the access token will be `null`.
+ *
+ * @returns A configured Supabase client suitable for use in Server Actions and Server Components
+ */
 export async function getSupabaseClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,7 +37,12 @@ export async function getSupabaseClient() {
   );
 }
 
-/** @deprecated Prefer getIsAdmin() from @/lib/auth in Server Components */
+/**
+ * Check whether the current request's user has administrator privileges.
+ *
+ * @deprecated Prefer `getIsAdmin()` from `@/lib/auth` in Server Components.
+ * @returns `true` if the current user is an admin, `false` otherwise.
+ */
 export async function verificarAdmin(): Promise<boolean> {
   return getIsAdmin();
 }
