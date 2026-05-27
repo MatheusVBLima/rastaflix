@@ -1,39 +1,41 @@
-import { fetchClipes } from "@/lib/queries";
+import { Suspense } from "react";
+import { Film } from "lucide-react";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Clipes } from "@/components/clipes/Clipes";
-import { QueryClient, HydrationBoundary, dehydrate } from "@tanstack/react-query";
-import { Clipe } from "@/lib/types";
+import { ClipesSkeleton } from "@/components/clipes/ClipesSkeleton";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { getQueryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
+import { fetchClipes } from "@/lib/queries";
 
-export default async function ClipesPage() {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: Infinity,
-      },
-    },
+export default function ClipesPage() {
+  return (
+    <div className="container mx-auto py-8 px-4 md:px-6 space-y-6">
+      <PageHeader
+        icon={Film}
+        title="Clipes"
+        description="Melhores momentos das lives na Twitch e na Kick."
+      />
+      <Suspense fallback={<ClipesSkeleton />}>
+        <ClipesContent />
+      </Suspense>
+    </div>
+  );
+}
+
+async function ClipesContent() {
+  const queryClient = getQueryClient();
+
+  await queryClient.fetchQuery({
+    queryKey: queryKeys.clipes.list(),
+    queryFn: fetchClipes,
   });
-
-  const queryKey = ["clipes"];
-
-  try {
-    await queryClient.prefetchQuery({
-      queryKey: queryKey,
-      queryFn: async () => {
-        const clipes = await fetchClipes();
-        return clipes;
-      },
-    });
-  } catch (error) {
-    console.error(`Erro no prefetch de ${queryKey[0]}:`, error);
-  }
-
-  const clipes = queryClient.getQueryData<Clipe[]>(queryKey) ?? [];
-  const dehydratedState = dehydrate(queryClient);
 
   return (
     <ErrorBoundary>
-      <HydrationBoundary state={dehydratedState}>
-        <Clipes initialClipes={clipes} />
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <Clipes />
       </HydrationBoundary>
     </ErrorBoundary>
   );

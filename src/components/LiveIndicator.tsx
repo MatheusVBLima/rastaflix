@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,6 +13,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Radio, ExternalLink, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { KickLogo } from "@/components/icons/KickLogo";
+import { TwitchLogo } from "@/components/icons/TwitchLogo";
+import { queryKeys } from "@/lib/query-keys";
 
 interface LiveStatus {
   is_live_twitch: boolean;
@@ -25,33 +28,21 @@ interface LiveStatus {
   kick_username: string;
 }
 
+async function fetchLiveStatus(): Promise<LiveStatus> {
+  const response = await fetch("/api/live-status", { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error("Failed to fetch live status");
+  }
+  return response.json();
+}
+
 export function LiveIndicator() {
-  const [status, setStatus] = useState<LiveStatus | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchStatus = async () => {
-      try {
-        const response = await fetch("/api/live-status", {
-          cache: "no-store",
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setStatus(data);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar status da live:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStatus();
-
-    // Polling a cada 60 segundos para atualizar o status
-    const interval = setInterval(fetchStatus, 60000);
-    return () => clearInterval(interval);
-  }, []);
+  const { data: status, isLoading } = useQuery({
+    queryKey: queryKeys.liveStatus.all(),
+    queryFn: fetchLiveStatus,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+  });
 
   const isLive = status?.is_live_twitch || status?.is_live_kick;
 
@@ -94,7 +85,6 @@ export function LiveIndicator() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        {/* Twitch */}
         <DropdownMenuItem asChild className="cursor-pointer">
           <Link
             href={`https://twitch.tv/${status?.twitch_username || "ovelhera"}`}
@@ -103,9 +93,7 @@ export function LiveIndicator() {
             className="flex items-center justify-between w-full"
           >
             <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-purple-500" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
-              </svg>
+              <TwitchLogo className="h-3.5 w-auto" />
               <div className="flex flex-col">
                 <span className="font-medium">Twitch</span>
                 {status?.is_live_twitch && status?.twitch_stream_title && (
@@ -118,7 +106,7 @@ export function LiveIndicator() {
             <div className="flex items-center gap-2">
               {status?.is_live_twitch ? (
                 <>
-                  {status.twitch_viewer_count !== null && status.twitch_viewer_count !== undefined && (
+                  {status.twitch_viewer_count != null && (
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Users className="h-3 w-3" />
                       {status.twitch_viewer_count}
@@ -134,18 +122,15 @@ export function LiveIndicator() {
           </Link>
         </DropdownMenuItem>
 
-        {/* Kick */}
         <DropdownMenuItem asChild className="cursor-pointer">
           <Link
-            href={`https://kick.com/${status?.kick_username || "OvelheraM"}`}
+            href={`https://kick.com/${status?.kick_username || "ovelheram"}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-between w-full"
           >
             <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-green-500" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M1.333 0v24h5.334V12l5.333 5.333V24h5.333V12L24 18.667V5.333L17.333 12V0H12v6.667L6.667 12V0z" />
-              </svg>
+              <KickLogo className="h-3.5 w-auto text-[#53FC18]" />
               <div className="flex flex-col">
                 <span className="font-medium">Kick</span>
                 {status?.is_live_kick && status?.kick_stream_title && (
@@ -158,7 +143,7 @@ export function LiveIndicator() {
             <div className="flex items-center gap-2">
               {status?.is_live_kick ? (
                 <>
-                  {status.kick_viewer_count !== null && status.kick_viewer_count !== undefined && (
+                  {status.kick_viewer_count != null && (
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Users className="h-3 w-3" />
                       {status.kick_viewer_count}

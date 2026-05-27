@@ -1,46 +1,41 @@
-import {
-  HydrationBoundary,
-  QueryClient,
-  dehydrate,
-} from "@tanstack/react-query";
-import { fetchInimigos } from "@/lib/queries";
+import { Suspense } from "react";
+import { Users } from "lucide-react";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Inimigos } from "@/components/inimigos/Inimigos";
+import { InimigosSkeleton } from "@/components/inimigos/InimigosSkeleton";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { getQueryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
+import { fetchInimigos } from "@/lib/queries";
 
-export default async function InimigosPage() {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: Infinity,
-      },
-    },
+export default function InimigosPage() {
+  return (
+    <div className="container mx-auto py-10 min-h-screen space-y-6">
+      <PageHeader
+        icon={Users}
+        title="Mural de Inimigos"
+        description="Conheça os antagonistas dessa jornada rastafari."
+      />
+      <Suspense fallback={<InimigosSkeleton />}>
+        <InimigosContent />
+      </Suspense>
+    </div>
+  );
+}
+
+async function InimigosContent() {
+  const queryClient = getQueryClient();
+
+  await queryClient.fetchQuery({
+    queryKey: queryKeys.inimigos.list(),
+    queryFn: fetchInimigos,
   });
-
-  try {
-    await queryClient.prefetchQuery({
-      queryKey: ["inimigos"],
-      queryFn: fetchInimigos,
-    });
-  } catch (error) {
-    console.error(
-      "Erro ao pré-buscar dados de inimigos para /inimigos (Server Component):",
-      error
-    );
-    // Em uma aplicação real, você poderia ter uma página de erro mais robusta aqui
-    // ou retornar um estado que o componente cliente possa usar para mostrar um erro.
-  }
-
-  const dehydratedState = dehydrate(queryClient);
 
   return (
     <ErrorBoundary>
-      <HydrationBoundary state={dehydratedState}>
-        <div className="container mx-auto py-10 min-h-screen">
-          <h1 className="text-2xl font-bold text-center mb-6">
-            Mural de Inimigos
-          </h1>
-          <Inimigos />
-        </div>
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <Inimigos />
       </HydrationBoundary>
     </ErrorBoundary>
   );

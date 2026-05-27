@@ -10,32 +10,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { User, Mail, Calendar, Shield, Clock, Award } from "lucide-react";
 import { fetchUserAchievements } from "@/lib/queries";
+import { queryKeys } from "@/lib/query-keys";
 import Image from "next/image";
 
 interface UserProfileProps {
   isAdmin: boolean;
 }
 
-export function UserProfile({ isAdmin: initialIsAdmin }: UserProfileProps) {
+export function UserProfile({ isAdmin }: UserProfileProps) {
   const { user, isLoaded } = useUser();
 
-  // Usar useQuery para manter reatividade e consistência com o prefetch
-  const { data: isAdmin } = useQuery({
-    queryKey: ["userAdminStatus"],
-    queryFn: async () => {
-      const response = await fetch("/api/check-admin");
-      const data = await response.json();
-      return data.isAdmin;
-    },
-    initialData: initialIsAdmin,
-    staleTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-  });
-
-  // Fetch user achievements
   const { data: achievements = [] } = useQuery({
-    queryKey: ["userAchievements", user?.id],
+    queryKey: user?.id ? queryKeys.user.achievements(user.id) : ["userAchievements", "pending"],
     queryFn: () => (user?.id ? fetchUserAchievements(user.id) : Promise.resolve([])),
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes

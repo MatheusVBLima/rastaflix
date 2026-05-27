@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
+import { HeaderShell } from "@/components/HeaderShell";
 import { Header } from "@/components/Header";
 import { ThemeProvider } from "@/components/provider/ThemeProvider";
 import Providers from "@/components/provider/Providers";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -40,6 +43,7 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           <Providers>
+            <NuqsAdapter>
             <ThemeProvider
               attribute="class"
               defaultTheme="dark"
@@ -56,11 +60,14 @@ export default function RootLayout({
               ]}
             >
               <div className="flex flex-col min-h-screen">
-                <Header />
+                <Suspense fallback={<Header isAdmin={false} />}>
+                  <HeaderShell />
+                </Suspense>
                 <main className="flex-1">{children}</main>
               </div>
               <Toaster />
             </ThemeProvider>
+            </NuqsAdapter>
           </Providers>
           <SpeedInsights />
         </body>

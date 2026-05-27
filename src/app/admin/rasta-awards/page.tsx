@@ -1,8 +1,8 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
-import { QueryClient } from "@tanstack/react-query";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
+import { requireAdmin } from "@/lib/auth";
+import { getQueryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 import {
   fetchAllSeasons,
   fetchCategoriesBySeason,
@@ -40,42 +40,18 @@ import { ResultsViewer } from "@/components/admin/awards/ResultsViewer";
 // Preview Button
 import { PreviewButton } from "@/components/admin/awards/PreviewButton";
 
-async function verificarAdminServerPage(): Promise<boolean> {
-  const authState = await auth();
-  if (!authState.userId) return false;
-  try {
-    const client = await clerkClient();
-    const user = await client.users.getUser(authState.userId);
-    return user.privateMetadata?.is_admin === true;
-  } catch {
-    return false;
-  }
-}
-
 export default async function AdminRastaAwardsPage() {
-  // Verificação de autenticação e permissão de admin
-  const isAdmin = await verificarAdminServerPage();
-  if (!isAdmin) {
-    redirect("/");
-  }
+  await requireAdmin();
 
-  // 1. Criar QueryClient no Server Component
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: Infinity,
-      },
-    },
-  });
+  const queryClient = getQueryClient();
 
   try {
-    // 2. Pré-buscar dados essenciais
-    await queryClient.prefetchQuery({
-      queryKey: ["seasons"],
+    await queryClient.fetchQuery({
+      queryKey: queryKeys.rastaAwards.seasons(),
       queryFn: fetchAllSeasons,
     });
   } catch (error) {
-    console.error("❌ Erro no prefetch de seasons para admin:", error);
+    console.error("Erro no prefetch de seasons para admin:", error);
   }
 
   // 3. Desidratar o cache

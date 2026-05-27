@@ -3,57 +3,26 @@ import { MusicListAdmin } from "@/components/admin/MusicListAdmin";
 import AddMusicForm from "@/components/admin/AddMusicForm";
 import { EditMusicForm } from "@/components/admin/EditMusicForm";
 import { DeleteMusicForm } from "@/components/admin/DeleteMusicForm";
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
-import { QueryClient } from "@tanstack/react-query";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { fetchMusicas } from "@/lib/queries";
-
-async function verificarAdminServerPage(): Promise<boolean> {
-  const authState = await auth();
-  if (!authState.userId) return false;
-  try {
-    const client = await clerkClient();
-    const user = await client.users.getUser(authState.userId);
-    return user.privateMetadata?.is_admin === true;
-  } catch {
-    return false;
-  }
-}
+import { requireAdmin } from "@/lib/auth";
+import { getQueryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 
 export default async function AdminMusicasPage() {
-  // Verificação de autenticação e permissão de admin
-  const isAdmin = await verificarAdminServerPage();
-  if (!isAdmin) {
-    redirect("/"); // Ou para uma página de "acesso negado"
-  }
+  await requireAdmin();
 
-  // 1. Criar QueryClient no Server Component
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: Infinity, // Dados pré-buscados ficam "frescos" eternamente (até resetQueries)
-      },
-    },
-  });
-
-  const queryKey = ["musicas"];
-  const startTime = Date.now();
+  const queryClient = getQueryClient();
 
   try {
-    // 2. Pré-buscar os dados
-    await queryClient.prefetchQuery({
-      queryKey: queryKey,
-      queryFn: async () => {
-        const musicas = await fetchMusicas();
-        return musicas;
-      },
+    await queryClient.fetchQuery({
+      queryKey: queryKeys.musicas.list(),
+      queryFn: fetchMusicas,
     });
   } catch (error) {
-    console.error(`❌ Erro no prefetch de ${queryKey[0]} para admin:`, error);
+    console.error("Erro no prefetch de musicas para admin:", error);
   }
 
-  // 3. Desidratar o cache
   const dehydratedState = dehydrate(queryClient);
 
   return (

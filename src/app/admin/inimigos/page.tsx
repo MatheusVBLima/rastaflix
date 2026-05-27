@@ -1,53 +1,21 @@
 import React from "react";
-import {
-  HydrationBoundary,
-  QueryClient,
-  dehydrate,
-} from "@tanstack/react-query";
+import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import AddInimigoForm from "@/components/admin/AddInimigoForm";
 import { EditInimigoForm } from "@/components/admin/EditInimigoForm";
 import { DeleteInimigoForm } from "@/components/admin/DeleteInimigoForm";
 import { fetchInimigos } from "@/lib/queries";
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
+import { requireAdmin } from "@/lib/auth";
+import { getQueryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 
 export default async function AdminInimigosPage() {
-  const authResult = await auth();
-  if (!authResult.userId) {
-    redirect("/");
-  }
+  await requireAdmin();
 
-  let isUserAdmin = false;
-  try {
-    const client = await clerkClient();
-    const user = await client.users.getUser(authResult.userId);
-    isUserAdmin = user.privateMetadata?.is_admin === true;
-  } catch (error) {
-    console.error(
-      "AdminInimigosPage: Erro ao buscar usuário ou metadados:",
-      error
-    );
-    // Em um cenário de produção, você pode querer redirecionar para uma página de erro
-    // ou retornar um componente de erro aqui, dependendo da gravidade.
-    // Por ora, se falhar em obter o usuário, assumimos que não é admin.
-    isUserAdmin = false;
-  }
-
-  if (!isUserAdmin) {
-    redirect("/");
-  }
-
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 5 * 60 * 1000, // 5 minutos
-      },
-    },
-  });
+  const queryClient = getQueryClient();
 
   try {
-    await queryClient.prefetchQuery({
-      queryKey: ["inimigos"],
+    await queryClient.fetchQuery({
+      queryKey: queryKeys.inimigos.list(),
       queryFn: fetchInimigos,
     });
   } catch (error) {

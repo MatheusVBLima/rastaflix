@@ -3,6 +3,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchInimigos } from "@/lib/queries";
+import { queryKeys } from "@/lib/query-keys";
 import { Inimigo } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -23,18 +24,13 @@ import { EmptyState } from "@/components/ui/empty-state";
 export function Inimigos() {
   // Usar useQuery que vai se hidratar com os dados pré-buscados no server
   const {
-    data: inimigos,
+    data: inimigos = [],
     isLoading,
     isError,
     error,
   } = useQuery<Inimigo[], Error>({
-    queryKey: ["inimigos"],
+    queryKey: queryKeys.inimigos.list(),
     queryFn: fetchInimigos,
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
   });
 
   const isMobile = useMediaQuery("(max-width: 767px)");

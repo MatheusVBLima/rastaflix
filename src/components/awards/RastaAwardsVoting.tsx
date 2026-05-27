@@ -4,6 +4,7 @@ import React, { useState, useTransition } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 import { fetchActiveSeason, fetchVotingData, fetchUserVotes, fetchAllCategoriesWithResults } from "@/lib/queries";
+import { queryKeys } from "@/lib/query-keys";
 import { submitVote } from "@/actions/awardActions";
 import { AwardSeason, VotingData, AwardVote, CategoryWithResults } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,25 +30,32 @@ export function RastaAwardsVoting() {
   const queryClient = useQueryClient();
 
   const { data: activeSeason } = useQuery<AwardSeason | null>({
-    queryKey: ["activeSeason"],
+    queryKey: queryKeys.rastaAwards.activeSeason(),
     queryFn: fetchActiveSeason,
   });
 
   const { data: votingData } = useQuery<VotingData | null>({
-    queryKey: ["votingData", activeSeason?.id],
-    queryFn: () => activeSeason ? fetchVotingData(activeSeason.id) : null,
+    queryKey: activeSeason
+      ? queryKeys.rastaAwards.votingData(activeSeason.id)
+      : ["votingData", "pending"],
+    queryFn: () => (activeSeason ? fetchVotingData(activeSeason.id) : null),
     enabled: !!activeSeason,
   });
 
   const { data: userVotes = [] } = useQuery<AwardVote[]>({
-    queryKey: ["userVotes", userId, activeSeason?.id],
-    queryFn: () => userId && activeSeason ? fetchUserVotes(userId, activeSeason.id) : [],
+    queryKey:
+      userId && activeSeason
+        ? queryKeys.rastaAwards.userVotes(userId, activeSeason.id)
+        : ["userVotes", "pending"],
+    queryFn: () =>
+      userId && activeSeason ? fetchUserVotes(userId, activeSeason.id) : [],
     enabled: !!userId && !!activeSeason,
   });
 
-  // Buscar resultados quando votação estiver encerrada
   const { data: resultsData } = useQuery<CategoryWithResults[]>({
-    queryKey: ["awardsResults", activeSeason?.id],
+    queryKey: activeSeason
+      ? queryKeys.rastaAwards.results(activeSeason.id)
+      : ["awardsResults", "pending"],
     queryFn: () => activeSeason ? fetchAllCategoriesWithResults(activeSeason.id) : Promise.resolve([]),
     enabled: !!activeSeason && activeSeason.status === "closed",
     staleTime: 5 * 60 * 1000, // 5 minutos

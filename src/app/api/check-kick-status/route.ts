@@ -1,81 +1,69 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { fetchKickChannelStatus } from "@/lib/kick";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
-const KICK_API_URL = "https://kick.com/api/v2/channels";
-
-function getSupabaseClient() {
+function getSupabaseAnon() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 }
 
-interface KickChannelResponse {
-  id: number;
-  slug: string;
-  user: {
-    username: string;
-  };
-  livestream: {
-    id: number;
-    session_title: string;
-    viewer_count: number;
-    thumbnail: {
-      url: string;
-    };
-  } | null;
-}
-
 export async function GET() {
   try {
-    const supabase = getSupabaseClient();
+    const supabaseAnon = getSupabaseAnon();
 
-    // Buscar config do streamer para pegar o username da Kick
-    const { data: config } = await supabase
+    const { data: config, error: configError } = await supabaseAnon
       .from("streamer_config")
-      .select("kick_username")
+      .select("id, kick_username, is_live_kick, kick_stream_title, kick_viewer_count")
       .single();
 
-    const kickUsername = config?.kick_username || "OvelheraM";
-
-    // Buscar status na API da Kick
-    const response = await fetch(`${KICK_API_URL}/${kickUsername}`, {
-      headers: {
-        "Accept": "application/json",
-        "User-Agent": "Rastaflix/1.0",
-      },
-      next: { revalidate: 0 }, // Não cachear
-    });
-
-    if (!response.ok) {
-      // Se der erro 404, o canal não existe ou está com problema
-      if (response.status === 404) {
-        await updateKickStatus(supabase, kickUsername, false, null, null, null);
-        return NextResponse.json({
-          is_live: false,
-          message: "Canal não encontrado"
-        });
-      }
-
-      throw new Error(`Kick API error: ${response.status}`);
+    if (configError || !config) {
+      return NextResponse.json(
+        { error: "Streamer config not found" },
+        { status: 404 }
+      );
     }
 
-    const data: KickChannelResponse = await response.json();
+    const kickUsername = config.kick_username || "ovelheram";
+    const kickStatus = await fetchKickChannelStatus(kickUsername);
 
-    const isLive = data.livestream !== null;
-    const streamTitle = data.livestream?.session_title ?? null;
-    const viewerCount = data.livestream?.viewer_count ?? null;
-    const thumbnailUrl = data.livestream?.thumbnail?.url ?? null;
+    if (kickStatus === null) {
+      return NextResponse.json({
+        is_live: config.is_live_kick,
+        stream_title: config.kick_stream_title,
+        viewer_count: config.kick_viewer_count,
+        username: kickUsername,
+        cached: true,
+        message: "Kick API unavailable, returning cached status",
+      });
+    }
 
-    // Atualizar no banco
-    await updateKickStatus(supabase, kickUsername, isLive, streamTitle, viewerCount, thumbnailUrl);
+    const supabaseAdmin = getSupabaseAdmin();
+    const { error: updateError } = await supabaseAdmin
+      .from("streamer_config")
+      .update({
+        is_live_kick: kickStatus.isLive,
+        kick_stream_title: kickStatus.title,
+        kick_viewer_count: kickStatus.viewers,
+        kick_thumbnail_url: kickStatus.thumbnail,
+        last_kick_update: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", config.id);
+
+    if (updateError) {
+      console.error("Erro ao atualizar status da Kick no banco:", updateError);
+    }
 
     return NextResponse.json({
-      is_live: isLive,
-      stream_title: streamTitle,
-      viewer_count: viewerCount,
-      thumbnail_url: thumbnailUrl,
+      is_live: kickStatus.isLive,
+      stream_title: kickStatus.title,
+      viewer_count: kickStatus.viewers,
+      thumbnail_url: kickStatus.thumbnail,
       username: kickUsername,
+      cached: false,
     });
   } catch (error) {
     console.error("Erro ao verificar status da Kick:", error);
@@ -83,30 +71,5 @@ export async function GET() {
       { error: "Erro ao verificar status da Kick" },
       { status: 500 }
     );
-  }
-}
-
-async function updateKickStatus(
-  supabase: ReturnType<typeof getSupabaseClient>,
-  kickUsername: string,
-  isLive: boolean,
-  streamTitle: string | null,
-  viewerCount: number | null,
-  thumbnailUrl: string | null
-) {
-  const { error } = await supabase
-    .from("streamer_config")
-    .update({
-      is_live_kick: isLive,
-      kick_stream_title: streamTitle,
-      kick_viewer_count: viewerCount,
-      kick_thumbnail_url: thumbnailUrl,
-      last_kick_update: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("kick_username", kickUsername);
-
-  if (error) {
-    console.error("Erro ao atualizar status da Kick no banco:", error);
   }
 }

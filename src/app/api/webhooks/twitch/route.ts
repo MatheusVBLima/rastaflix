@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 // Twitch EventSub message types
 const MESSAGE_TYPE_VERIFICATION = "webhook_callback_verification";
@@ -14,13 +14,6 @@ const TWITCH_MESSAGE_SIGNATURE = "twitch-eventsub-message-signature";
 const TWITCH_MESSAGE_TYPE = "twitch-eventsub-message-type";
 
 const HMAC_PREFIX = "sha256=";
-
-function getSupabaseClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-}
 
 function getHmacMessage(
   messageId: string,
@@ -125,7 +118,7 @@ async function handleNotification(body: {
   };
 }) {
   const { subscription, event } = body;
-  const supabase = getSupabaseClient();
+  const supabase = getSupabaseAdmin();
 
   console.log(`Twitch notification: ${subscription.type}`, event);
 

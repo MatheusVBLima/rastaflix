@@ -2,6 +2,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { auth, clerkClient } from "@clerk/nextjs/server";
+import { getIsAdmin } from "@/lib/auth";
 
 // Helper para criar cliente Supabase em Server Actions/Server Components
 export async function getSupabaseClient() {
@@ -30,26 +31,9 @@ export async function getSupabaseClient() {
   );
 }
 
-// Verificação de administrador
+/** @deprecated Prefer getIsAdmin() from @/lib/auth in Server Components */
 export async function verificarAdmin(): Promise<boolean> {
-  console.log("Verificando status de admin...");
-  const authState = await auth();
-  if (!authState.userId) {
-    console.log("Usuário não logado.");
-    return false;
-  }
-  console.log(`Usuário ID: ${authState.userId}`);
-  try {
-    const client = await clerkClient();
-    const user = await client.users.getUser(authState.userId);
-    console.log("Metadados privados do usuário:", user.privateMetadata);
-    const isAdmin = user.privateMetadata?.is_admin === true;
-    console.log(`É admin? ${isAdmin}`);
-    return isAdmin;
-  } catch (error) {
-    console.error("Erro ao verificar admin:", error);
-    return false;
-  }
+  return getIsAdmin();
 }
 
 // Função para verificar se o usuário é admin e lançar erro se não for

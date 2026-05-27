@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { parseAsString, useQueryState } from "nuqs";
+import { useDebouncedQueryState } from "@/hooks/use-debounced-query-state";
 import Link from "next/link";
 import Image from "next/image";
 import { fetchHistorias } from "@/lib/queries";
+import { queryKeys } from "@/lib/query-keys";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -28,34 +31,31 @@ import { ClipboardCopyIcon, CheckIcon, Search, BookOpen } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 
 interface HistoriasProps {
-  initialHistorias: Story[];
-  initialTags: string[];
+  tags: string[];
   isAdmin?: boolean;
 }
 
-export function Historias({
-  initialHistorias,
-  initialTags,
-  isAdmin,
-}: HistoriasProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTag, setSelectedTag] = useState<string>("todas");
+export function Historias({ tags, isAdmin }: HistoriasProps) {
+  const [searchTerm, setSearchTerm] = useDebouncedQueryState(
+    "busca",
+    parseAsString.withDefault("").withOptions({ clearOnDefault: true }),
+    300
+  );
+  const [selectedTag, setSelectedTag] = useQueryState(
+    "tag",
+    parseAsString.withDefault("todas").withOptions({ clearOnDefault: true })
+  );
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Usar useQuery com a mesma queryKey usada no prefetch
   // A queryFn usa fetchHistorias real para que invalidateQueries funcione corretamente
   const {
-    data: historias,
+    data: historias = [],
     isLoading,
     error,
   } = useQuery<Story[], Error>({
-    queryKey: ["historias"],
+    queryKey: queryKeys.historias.list(),
     queryFn: fetchHistorias,
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
   });
 
   const filteredHistorias = useMemo(() => {
@@ -79,7 +79,7 @@ export function Historias({
     return result;
   }, [historias, searchTerm, selectedTag]);
 
-  if (isLoading && !initialHistorias?.length) {
+  if (isLoading && !historias?.length) {
     return <p>Carregando histórias...</p>;
   }
   if (error) {
@@ -91,8 +91,8 @@ export function Historias({
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 md:px-6">
-      <div className="mb-8 flex flex-col md:flex-row gap-4 items-start">
+    <>
+      <div className="flex flex-col md:flex-row gap-4 items-start">
         <Input
           type="text"
           placeholder="Pesquisar por título..."
@@ -106,7 +106,7 @@ export function Historias({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="todas">Todas as Tags</SelectItem>
-            {initialTags.map((tag) => (
+            {tags.map((tag) => (
               <SelectItem key={tag} value={tag}>
                 {tag.charAt(0).toUpperCase() + tag.slice(1)}
               </SelectItem>
@@ -222,6 +222,6 @@ export function Historias({
           </Link>
         ))}
       </div>
-    </div>
+    </>
   );
 }

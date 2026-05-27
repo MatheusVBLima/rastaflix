@@ -56,7 +56,7 @@ export default function RootLayout({
               ]}
             >
               <div className="flex flex-col min-h-screen">
-                <Header />
+                <Header isAdmin={false} />
                 <main className="flex-1">{children}</main>
               </div>
               <Toaster />

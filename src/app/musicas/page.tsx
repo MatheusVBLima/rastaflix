@@ -1,62 +1,45 @@
-import React, { Suspense } from "react";
-import { fetchMusicas } from "@/lib/queries";
+import { Suspense } from "react";
+import { Music } from "lucide-react";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Musicas } from "@/components/musicas/Musicas";
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { QueryClient } from "@tanstack/react-query";
-import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
-import { Music } from "@/lib/types";
+import { MusicasSkeleton } from "@/components/musicas/MusicasSkeleton";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { getIsAdmin } from "@/lib/auth";
+import { getQueryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
+import { fetchMusicas } from "@/lib/queries";
 
-async function verificarAdmin(): Promise<boolean> {
-  const authState = await auth();
-  if (!authState.userId) return false;
-  try {
-    const client = await clerkClient();
-    const user = await client.users.getUser(authState.userId);
-    return user.privateMetadata?.is_admin === true;
-  } catch {
-    return false;
-  }
+export default function MusicasPage() {
+  return (
+    <div className="container mx-auto py-8 px-4 md:px-6 space-y-6">
+      <PageHeader
+        icon={Music}
+        title="Músicas"
+        description="Descubra e compartilhe as músicas da comunidade."
+      />
+      <Suspense fallback={<MusicasSkeleton />}>
+        <MusicasContent />
+      </Suspense>
+    </div>
+  );
 }
 
-export default async function MusicasPage() {
-  // 1. Criar QueryClient no Server Component
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: Infinity, // Dados pré-buscados ficam "frescos" eternamente (até resetQueries)
-      },
-    },
-  });
+async function MusicasContent() {
+  const queryClient = getQueryClient();
 
-  const queryKey = ["musicas"];
-  const startTime = Date.now();
+  const [, isAdmin] = await Promise.all([
+    queryClient.fetchQuery({
+      queryKey: queryKeys.musicas.list(),
+      queryFn: fetchMusicas,
+    }),
+    getIsAdmin(),
+  ]);
 
-  try {
-    // 2. Pré-buscar os dados
-    await queryClient.prefetchQuery({
-      queryKey: queryKey,
-      queryFn: async () => {
-        const musicas = await fetchMusicas();
-        return musicas;
-      },
-    });
-  } catch (error) {
-    console.error(`❌ Erro no prefetch de ${queryKey[0]}:`, error);
-  }
-
-  // Obter do cache já preenchido
-  const musicas = queryClient.getQueryData<Music[]>(queryKey) ?? [];
-  const isAdmin = await verificarAdmin();
-
-  // 3. Desidratar o cache
-  const dehydratedState = dehydrate(queryClient);
-
-  // 4. Renderizar o Client Component dentro do HydrationBoundary
   return (
     <ErrorBoundary>
-      <HydrationBoundary state={dehydratedState}>
-        <Musicas initialMusicas={musicas} isAdmin={isAdmin} />
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <Musicas isAdmin={isAdmin} />
       </HydrationBoundary>
     </ErrorBoundary>
   );

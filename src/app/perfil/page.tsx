@@ -1,46 +1,51 @@
-import { QueryClient, HydrationBoundary, dehydrate } from "@tanstack/react-query";
+import { Suspense } from "react";
+import { User } from "lucide-react";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { UserProfile } from "@/components/user/UserProfile";
 import { Metadata } from "next";
-import { verificarAdmin } from "@/actions/commonActions";
+import { getIsAdmin } from "@/lib/auth";
+import { getQueryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
   title: "Meu Perfil | Rastaflix",
   description: "Visualize suas informações e atividades na Rastaflix.",
 };
 
-export default async function PerfilPage() {
-  // 1. Criar QueryClient com staleTime: Infinity
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: Infinity,
-      },
-    },
+export default function PerfilPage() {
+  return (
+    <div className="container mx-auto py-10 min-h-screen space-y-6">
+      <PageHeader
+        icon={User}
+        title="Meu Perfil"
+        description="Suas informações e conquistas na Rastaflix."
+      />
+      <Suspense
+        fallback={
+          <div className="space-y-4">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-40 w-full" />
+          </div>
+        }
+      >
+        <PerfilContent />
+      </Suspense>
+    </div>
+  );
+}
+
+async function PerfilContent() {
+  const queryClient = getQueryClient();
+
+  const isAdmin = await queryClient.fetchQuery({
+    queryKey: queryKeys.auth.adminStatus(),
+    queryFn: getIsAdmin,
   });
 
-  const queryKey = ["userAdminStatus"];
-
-  try {
-    // 2. Prefetch admin status server-side
-    await queryClient.prefetchQuery({
-      queryKey: queryKey,
-      queryFn: async () => {
-        const isAdmin = await verificarAdmin();
-        return isAdmin;
-      },
-    });
-  } catch (error) {
-    console.error("Erro no prefetch de userAdminStatus:", error);
-  }
-
-  // 3. Obter do cache
-  const isAdmin = queryClient.getQueryData<boolean>(queryKey) ?? false;
-
-  // 4. Dehydrate e passar para HydrationBoundary
-  const dehydratedState = dehydrate(queryClient);
-
   return (
-    <HydrationBoundary state={dehydratedState}>
+    <HydrationBoundary state={dehydrate(queryClient)}>
       <UserProfile isAdmin={isAdmin} />
     </HydrationBoundary>
   );

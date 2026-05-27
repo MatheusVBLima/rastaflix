@@ -1,48 +1,48 @@
-import { QueryClient } from "@tanstack/react-query";
-import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
-import { fetchActiveSeason, fetchVotingData } from "@/lib/queries";
+import { Suspense } from "react";
+import { Trophy } from "lucide-react";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { RastaAwardsVoting } from "@/components/awards/RastaAwardsVoting";
+import { RastaAwardsSkeleton } from "@/components/awards/RastaAwardsSkeleton";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { getQueryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
+import { fetchActiveSeason, fetchVotingData } from "@/lib/queries";
 
-export default async function RastaAwardsPage() {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: Infinity,
-      },
-    },
+export default function RastaAwardsPage() {
+  return (
+    <div className="container mx-auto py-10 min-h-screen space-y-6">
+      <PageHeader
+        icon={Trophy}
+        title="Rasta Awards"
+        description="Vote nos melhores momentos e conteúdos do ano."
+      />
+      <Suspense fallback={<RastaAwardsSkeleton />}>
+        <RastaAwardsContent />
+      </Suspense>
+    </div>
+  );
+}
+
+async function RastaAwardsContent() {
+  const queryClient = getQueryClient();
+
+  const activeSeason = await queryClient.fetchQuery({
+    queryKey: queryKeys.rastaAwards.activeSeason(),
+    queryFn: fetchActiveSeason,
   });
 
-  let activeSeason: any = null;
-
-  try {
-    // 1. Buscar temporada ativa
-    activeSeason = await queryClient.fetchQuery({
-      queryKey: ["activeSeason"],
-      queryFn: fetchActiveSeason,
+  if (activeSeason) {
+    await queryClient.prefetchQuery({
+      queryKey: queryKeys.rastaAwards.votingData(activeSeason.id),
+      queryFn: () => fetchVotingData(activeSeason.id),
     });
-
-    // 2. Se houver temporada ativa, buscar dados de votação
-    if (activeSeason) {
-      await queryClient.prefetchQuery({
-        queryKey: ["votingData", activeSeason.id],
-        queryFn: () => fetchVotingData(activeSeason.id),
-      });
-    }
-    // Nota: O userId e userVotes são gerenciados no cliente via useAuth()
-    // para garantir funcionamento correto em produção
-  } catch (error) {
-    console.error("❌ Erro no prefetch de Rasta Awards:", error);
   }
-
-  const dehydratedState = dehydrate(queryClient);
 
   return (
     <ErrorBoundary>
-      <HydrationBoundary state={dehydratedState}>
-        <div className="container mx-auto py-10 min-h-screen">
-          <RastaAwardsVoting />
-        </div>
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <RastaAwardsVoting />
       </HydrationBoundary>
     </ErrorBoundary>
   );
