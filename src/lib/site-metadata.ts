@@ -7,13 +7,10 @@ export const SITE_TAGLINE = "Histórias • Músicas • Esculachos • Lives";
 
 export function getSiteUrl(): URL {
   const fromEnv = process.env.NEXT_PUBLIC_SITE_URL;
-  if (fromEnv) {
-    return new URL(fromEnv.startsWith("http") ? fromEnv : `https://${fromEnv}`);
+  if (!fromEnv) {
+    throw new Error("NEXT_PUBLIC_SITE_URL is not set");
   }
-  if (process.env.VERCEL_URL) {
-    return new URL(`https://${process.env.VERCEL_URL}`);
-  }
-  return new URL("https://rastaflix.vercel.app");
+  return new URL(fromEnv.startsWith("http") ? fromEnv : `https://${fromEnv}`);
 }
 
 export const siteMetadata: Metadata = {
@@ -38,6 +35,7 @@ export const siteMetadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "pt_BR",
+    url: getSiteUrl().toString(),
     siteName: SITE_NAME,
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
