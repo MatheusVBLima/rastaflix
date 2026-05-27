@@ -1,3 +1,5 @@
+import { fetchKickChannelStatusOfficial } from "@/lib/kick-official";
+
 const KICK_API_BASE = "https://kick.com/api/v2/channels";
 
 export interface KickChannelStatus {
@@ -43,6 +45,13 @@ function getKickRequestHeaders(acceptHtml = false): HeadersInit {
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     Referer: "https://kick.com/",
     Origin: "https://kick.com",
+    "sec-ch-ua":
+      '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="99"',
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"Windows"',
+    "sec-fetch-dest": acceptHtml ? "document" : "empty",
+    "sec-fetch-mode": acceptHtml ? "navigate" : "cors",
+    "sec-fetch-site": "same-origin",
   };
 }
 
@@ -172,6 +181,9 @@ export async function fetchKickChannelStatus(
 ): Promise<KickChannelStatus | null> {
   const normalized = normalizeKickSlug(slug);
   if (!normalized) return null;
+
+  const officialResult = await fetchKickChannelStatusOfficial(normalized);
+  if (officialResult !== null) return officialResult;
 
   const apiResult = await fetchFromKickApi(normalized);
   if (apiResult !== null) return apiResult;
