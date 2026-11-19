@@ -5,8 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
-  SignedIn,
-  SignedOut,
+  Show,
   ClerkLoading,
   ClerkLoaded,
 } from "@clerk/nextjs";
@@ -301,7 +300,7 @@ export function Header({ isAdmin }: HeaderProps) {
             <Skeleton className="h-8 w-20" />
           </ClerkLoading>
 
-          <SignedIn>
+          <Show when="signed-in">
             {isAdmin ? (
               <ClerkLoaded>
                 <NavigationMenu>
@@ -330,7 +329,7 @@ export function Header({ isAdmin }: HeaderProps) {
                 </NavigationMenu>
               </ClerkLoaded>
             ) : null}
-          </SignedIn>
+          </Show>
         </div>
 
         {/* UserButton e Tema à direita */}
@@ -387,7 +386,7 @@ export function Header({ isAdmin }: HeaderProps) {
                   ))}
                   <Separator />
                   <ClerkLoaded>
-                    <SignedIn>
+                    <Show when="signed-in">
                       {isAdmin && (
                         <>
                           <SheetClose asChild>
@@ -411,10 +410,10 @@ export function Header({ isAdmin }: HeaderProps) {
                           <Separator />
                         </>
                       )}
-                    </SignedIn>
+                    </Show>
                   </ClerkLoaded>
                   <ClerkLoaded>
-                    <SignedIn>
+                    <Show when="signed-in">
                       <SheetClose asChild>
                         <Link
                           href="/perfil"
@@ -423,8 +422,8 @@ export function Header({ isAdmin }: HeaderProps) {
                           Meu Perfil
                         </Link>
                       </SheetClose>
-                    </SignedIn>
-                    <SignedOut>
+                    </Show>
+                    <Show when="signed-out">
                       <SheetClose asChild>
                         <Link
                           href="/sign-in"
@@ -434,7 +433,7 @@ export function Header({ isAdmin }: HeaderProps) {
                           Login
                         </Link>
                       </SheetClose>
-                    </SignedOut>
+                    </Show>
                   </ClerkLoaded>
                 </nav>
               </SheetContent>
@@ -445,12 +444,12 @@ export function Header({ isAdmin }: HeaderProps) {
             <Skeleton className="h-8 w-8 rounded-full" />
           </ClerkLoading>
 
-          <SignedIn>
+          <Show when="signed-in">
             <ClerkLoaded>
               <UserMenu />
             </ClerkLoaded>
-          </SignedIn>
-          <SignedOut>
+          </Show>
+          <Show when="signed-out">
             <ClerkLoaded>
               <Button variant="outline" asChild size="sm">
                 <Link href="/sign-in">
@@ -458,7 +457,7 @@ export function Header({ isAdmin }: HeaderProps) {
                 </Link>
               </Button>
             </ClerkLoaded>
-          </SignedOut>
+          </Show>
         </div>
       </div>
     </header>

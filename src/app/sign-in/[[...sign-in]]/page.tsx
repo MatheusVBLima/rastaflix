@@ -10,7 +10,7 @@ export default function Page() {
     <div className="flex justify-center items-center h-screen">
       <SignIn
         appearance={{
-          baseTheme: dark,
+          theme: dark,
         }}
       />
     </div>

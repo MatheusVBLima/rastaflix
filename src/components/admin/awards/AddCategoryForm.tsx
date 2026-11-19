@@ -3,7 +3,7 @@
 import React, { useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AwardCategorySchema, AwardSeason } from "@/lib/types";
+import { AwardCategoryFormData, AwardCategorySchema, AwardSeason } from "@/lib/types";
 import { addCategory } from "@/actions/awardActions";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,13 +15,6 @@ import { Loader2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchAllSeasons } from "@/lib/queries";
 
-type AddCategoryFormData = {
-  season_id: string;
-  name: string;
-  description?: string;
-  display_order: number;
-};
-
 export function AddCategoryForm() {
   const [isPending, startTransition] = useTransition();
   const queryClient = useQueryClient();
@@ -31,7 +24,7 @@ export function AddCategoryForm() {
     queryFn: fetchAllSeasons,
   });
 
-  const form = useForm<AddCategoryFormData>({
+  const form = useForm({
     resolver: zodResolver(AwardCategorySchema),
     defaultValues: {
       season_id: "",
@@ -41,7 +34,7 @@ export function AddCategoryForm() {
     },
   });
 
-  async function onSubmit(data: AddCategoryFormData) {
+  async function onSubmit(data: AwardCategoryFormData) {
     startTransition(async () => {
       const formData = new FormData();
       formData.append("season_id", data.season_id);
