@@ -16,6 +16,7 @@ import {
   ClipePlatform,
   StreamerConfig,
   UserAchievement,
+  GameScoreEntry,
 } from "./types";
 
 let supabaseDirectClient: SupabaseClient | null = null;
@@ -915,4 +916,104 @@ export async function fetchAdminCounts(): Promise<AdminCounts> {
     inimigos: results[4].count ?? 0,
     seasons: results[5].count ?? 0,
   };
+}
+
+// ========================================
+// JOGOS / LEADERBOARD
+// ========================================
+
+/**
+ * Busca o ranking de um jogo no Supabase, retornando a melhor partida de cada jogador.
+ */
+export async function fetchGameLeaderboard(
+  gameSlug: string,
+  limit = 15
+): Promise<GameScoreEntry[]> {
+  if (!gameSlug) return [];
+
+  try {
+    const supabase = getSupabaseClientDirect();
+    const { data, error } = await supabase
+      .from("game_scores")
+      .select(
+        "id, game_slug, user_id, player_name, player_avatar, score, kills, level_reached, survival_seconds, bosses_defeated, weapons_used, seed, created_at"
+      )
+      .eq("game_slug", gameSlug)
+      .order("score", { ascending: false })
+      .order("survival_seconds", { ascending: false })
+      .limit(Math.max(limit * 4, 60));
+
+    if (error) {
+      // Tabela ainda não aplicada no banco remoto
+      if (error.code === "42P01" || error.code === "PGRST205") {
+        return [];
+      }
+      console.error("Erro ao buscar ranking do jogo:", error);
+      return [];
+    }
+
+    if (!data) return [];
+
+    // Mantém apenas o melhor recorde por jogador no ranking
+    const bestByUser = new Map<string, GameScoreEntry>();
+    for (const row of data) {
+      if (bestByUser.has(row.user_id)) continue;
+      bestByUser.set(row.user_id, {
+        ...row,
+        weapons_used: Array.isArray(row.weapons_used)
+          ? row.weapons_used.map(String)
+          : [],
+      });
+      if (bestByUser.size >= limit) break;
+    }
+
+    return Array.from(bestByUser.values());
+  } catch (e) {
+    console.error("Exceção ao buscar ranking do jogo:", e);
+    return [];
+  }
+}
+
+/**
+ * Busca a melhor pontuação pessoal de um jogador em um jogo.
+ */
+export async function fetchUserBestScore(
+  gameSlug: string,
+  userId: string
+): Promise<GameScoreEntry | null> {
+  if (!gameSlug || !userId) return null;
+
+  try {
+    const supabase = getSupabaseClientDirect();
+    const { data, error } = await supabase
+      .from("game_scores")
+      .select(
+        "id, game_slug, user_id, player_name, player_avatar, score, kills, level_reached, survival_seconds, bosses_defeated, weapons_used, seed, created_at"
+      )
+      .eq("game_slug", gameSlug)
+      .eq("user_id", userId)
+      .order("score", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      if (error.code === "42P01" || error.code === "PGRST205") {
+        return null;
+      }
+      console.error("Erro ao buscar melhor pontuação do usuário:", error);
+      return null;
+    }
+
+    if (!data) return null;
+
+    return {
+      ...data,
+      weapons_used: Array.isArray(data.weapons_used)
+        ? data.weapons_used.map(String)
+        : [],
+    };
+  } catch (e) {
+    console.error("Exceção ao buscar melhor pontuação do usuário:", e);
+    return null;
+  }
 }

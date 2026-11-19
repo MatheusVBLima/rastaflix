@@ -426,3 +426,45 @@ export interface ClipeActionResponse extends ActionResponse {
   clipeId?: string;
   clipe?: Clipe;
 }
+
+// ============================================
+// JOGOS - Ranking / Game Scores
+// ============================================
+
+export interface GameScoreEntry {
+  id: string;
+  game_slug: string;
+  user_id: string;
+  player_name: string;
+  player_avatar?: string | null;
+  score: number;
+  kills: number;
+  level_reached: number;
+  survival_seconds: number;
+  bosses_defeated: number;
+  weapons_used: string[];
+  seed?: number | null;
+  created_at: string;
+}
+
+export const SubmitGameScoreSchema = z.object({
+  gameSlug: z
+    .string()
+    .min(1)
+    .max(80)
+    .regex(/^[a-z0-9-]+$/, "Slug do jogo inválido."),
+  score: z.number().int().min(0).max(100_000_000),
+  kills: z.number().int().min(0).max(1_000_000),
+  levelReached: z.number().int().min(1).max(500),
+  survivalSeconds: z.number().int().min(0).max(86_400),
+  bossesDefeated: z.number().int().min(0).max(1_000),
+  weaponsUsed: z.array(z.string().max(60)).max(12),
+  seed: z.number().int().optional(),
+});
+
+export type SubmitGameScoreInput = z.infer<typeof SubmitGameScoreSchema>;
+
+export interface GameScoreActionResponse extends ActionResponse {
+  entry?: GameScoreEntry;
+  isNewPersonalBest?: boolean;
+}

@@ -42,4 +42,10 @@ export const queryKeys = {
   liveStatus: {
     all: () => ["liveStatus"] as const,
   },
+  games: {
+    all: ["games"] as const,
+    leaderboard: (gameSlug: string) => ["games", "leaderboard", gameSlug] as const,
+    userBest: (gameSlug: string, userId: string) =>
+      ["games", "userBest", gameSlug, userId] as const,
+  },
 } as const;
