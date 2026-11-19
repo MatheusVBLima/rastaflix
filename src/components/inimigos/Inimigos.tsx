@@ -1,170 +1,143 @@
 "use client";
 
-import React from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import type { ColumnDef } from "@tanstack/react-table";
+import NumberFlow from "@number-flow/react";
+import { Clock, Skull } from "lucide-react";
 import { fetchInimigos } from "@/lib/queries";
 import { queryKeys } from "@/lib/query-keys";
-import { Inimigo } from "@/lib/types";
+import type { Inimigo } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
-import { useMediaQuery } from "@/hooks/use-media-query";
-import { Clock, Skull } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { DataTable, inValues } from "@/components/data-table/DataTable";
+import { formatDate } from "@/lib/format";
 
-/**
- * Render the Inimigos UI: fetch and display a list of enemies with appropriate loading, error, empty, and responsive states.
- *
- * Displays skeleton placeholders while loading, a destructive alert on fetch error, an empty state when there are no enemies,
- * a vertical list of cards on narrow viewports, and a table layout on wider viewports. Each enemy entry shows its name and
- * a status badge that reflects the revenge status.
- *
- * @returns The JSX element for the Inimigos component UI
- */
+const NO_INIMIGOS: Inimigo[] = [];
+
+export const STATUS_OPTIONS = [
+  { value: "pendente", label: "Pendente" },
+  { value: "vingado", label: "Vingado" },
+];
+
+export function StatusBadge({ status }: { status: Inimigo["status"] }) {
+  return (
+    <Badge variant={status === "vingado" ? "vingado" : "pendente"} className="gap-1.5 px-2 py-0.5">
+      {status === "vingado" ? <Skull /> : <Clock />}
+      {status === "vingado" ? "Vingado" : "Pendente"}
+    </Badge>
+  );
+}
+
+const columns: ColumnDef<Inimigo, unknown>[] = [
+  {
+    id: "nome",
+    accessorKey: "nome",
+    header: "Nome",
+    meta: { label: "Nome", cellClassName: "font-medium" },
+  },
+  {
+    id: "status",
+    accessorKey: "status",
+    header: "Status",
+    filterFn: inValues as never,
+    cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    meta: { label: "Status", filterOptions: STATUS_OPTIONS },
+  },
+  {
+    id: "created_at",
+    accessorKey: "created_at",
+    header: "Na lista desde",
+    enableGlobalFilter: false,
+    cell: ({ row }) => (
+      <time dateTime={row.original.created_at} className="tabular-nums text-muted-foreground">
+        {formatDate(row.original.created_at)}
+      </time>
+    ),
+    meta: { label: "Na lista desde" },
+  },
+];
+
 export function Inimigos() {
-  // Usar useQuery que vai se hidratar com os dados pré-buscados no server
-  const {
-    data: inimigos = [],
-    isLoading,
-    isError,
-    error,
-  } = useQuery<Inimigo[], Error>({
+  const { data: inimigos = NO_INIMIGOS, isLoading, error } = useQuery<Inimigo[], Error>({
     queryKey: queryKeys.inimigos.list(),
     queryFn: fetchInimigos,
   });
 
-  const isMobile = useMediaQuery("(max-width: 767px)");
+  const placar = useMemo(
+    () => ({
+      vingados: inimigos.filter((i) => i.status === "vingado").length,
+      pendentes: inimigos.filter((i) => i.status === "pendente").length,
+    }),
+    [inimigos]
+  );
 
-  if (isLoading) {
-    if (isMobile) {
-      return (
-        <div className="space-y-4 max-w-2xl mx-auto">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <Card key={index}>
-              <CardContent className="p-4 flex flex-col space-y-2 sm:flex-row sm:justify-between sm:items-center sm:space-y-0">
-                <Skeleton className="h-5 w-3/4" />
-                <Skeleton className="h-6 w-20 mt-2 sm:mt-0" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      );
-    }
+  if (error) {
     return (
-      <div className="border rounded-md p-4 max-w-2xl mx-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[70%]">Nome do Inimigo</TableHead>
-              <TableHead className="text-right">Status da Vingança</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array.from({ length: 5 }).map((_, index) => (
-              <TableRow key={index}>
-                <TableCell>
-                  <Skeleton className="h-5 w-3/4" />
-                </TableCell>
-                <TableCell className="text-right">
-                  <Skeleton className="h-5 w-20 inline-block" />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <EmptyState
+        title="Não foi possível carregar os inimigos"
+        description={error.message}
+      />
     );
   }
 
-  if (isError) {
+  if (!isLoading && inimigos.length === 0) {
     return (
-      <Alert variant="destructive" className="max-w-2xl mx-auto">
-        <AlertTitle>Erro ao Carregar Inimigos</AlertTitle>
-        <AlertDescription>
-          Não foi possível buscar a lista de inimigos. Detalhes:{" "}
-          {error?.message}
-        </AlertDescription>
-      </Alert>
+      <EmptyState
+        icon={Skull}
+        title="Mural vazio"
+        description="Ninguém entrou na lista ainda. Ou todos já foram perdoados."
+      />
     );
   }
 
-  if (!inimigos || inimigos.length === 0) {
-    return (
-      <div className="max-w-2xl mx-auto">
-        <EmptyState
-          icon={Skull}
-          title="Mural de Inimigos Vazio"
-          description="Nenhum inimigo foi adicionado à lista ainda. Ou talvez todos já foram perdoados?"
-        />
-      </div>
-    );
-  }
-
-  if (isMobile) {
-    return (
-      <div className="space-y-4 max-w-2xl mx-auto px-4 md:px-6">
-        {inimigos.map((inimigo) => (
-          <Card key={inimigo.id}>
-            <CardContent className="p-4 flex flex-col space-y-2 sm:flex-row sm:justify-between sm:items-center sm:space-y-0">
-              <div className="font-medium">{inimigo.nome}</div>
-              <Badge
-                variant={inimigo.status === "vingado" ? "vingado" : "pendente"}
-                className="font-medium px-3 py-1 whitespace-nowrap self-start sm:self-auto min-w-[100px]"
-              >
-                {inimigo.status == "vingado" ? <Skull /> : <Clock />}
-                {inimigo.status.charAt(0).toUpperCase() +
-                  inimigo.status.slice(1)}
-              </Badge>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
+  const total = placar.vingados + placar.pendentes;
+  const pct = total ? (placar.vingados / total) * 100 : 0;
 
   return (
-    <div className="border rounded-md max-w-2xl mx-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[calc(100%-150px)] sm:w-[calc(100%-200px)]">
-              Nome do Inimigo
-            </TableHead>
-            <TableHead className="text-right w-[150px] sm:w-[200px]">
-              Status da Vingança
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {inimigos.map((inimigo) => (
-            <TableRow key={inimigo.id}>
-              <TableCell className="font-medium py-3">{inimigo.nome}</TableCell>
-              <TableCell className="text-right py-3">
-                <Badge
-                  variant={
-                    inimigo.status === "vingado" ? "vingado" : "pendente"
-                  }
-                  className="font-medium px-3 py-1 whitespace-nowrap min-w-[100px]"
-                >
-                  {inimigo.status == "vingado" ? <Skull /> : <Clock />}
+    <div className="space-y-8">
+      <section aria-label="Placar da vingança" className="grid grid-cols-2 gap-4 sm:grid-cols-[1fr_1fr_2fr]">
+        <div className="rounded-xl border bg-card p-5">
+          <p className="text-sm text-muted-foreground">Vingados</p>
+          <NumberFlow
+            value={placar.vingados}
+            className="font-display text-4xl font-semibold text-success"
+          />
+        </div>
+        <div className="rounded-xl border bg-card p-5">
+          <p className="text-sm text-muted-foreground">Pendentes</p>
+          <NumberFlow
+            value={placar.pendentes}
+            className="font-display text-4xl font-semibold text-warning"
+          />
+        </div>
+        <div className="col-span-2 flex flex-col justify-end gap-3 rounded-xl border bg-card p-5 sm:col-span-1">
+          <p className="text-sm text-muted-foreground">
+            <NumberFlow
+              value={Math.round(pct)}
+              suffix="%"
+              className="font-medium text-foreground"
+            />{" "}
+            da vingança cumprida
+          </p>
+          <div className="h-2 overflow-hidden rounded-full bg-warning/20">
+            <div
+              className="h-full rounded-full bg-success transition-[width] duration-700 ease-out"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+      </section>
 
-                  {inimigo.status.charAt(0).toUpperCase() +
-                    inimigo.status.slice(1)}
-                </Badge>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <DataTable
+        columns={columns}
+        data={inimigos}
+        getRowId={(r) => r.id}
+        noun={["inimigo", "inimigos"]}
+        isLoading={isLoading}
+        storageKey="rastaflix:inimigos"
+        initialSorting={[{ id: "created_at", desc: true }]}
+      />
     </div>
   );
 }

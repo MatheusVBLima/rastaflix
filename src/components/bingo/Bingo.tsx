@@ -1,194 +1,161 @@
 "use client";
 
-import type React from "react";
-
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "motion/react";
+import NumberFlow from "@number-flow/react";
+import { Check } from "lucide-react";
 import { bingoItems } from "@/data/bingo";
-import { Check, RotateCcw } from "lucide-react";
-
-interface BingoCardProps {
-  text: string;
-  isChecked: boolean;
-  onClick: () => void;
-}
-
-const BingoCard: React.FC<BingoCardProps> = ({ text, isChecked, onClick }) => {
-  return (
-    <div className="aspect-square relative">
-      <motion.div
-        className="w-full h-full absolute cursor-pointer"
-        initial={{ rotateY: 0 }}
-        animate={{
-          rotateY: isChecked ? 180 : 0,
-        }}
-        transition={{
-          duration: 0.6,
-          type: "spring",
-          stiffness: 260,
-          damping: 20,
-        }}
-        onClick={onClick}
-        style={{
-          transformStyle: "preserve-3d",
-        }}
-      >
-        {/* Front of card (unchecked) */}
-        <div
-          className="w-full h-full flex items-center justify-center text-center border border-border rounded-md shadow-sm bg-card text-card-foreground p-2 absolute"
-          style={{
-            backfaceVisibility: "hidden",
-          }}
-        >
-          <motion.span
-            className="font-medium text-center text-xs sm:text-sm md:text-base px-1"
-            whileHover={{ scale: 1.05 }}
-          >
-            {text}
-          </motion.span>
-        </div>
-
-        {/* Back of card (checked) */}
-        <div
-          className="w-full h-full flex items-center justify-center text-center border border-green-700/20 rounded-md shadow-md absolute bg-green-900 text-white p-2"
-          style={{
-            backfaceVisibility: "hidden",
-            transform: "rotateY(180deg)",
-          }}
-        >
-          <motion.div
-            className="flex flex-col items-center gap-1"
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{
-              delay: 0.3,
-              type: "spring",
-              stiffness: 400,
-              damping: 10,
-            }}
-          >
-            <Check className="w-4 h-4 opacity-80" />
-            <span className="font-medium text-center text-xs sm:text-sm md:text-base px-1">
-              {text}
-            </span>
-          </motion.div>
-        </div>
-      </motion.div>
-    </div>
-  );
-};
+import { Button } from "@/components/ui/button";
+import { RotateCCWIcon } from "@/components/icons/animated/rotate-ccw";
+import { useAnimatedIcon, type AnimatedIconHandle } from "@/hooks/use-animated-icon";
+import { celebrate, celebrateText } from "@/lib/celebrate";
+import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "bingo_rastafari";
+const SIZE = 4; // cartela 4x4
+
+/** Linhas que valem "bingo": 4 linhas, 4 colunas e 2 diagonais. */
+const LINES: number[][] = (() => {
+  const lines: number[][] = [];
+  for (let r = 0; r < SIZE; r++) lines.push([0, 1, 2, 3].map((c) => r * SIZE + c));
+  for (let c = 0; c < SIZE; c++) lines.push([0, 1, 2, 3].map((r) => r * SIZE + c));
+  lines.push([0, 5, 10, 15], [3, 6, 9, 12]);
+  return lines;
+})();
+
+function BingoCell({
+  text,
+  checked,
+  inLine,
+  onToggle,
+}: {
+  text: string;
+  checked: boolean;
+  inLine: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={checked}
+      className="group relative aspect-square rounded-lg outline-none [perspective:800px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
+      <motion.span
+        className="absolute inset-0 block [transform-style:preserve-3d]"
+        animate={{ rotateY: checked ? 180 : 0 }}
+        transition={{ duration: 0.45, ease: [0.2, 0.8, 0.2, 1] }}
+      >
+        {/* Frente */}
+        <span className="absolute inset-0 flex items-center justify-center rounded-lg border bg-card p-1.5 text-center text-[0.6rem] font-semibold uppercase leading-tight tracking-wide text-card-foreground shadow-xs transition-colors [backface-visibility:hidden] group-hover:border-primary/50 sm:p-3 sm:text-xs md:text-sm">
+          {text}
+        </span>
+        {/* Verso (marcado) */}
+        <span
+          className={cn(
+            "absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-lg bg-primary p-1.5 text-center text-[0.6rem] font-semibold uppercase leading-tight tracking-wide text-primary-foreground [backface-visibility:hidden] [transform:rotateY(180deg)] sm:p-3 sm:text-xs md:text-sm",
+            inLine && "ring-2 ring-foreground ring-offset-2 ring-offset-background"
+          )}
+        >
+          <Check className="size-3.5 sm:size-4" aria-hidden />
+          {text}
+        </span>
+      </motion.span>
+    </button>
+  );
+}
 
 export function Bingo() {
-  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [loaded, setLoaded] = useState(false);
-  const [completionPercentage, setCompletionPercentage] = useState(0);
+  const reset = useAnimatedIcon<AnimatedIconHandle>();
+  const prevLines = useRef<number | null>(null);
 
-  // Load state from localStorage when component mounts
   useEffect(() => {
     try {
-      const savedState = localStorage.getItem(STORAGE_KEY);
-      if (savedState) {
-        const parsedState = JSON.parse(savedState);
-        setCheckedItems(parsedState);
-      }
-    } catch (error) {
-      console.error("Error loading state from localStorage:", error);
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) setChecked(JSON.parse(saved));
+    } catch {
+      /* sem storage: começa vazio */
     } finally {
       setLoaded(true);
     }
   }, []);
 
-  // Save state to localStorage when it changes
   useEffect(() => {
-    if (loaded) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(checkedItems));
-
-        // Calculate completion percentage
-        const checkedCount = Object.values(checkedItems).filter(Boolean).length;
-        const totalItems = bingoItems.length;
-        setCompletionPercentage(Math.round((checkedCount / totalItems) * 100));
-      } catch (error) {
-        console.error("Error saving state to localStorage:", error);
-      }
+    if (!loaded) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(checked));
+    } catch {
+      /* ignore */
     }
-  }, [checkedItems, loaded]);
+  }, [checked, loaded]);
 
-  const toggleItem = (id: string) => {
-    setCheckedItems((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
+  const marked = bingoItems.filter((i) => checked[i.id]).length;
+  const total = bingoItems.length;
 
-  const resetBingo = () => {
-    setCheckedItems({});
-  };
+  const completedLines = useMemo(
+    () => LINES.filter((line) => line.every((idx) => checked[bingoItems[idx]?.id])),
+    [checked]
+  );
+  const cellsInLine = useMemo(() => new Set(completedLines.flat()), [completedLines]);
+
+  // Comemora quando fecha uma linha nova, e com "BINGO" ao completar a cartela.
+  useEffect(() => {
+    if (!loaded) return;
+    const count = completedLines.length;
+    if (prevLines.current !== null) {
+      if (marked === total) void celebrateText("BINGO", "#16a34a");
+      else if (count > prevLines.current) void celebrate();
+    }
+    prevLines.current = count;
+  }, [completedLines.length, loaded, marked, total]);
 
   return (
-    <div className="min-h-screen py-8 px-4 bg-background">
-      <div className="max-w-4xl mx-auto">
-        <motion.div
-          className="mb-8 text-center"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <dl className="flex gap-8">
+          <div>
+            <dt className="text-sm text-muted-foreground">Marcados</dt>
+            <dd className="font-display text-3xl font-semibold tabular-nums">
+              <NumberFlow value={loaded ? marked : 0} />
+              <span className="text-muted-foreground">/{total}</span>
+            </dd>
+          </div>
+          <div>
+            <dt className="text-sm text-muted-foreground">Linhas</dt>
+            <dd className="font-display text-3xl font-semibold tabular-nums">
+              <NumberFlow value={completedLines.length} />
+            </dd>
+          </div>
+        </dl>
+
+        <Button
+          variant="outline"
+          onClick={() => setChecked({})}
+          disabled={marked === 0}
+          {...reset.handlers}
         >
-          <h1 className="text-3xl sm:text-4xl font-bold mb-2">
-            Bingo Rastafari
-          </h1>
-          <p className="text-muted-foreground mb-4">
-            Marque os itens que você encontrar
-          </p>
+          <RotateCCWIcon ref={reset.ref} size={16} aria-hidden />
+          Limpar cartela
+        </Button>
+      </div>
 
-          {loaded && (
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-4">
-              <div className="flex items-center gap-2">
-                <div className="w-full bg-muted rounded-full h-2.5 sm:w-48">
-                  <div
-                    className="bg-green-600 h-2.5 rounded-full transition-all duration-500 ease-out"
-                    style={{ width: `${completionPercentage}%` }}
-                  ></div>
-                </div>
-                <span className="text-sm font-medium">
-                  {completionPercentage}%
-                </span>
-              </div>
-
-              <button
-                onClick={resetBingo}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-muted hover:bg-muted/80 text-sm font-medium transition-colors"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                Reiniciar
-              </button>
-            </div>
-          )}
-        </motion.div>
-
-        <AnimatePresence>
-          {loaded && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4 }}
-              className="bg-card rounded-lg shadow-md p-2 sm:p-4"
-            >
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-                {bingoItems.map((item) => (
-                  <BingoCard
-                    key={item.id}
-                    text={item.text}
-                    isChecked={!!checkedItems[item.id]}
-                    onClick={() => toggleItem(item.id)}
-                  />
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      <div
+        className={cn(
+          "grid grid-cols-4 gap-2 rounded-2xl border bg-muted/30 p-2 transition-opacity sm:gap-3 sm:p-4",
+          !loaded && "opacity-0"
+        )}
+      >
+        {bingoItems.slice(0, SIZE * SIZE).map((item, idx) => (
+          <BingoCell
+            key={item.id}
+            text={item.text}
+            checked={!!checked[item.id]}
+            inLine={cellsInLine.has(idx)}
+            onToggle={() => setChecked((prev) => ({ ...prev, [item.id]: !prev[item.id] }))}
+          />
+        ))}
       </div>
     </div>
   );

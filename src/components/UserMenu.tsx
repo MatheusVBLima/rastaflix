@@ -11,10 +11,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, Palette, Shield } from "lucide-react";
 import Link from "next/link";
 
-export function UserMenu() {
+interface UserMenuProps {
+  isAdmin?: boolean;
+}
+
+export function UserMenu({ isAdmin = false }: UserMenuProps) {
   const { user } = useUser();
   const { signOut } = useClerk();
 
@@ -53,9 +57,26 @@ export function UserMenu() {
         <DropdownMenuItem asChild>
           <Link href="/perfil" className="cursor-pointer">
             <User className="mr-2 h-4 w-4" />
-            Meu Perfil
+            Meu perfil
           </Link>
         </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/aparencia" className="cursor-pointer">
+            <Palette className="mr-2 h-4 w-4" />
+            Aparência
+          </Link>
+        </DropdownMenuItem>
+        {isAdmin && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/admin" className="cursor-pointer">
+                <Shield className="mr-2 h-4 w-4" />
+                Admin
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="cursor-pointer"

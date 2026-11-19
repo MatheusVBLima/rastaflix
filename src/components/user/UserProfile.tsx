@@ -1,226 +1,183 @@
 "use client";
 
-import React from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import NumberFlow from "@number-flow/react";
+import { Palette, Shield } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { User, Mail, Calendar, Shield, Clock, Award } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { fetchUserAchievements } from "@/lib/queries";
 import { queryKeys } from "@/lib/query-keys";
-import Image from "next/image";
+import { formatDate } from "@/lib/format";
 
 interface UserProfileProps {
   isAdmin: boolean;
 }
 
-/**
- * Render the user's profile page with account details, verification and admin badges, and a gallery of achievements.
- *
- * @param isAdmin - When true, displays an "Administrador" badge on the profile header.
- * @returns The React element for the profile page. Shows loading skeletons while Clerk data is loading, an access-denied card if no user is present, or the full profile (avatar, contact and account info, badges) and achievements when a user is available.
- */
+function initials(name: string | null) {
+  if (!name) return "U";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
 export function UserProfile({ isAdmin }: UserProfileProps) {
   const { user, isLoaded } = useUser();
 
-  const { data: achievements = [] } = useQuery({
+  const { data: achievements = [], isLoading: loadingAchievements } = useQuery({
     queryKey: user?.id ? queryKeys.user.achievements(user.id) : ["userAchievements", "pending"],
     queryFn: () => (user?.id ? fetchUserAchievements(user.id) : Promise.resolve([])),
     enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
-  if (!isLoaded) {
-    return (
-      <div className="container mx-auto py-12 px-4 max-w-4xl">
-        <div className="space-y-6">
-          <Skeleton className="h-12 w-64" />
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-32 w-full" />
-        </div>
-      </div>
-    );
-  }
+  if (!isLoaded) return <ProfileSkeleton />;
 
   if (!user) {
     return (
-      <div className="container mx-auto py-12 px-4 max-w-4xl">
-        <Card>
-          <CardHeader>
-            <CardTitle>Acesso Negado</CardTitle>
-            <CardDescription>Você precisa estar logado para ver esta página.</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
+      <EmptyState
+        title="Entre para ver seu perfil"
+        action={
+          <Button asChild>
+            <Link href="/sign-in">Entrar</Link>
+          </Button>
+        }
+      />
     );
   }
 
-  const formatDate = (date: Date | number | null) => {
-    if (!date) return "Não disponível";
-    const dateObj = typeof date === "number" ? new Date(date) : date;
-    return dateObj.toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
-  };
+  const verified =
+    user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId)?.verification.status ===
+    "verified";
 
-  const getInitials = (name: string | null) => {
-    if (!name) return "U";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const facts = [
+    { label: "Usuário", value: user.username ? `@${user.username}` : "Não definido" },
+    { label: "Membro desde", value: formatDate(user.createdAt?.toISOString()) },
+    {
+      label: "Último acesso",
+      value: user.lastSignInAt ? formatDate(user.lastSignInAt.toISOString()) : "Nunca",
+    },
+  ];
 
   return (
-    <div className="container mx-auto py-12 px-4 max-w-4xl">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Meu Perfil</h1>
-          <p className="text-muted-foreground mt-2">
-            Visualize suas informações e atividades na Rastaflix
-          </p>
+    <div className="space-y-10">
+      {/* Identidade */}
+      <section className="flex flex-col gap-6 rounded-2xl border bg-card p-6 sm:flex-row sm:items-center">
+        <Avatar className="size-20 ring-2 ring-border">
+          <AvatarImage src={user.imageUrl} alt="" />
+          <AvatarFallback className="font-display text-xl">{initials(user.fullName)}</AvatarFallback>
+        </Avatar>
+        <div className="min-w-0 flex-1 space-y-2">
+          <h2 className="truncate font-display text-2xl font-semibold tracking-tight">
+            {user.fullName || user.username || "Usuário"}
+          </h2>
+          <p className="truncate text-muted-foreground">{user.primaryEmailAddress?.emailAddress}</p>
+          <div className="flex flex-wrap gap-2">
+            {isAdmin && (
+              <Badge className="gap-1">
+                <Shield /> Administrador
+              </Badge>
+            )}
+            {!verified && <Badge variant="outline">E-mail não verificado</Badge>}
+          </div>
+        </div>
+        <Button asChild variant="outline" className="self-start sm:self-center">
+          <Link href="/aparencia">
+            <Palette /> Aparência
+          </Link>
+        </Button>
+      </section>
+
+      {/* Conta */}
+      <dl className="grid gap-4 sm:grid-cols-3">
+        {facts.map((f) => (
+          <div key={f.label} className="rounded-xl border bg-card p-5">
+            <dt className="text-sm text-muted-foreground">{f.label}</dt>
+            <dd className="mt-1 truncate font-medium">{f.value}</dd>
+          </div>
+        ))}
+      </dl>
+
+      {/* Conquistas */}
+      <section aria-labelledby="conquistas" className="space-y-4">
+        <div className="flex items-baseline justify-between gap-4">
+          <h2 id="conquistas" className="font-display text-xl font-semibold tracking-tight">
+            Conquistas
+          </h2>
+          {!loadingAchievements && (
+            <p className="text-sm tabular-nums text-muted-foreground">
+              <NumberFlow value={achievements.length} className="font-medium text-foreground" />{" "}
+              {achievements.length === 1 ? "conquista" : "conquistas"}
+            </p>
+          )}
         </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={user.imageUrl} alt={user.fullName || "Usuário"} />
-                <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <CardTitle className="text-2xl">{user.fullName || "Usuário"}</CardTitle>
-                <CardDescription className="mt-1">
-                  {user.primaryEmailAddress?.emailAddress}
-                </CardDescription>
-                <div className="flex gap-2 mt-2">
-                  {isAdmin && (
-                    <Badge variant="default">
-                      <Shield className="h-3 w-3 mr-1" />
-                      Administrador
-                    </Badge>
-                  )}
-                  <Badge variant="outline">
-                    {user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId)?.verification.status === "verified" ? "Email Verificado" : "Email Não Verificado"}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-        </Card>
+        {loadingAchievements ? (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <Skeleton key={i} className="aspect-[3/4] w-full rounded-xl" />
+            ))}
+          </div>
+        ) : achievements.length === 0 ? (
+          <EmptyState
+            title="Nenhuma conquista ainda"
+            description="Quem vota no Rasta Awards ganha a badge da edição."
+            action={
+              <Button asChild variant="outline">
+                <Link href="/rasta-awards">Ir para o Rasta Awards</Link>
+              </Button>
+            }
+            className="min-h-56"
+          />
+        ) : (
+          <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {achievements.map((a) => {
+              const year = a.achievement_type === "rasta_awards_voter" ? a.achievement_year : 2025;
+              const title = `Rasta Awards ${year}`;
+              return (
+                <li key={a.id} className="space-y-2">
+                  <div className="relative aspect-[3/4] overflow-hidden rounded-xl border bg-muted">
+                    <Image
+                      src={`/awards/rasta-awards-${year}.png`}
+                      alt={`Badge ${title}`}
+                      fill
+                      sizes="(max-width: 640px) 50vw, 25vw"
+                      className="object-cover"
+                    />
+                  </div>
+                  <p className="text-sm font-medium">{title}</p>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Informações da Conta
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Email Principal</p>
-                <p className="text-sm text-muted-foreground">
-                  {user.primaryEmailAddress?.emailAddress}
-                </p>
-              </div>
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center gap-3">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Nome de Usuário</p>
-                <p className="text-sm text-muted-foreground">
-                  {user.username || "Não definido"}
-                </p>
-              </div>
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center gap-3">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Membro desde</p>
-                <p className="text-sm text-muted-foreground">
-                  {formatDate(user.createdAt)}
-                </p>
-              </div>
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center gap-3">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Último acesso</p>
-                <p className="text-sm text-muted-foreground">
-                  {user.lastSignInAt ? formatDate(user.lastSignInAt) : "Nunca"}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5" />
-              Conquistas
-            </CardTitle>
-            <CardDescription>
-              Badges e conquistas que você ganhou na plataforma
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {achievements.length === 0 ? (
-              <div className="text-center py-8">
-                <Award className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                <p className="text-muted-foreground">
-                  Você ainda não tem conquistas. Participe do Rasta Awards para ganhar sua primeira badge!
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {achievements.map((achievement) => {
-                  // Determine badge image and title based on achievement type
-                  let badgeImage = "/awards/rasta-awards-2025.png";
-                  let badgeTitle = "Rasta Awards";
-
-                  if (achievement.achievement_type === "rasta_awards_voter") {
-                    badgeImage = `/awards/rasta-awards-${achievement.achievement_year}.png`;
-                    badgeTitle = `Rasta Awards ${achievement.achievement_year}`;
-                  }
-
-                  return (
-                    <div
-                      key={achievement.id}
-                      className="relative w-full aspect-[3/4] rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
-                    >
-                      <Image
-                        src={badgeImage}
-                        alt={badgeTitle}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+function ProfileSkeleton() {
+  return (
+    <div className="space-y-10" aria-busy="true" aria-label="Carregando">
+      <div className="flex items-center gap-6 rounded-2xl border p-6">
+        <Skeleton className="size-20 rounded-full" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-20 rounded-xl" />
+        ))}
       </div>
     </div>
   );

@@ -1,46 +1,58 @@
-import { Badge } from "@/components/ui/badge";
-import { nicknames } from "@/data/nicknames";
 import Image from "next/image";
+import heroImg from "../../public/hero.png";
+import { PageTransition } from "@/components/layout/PageTransition";
+import { NicknameMarquee } from "@/components/home/NicknameMarquee";
+import { HomeSections } from "@/components/home/HomeSections";
 
-/**
- * Homepage component that renders a responsive two-column landing layout for Rastaflix.
- *
- * Left column centers the title, descriptive text, and a list of nickname badges; the right column
- * displays a themed hero image that is visible only on large screens.
- *
- * @returns The homepage JSX element
- */
 export default function Home() {
   return (
-    <div className="lg:grid lg:grid-cols-2">
-      <div className="flex items-center justify-center py-12">
-        <div className="mx-auto grid w-[350px] gap-6">
-          <h1 className="text-center text-3xl font-bold">Rastaflix</h1>
-          <p className="text-center text-lg">
-            Acompanhe as histórias do nosso querido Gabriel Scutasu
-          </p>
-          <p className="text-center text-lg">Também conhecido como</p>
-          <div className="flex flex-wrap gap-4 items-center justify-center">
-            {nicknames.map((n) => (
-              <Badge key={n} variant="outline">
-                {n}
-              </Badge>
-            ))}
+    <PageTransition>
+      <div>
+        {/* Hero */}
+        <section className="relative isolate overflow-hidden border-b">
+          {/* Glow sutil atrás do retrato para destacar cabelo e silhueta no tema escuro */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_55%_70%_at_72%_50%,color-mix(in_oklab,var(--primary)_22%,transparent),transparent_72%)]"
+          />
+
+          <div className="relative overflow-hidden">
+            <div className="container relative mx-auto grid grid-cols-1 items-center gap-4 px-4 pt-10 md:min-h-[440px] md:grid-cols-12 md:gap-6 md:px-6 md:pt-0 lg:min-h-[520px]">
+              <div className="relative z-10 md:col-span-5 md:py-16 lg:py-20">
+                <h1 className="font-display text-5xl font-semibold leading-[0.9] tracking-[-0.04em] sm:text-6xl md:text-6xl lg:text-[4.75rem] xl:text-[5.75rem]">
+                  Rastaflix
+                </h1>
+                <p className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg md:mt-6 md:text-xl">
+                  As histórias do nosso querido Gabriel Scutasu, também conhecido como
+                </p>
+              </div>
+
+              <div className="relative flex items-end justify-center md:col-span-7 md:h-full md:min-h-[440px] md:justify-end lg:min-h-[520px]">
+                {/* Rim light suave atrás das cabeças para separar do fundo escuro */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute top-1/2 left-1/2 -z-10 h-64 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/[0.08] blur-3xl md:h-80 md:w-[26rem] lg:h-96 lg:w-[32rem]"
+                />
+                <Image
+                  src={heroImg}
+                  alt="Gabriel Scutasu (Ovelhera)"
+                  priority
+                  sizes="(max-width: 768px) 100vw, 60vw"
+                  className="pointer-events-none h-auto w-full max-w-[440px] translate-y-4 select-none object-contain drop-shadow-[0_20px_36px_rgba(0,0,0,0.45)] sm:max-w-[520px] sm:translate-y-5 md:max-w-[620px] md:translate-y-7 lg:max-w-[740px] lg:translate-y-8"
+                />
+              </div>
+            </div>
           </div>
+
+          <div className="relative z-10">
+            <NicknameMarquee />
+          </div>
+        </section>
+
+        <div className="container mx-auto px-4 py-12 md:px-6">
+          <HomeSections />
         </div>
       </div>
-      <div className="hidden bg-muted lg:flex">
-        <Image
-          src="/hero.png"
-          alt="Foto de Gabriel 'Givaldo' Scutasu comendo açaí"
-          width={900}
-          height={600}
-          priority
-          placeholder="blur"
-          blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mM8c+ZMPQAHPgLI8aPJrAAAAABJRU5ErkJggg=="
-          className="max-h-[calc(100vh-5.2rem)] w-full object-cover brightness-[0.4] grayscale"
-        />
-      </div>
-    </div>
+    </PageTransition>
   );
 }

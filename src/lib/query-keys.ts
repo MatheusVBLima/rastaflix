@@ -2,11 +2,13 @@ export const queryKeys = {
   historias: {
     all: ["historias"] as const,
     list: () => ["historias"] as const,
+    adminList: () => ["historias", "admin"] as const,
     detail: (id: string) => ["story", id] as const,
   },
   musicas: {
     all: ["musicas"] as const,
     list: () => ["musicas"] as const,
+    adminList: () => ["musicas", "admin"] as const,
     detail: (id: string) => ["music", id] as const,
   },
   esculachos: {
@@ -20,6 +22,7 @@ export const queryKeys = {
   clipes: {
     all: ["clipes"] as const,
     list: () => ["clipes"] as const,
+    adminList: () => ["clipes", "admin"] as const,
   },
   rastaAwards: {
     all: ["rastaAwards"] as const,

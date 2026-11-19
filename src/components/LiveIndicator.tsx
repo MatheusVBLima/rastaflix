@@ -75,11 +75,11 @@ export function LiveIndicator() {
           variant={isLive ? "default" : "ghost"}
           size="sm"
           className={cn(
-            "gap-2 transition-all",
-            isLive && "bg-red-600 hover:bg-red-700 text-white animate-pulse"
+            "gap-2 transition-colors",
+            isLive && "bg-red-600 hover:bg-red-700 text-white"
           )}
         >
-          <Radio className={cn("h-4 w-4", isLive && "animate-pulse")} />
+          <Radio className="h-4 w-4" />
           <span className="hidden sm:inline">
             {isLive ? "AO VIVO" : "Lives"}
           </span>

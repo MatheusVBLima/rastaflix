@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { User } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -9,8 +11,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { LogIn } from "lucide-react";
-import Link from "next/link";
 
 interface LoginDialogProps {
   open: boolean;
@@ -20,25 +20,26 @@ interface LoginDialogProps {
 export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <LogIn className="h-5 w-5" />
-            Login Necessário
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader className="items-center text-center sm:text-center">
+          <span className="mb-2 flex size-14 items-center justify-center rounded-full bg-muted/70 ring-8 ring-muted/30">
+            <span className="flex size-10 items-center justify-center rounded-full border bg-background shadow-xs">
+              <User className="size-4 text-muted-foreground" aria-hidden />
+            </span>
+          </span>
+          <DialogTitle className="font-display text-xl font-semibold tracking-tight">
+            Entre na sua conta
           </DialogTitle>
           <DialogDescription>
-            Você precisa estar logado para participar da votação do Rasta Awards.
-            Faça login para registrar seus votos e concorrer a conquistas exclusivas!
+            Use sua conta do Discord para registrar seus votos no Rasta Awards e liberar conquistas no perfil.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="flex-col sm:flex-row gap-2">
+        <DialogFooter className="mt-2 gap-2 sm:justify-center">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+            Agora não
           </Button>
           <Button asChild>
-            <Link href="/sign-in">
-              Fazer Login
-            </Link>
+            <Link href="/sign-in">Entrar com Discord</Link>
           </Button>
         </DialogFooter>
       </DialogContent>

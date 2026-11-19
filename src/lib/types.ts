@@ -23,6 +23,7 @@ export const StorySchema = z.object({
     ),
   url: z.string().url({ message: "URL inválida" }),
   imageUrl: z.string().url({ message: "URL da imagem inválida" }).optional(),
+  archived: z.boolean().optional(),
   created_at: z.string().datetime().optional(),
 });
 
@@ -37,6 +38,7 @@ export const MusicSchema = z.object({
   title: z.string().min(1, "O título é obrigatório."),
   url: z.string().url("Por favor, insira uma URL válida."),
   imageUrl: z.string().url("URL da imagem inválida.").nullable().optional(), // Tornando opcional e nula
+  archived: z.boolean().optional(),
 });
 
 // Tipo para os dados do formulário inferido do MusicSchema
@@ -56,6 +58,7 @@ export interface Story {
   tags: string[];
   url: string;
   imageUrl?: string | null;
+  archived?: boolean;
   created_at?: string;
   user_id?: string;
 }
@@ -65,6 +68,7 @@ export interface Music {
   title: string;
   url: string;
   imageUrl?: string | null;
+  archived?: boolean;
   created_at?: string;
 }
 
@@ -397,6 +401,7 @@ export interface Clipe {
   url: string;
   thumbnail_url?: string | null;
   plataforma: ClipePlatform;
+  archived?: boolean;
   created_at?: string;
 }
 
@@ -407,6 +412,7 @@ export const ClipeSchema = z.object({
   plataforma: z.enum(["twitch", "kick"], {
     error: "Plataforma deve ser twitch ou kick.",
   }),
+  archived: z.boolean().optional(),
 });
 
 export const EditClipeSchema = ClipeSchema.extend({

@@ -1,161 +1,112 @@
 "use client";
 
-import React, { useMemo } from "react";
+import { ViewTransition, useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { parseAsString } from "nuqs";
+import { Mic, SearchX } from "lucide-react";
 import { useDebouncedQueryState } from "@/hooks/use-debounced-query-state";
 import { fetchEsculachos } from "@/lib/queries";
 import { queryKeys } from "@/lib/query-keys";
-import { Esculacho } from "@/lib/types";
-import { Input } from "@/components/ui/input";
+import type { Esculacho } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Download, Search, Mic } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AudioPlayerProvider } from "@/components/ui/audio-player-eleven";
-import { EsculachoAudioPlayer } from "@/components/esculachos/EsculachoAudioPlayer";
 import { EmptyState } from "@/components/ui/empty-state";
+import { SearchField } from "@/components/layout/SearchField";
+import { ResultCount } from "@/components/layout/ResultCount";
+import { StickyFilterBar } from "@/components/layout/StickyFilterBar";
+import { ShowMore } from "@/components/layout/ShowMore";
+import { EsculachoCard } from "@/components/cards/EsculachoCard";
 
-/**
- * Renders the Esculachos page: a debounced search tied to the "busca" query parameter, fetches esculachos, and displays an error message, an empty state, loading skeletons, or a responsive grid of cards showing each esculacho's title, description, content, author badge and an audio player when available.
- *
- * @returns The rendered Esculachos page component tree.
- */
+const PAGE = 12;
+
 export function Esculachos() {
   const [searchTerm, setSearchTerm] = useDebouncedQueryState(
     "busca",
     parseAsString.withDefault("").withOptions({ clearOnDefault: true }),
     300
   );
+  const [limit, setLimit] = useState(PAGE);
 
-  const {
-    data: esculachos = [],
-    isLoading,
-    error,
-  } = useQuery<Esculacho[], Error>({
+  const { data: esculachos = [], error } = useQuery<Esculacho[], Error>({
     queryKey: queryKeys.esculachos.list(),
     queryFn: fetchEsculachos,
   });
 
-  const filteredEsculachos = useMemo(() => {
-    if (!esculachos) {
-      return [];
-    }
-    if (!searchTerm) {
-      return esculachos;
-    }
-    return esculachos.filter(
-      (esculacho) =>
-        esculacho.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (esculacho.descricao &&
-          esculacho.descricao
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())) ||
-        esculacho.conteudo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (esculacho.autor &&
-          esculacho.autor.toLowerCase().includes(searchTerm.toLowerCase()))
+  const search = useDeferredValue(searchTerm);
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return esculachos;
+    return esculachos.filter((e) =>
+      [e.titulo, e.descricao, e.conteudo, e.autor].some((field) =>
+        field?.toLowerCase().includes(q)
+      )
     );
-  }, [searchTerm, esculachos]);
+  }, [esculachos, search]);
 
   if (error) {
-    return <p>Erro ao carregar esculachos: {error.message}</p>;
+    return (
+      <EmptyState
+        title="Não foi possível carregar os esculachos"
+        description={error.message}
+      />
+    );
   }
 
   return (
-    <AudioPlayerProvider>
-      <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4">
-        <Input
-          type="text"
-          placeholder="Pesquisar esculachos..."
+    <div className="space-y-6">
+      <StickyFilterBar>
+        <SearchField
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
-          disabled={isLoading}
+          onChange={(v) => {
+            setLimit(PAGE);
+            setSearchTerm(v);
+          }}
+          label="Buscar esculachos"
+          placeholder="Buscar no texto, título ou autor"
         />
-      </div>
-
-      {!isLoading && filteredEsculachos.length === 0 && (
-        <EmptyState
-          icon={esculachos && esculachos.length > 0 && searchTerm ? Search : Mic}
-          title={esculachos && esculachos.length > 0 && searchTerm ? "Nenhum esculacho encontrado" : "Nenhum esculacho cadastrado"}
-          description={
-            esculachos && esculachos.length > 0 && searchTerm
-              ? `Não encontramos esculachos que correspondam a "${searchTerm}". Tente pesquisar com outros termos.`
-              : "Ainda não há esculachos cadastrados no sistema. Fique atento para novas adições!"
-          }
+        <ResultCount
+          shown={filtered.length}
+          total={esculachos.length}
+          noun={["esculacho", "esculachos"]}
+          className="sm:ml-auto"
         />
-      )}
+      </StickyFilterBar>
 
-      {isLoading && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Card
-              key={`skeleton-${index}`}
-              className="flex flex-col h-full overflow-hidden"
-            >
-              <Skeleton className="h-20 w-full" />
-              <CardContent className="flex-grow p-4">
-                <Skeleton className="h-4 w-full mb-2" />
-                <Skeleton className="h-4 w-5/6 mb-2" />
-                <Skeleton className="h-4 w-2/3" />
-              </CardContent>
-              <CardFooter className="p-4 pt-0 mt-auto">
-                <Skeleton className="h-10 w-full" />
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+      {filtered.length === 0 ? (
+        searchTerm ? (
+          <EmptyState
+            icon={SearchX}
+            title={`Nenhum esculacho com “${searchTerm}”`}
+            action={
+              <Button variant="outline" onClick={() => setSearchTerm("")}>
+                Limpar busca
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState icon={Mic} title="Nenhum esculacho cadastrado" />
+        )
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {filtered.slice(0, limit).map((esculacho) => (
+              <ViewTransition
+                key={esculacho.id}
+                enter="scale-in"
+                exit="scale-out"
+                update="auto"
+                default="none"
+              >
+                <EsculachoCard esculacho={esculacho} />
+              </ViewTransition>
+            ))}
+          </div>
+          <ShowMore
+            shown={Math.min(limit, filtered.length)}
+            total={filtered.length}
+            onMore={() => setLimit((l) => l + PAGE)}
+          />
+        </>
       )}
-
-      {!isLoading && esculachos && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredEsculachos.map((esculacho) => (
-            <Card key={esculacho.id} className="flex flex-col">
-              <CardHeader>
-                <CardTitle>{esculacho.titulo}</CardTitle>
-                {esculacho.descricao && (
-                  <CardDescription className="italic">
-                    {esculacho.descricao}
-                  </CardDescription>
-                )}
-              </CardHeader>
-              <CardContent className="flex-grow">
-                <p className="text-sm whitespace-pre-wrap">
-                  {esculacho.conteudo}
-                </p>
-              </CardContent>
-              <CardFooter className="flex flex-col items-start gap-3 pt-4">
-                <div className="flex flex-wrap gap-2">
-                  {esculacho.autor && (
-                    <Badge variant="outline">Autor: {esculacho.autor}</Badge>
-                  )}
-                </div>
-                {esculacho.audio_url ? (
-                  <EsculachoAudioPlayer 
-                    audioUrl={esculacho.audio_url} 
-                    titulo={esculacho.titulo}
-                    esculachoId={esculacho.id}
-                  />
-                ) : (
-                  <p className="text-sm text-muted-foreground w-full text-center">
-                    Áudio não disponível
-                  </p>
-                )}
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      )}
-      </div>
-    </AudioPlayerProvider>
+    </div>
   );
 }

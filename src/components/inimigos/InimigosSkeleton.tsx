@@ -1,44 +1,32 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
-/**
- * Render a centered, bordered table skeleton used as a placeholder for an enemies list.
- *
- * The table includes a header with "Nome do Inimigo" and "Status da Vinganca" and five body rows
- * containing skeleton placeholders for the enemy name and vengeance status.
- *
- * @returns A JSX element containing the skeleton table with five placeholder rows.
- */
 export function InimigosSkeleton() {
   return (
-    <div className="border rounded-md p-4 max-w-2xl mx-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[70%]">Nome do Inimigo</TableHead>
-            <TableHead className="text-right">Status da Vinganca</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <TableRow key={i}>
-              <TableCell>
-                <Skeleton className="h-5 w-3/4" />
-              </TableCell>
-              <TableCell className="text-right">
-                <Skeleton className="h-5 w-20 inline-block" />
-              </TableCell>
-            </TableRow>
+    <div className="space-y-8" aria-busy="true" aria-label="Carregando">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-[1fr_1fr_2fr]">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className={i === 2 ? "col-span-2 space-y-3 rounded-xl border p-5 sm:col-span-1" : "space-y-3 rounded-xl border p-5"}>
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-9 w-16" />
+          </div>
+        ))}
+      </div>
+      <div className="space-y-3">
+        <div className="flex gap-2">
+          <Skeleton className="h-10 w-full sm:max-w-sm" />
+          <Skeleton className="h-8 w-24" />
+        </div>
+        <div className="overflow-hidden rounded-xl border">
+          <Skeleton className="h-11 w-full rounded-none" />
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-6 border-t px-4 py-3">
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="ml-auto h-4 w-24" />
+            </div>
           ))}
-        </TableBody>
-      </Table>
+        </div>
+      </div>
     </div>
   );
 }

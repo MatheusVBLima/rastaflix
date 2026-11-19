@@ -1,7 +1,11 @@
 import { Suspense } from "react";
-import { Users } from "lucide-react";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { PageHeader } from "@/components/layout/PageHeader";
+import {
+  PageTransition,
+  RevealTransition,
+  SkeletonTransition,
+} from "@/components/layout/PageTransition";
 import { Inimigos } from "@/components/inimigos/Inimigos";
 import { InimigosSkeleton } from "@/components/inimigos/InimigosSkeleton";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -16,34 +20,33 @@ export const metadata = pageMetadata(
   "/inimigos"
 );
 
-/**
- * Page component that displays the "Mural de Inimigos" header and its prefetched content with a Suspense fallback.
- *
- * @returns A React element for the Inimigos page containing a PageHeader and Suspense-wrapped InimigosContent with an InimigosSkeleton fallback.
- */
 export default function InimigosPage() {
   return (
-    <div className="container mx-auto py-10 min-h-screen space-y-6">
-      <PageHeader
-        icon={Users}
-        title="Mural de Inimigos"
-        description="Conheça os antagonistas dessa jornada rastafari."
-      />
-      <Suspense fallback={<InimigosSkeleton />}>
-        <InimigosContent />
-      </Suspense>
-    </div>
+    <PageTransition>
+      <div className="container mx-auto space-y-8 px-4 py-10 md:px-6">
+        <PageHeader
+          slug="inimigos"
+          title="Mural de Inimigos"
+          description="Os antagonistas dessa jornada rastafari."
+        />
+        <Suspense
+          fallback={
+            <SkeletonTransition>
+              <InimigosSkeleton />
+            </SkeletonTransition>
+          }
+        >
+          <RevealTransition>
+            <InimigosContent />
+          </RevealTransition>
+        </Suspense>
+      </div>
+    </PageTransition>
   );
 }
 
-/**
- * Prefetches the `inimigos` query into a query client and returns the hydrated UI for the Inimigos component.
- *
- * @returns A React element tree rendering `Inimigos` wrapped with an `ErrorBoundary` and a `HydrationBoundary` initialized with the prefetched query cache.
- */
 async function InimigosContent() {
   const queryClient = getQueryClient();
-
   await queryClient.fetchQuery({
     queryKey: queryKeys.inimigos.list(),
     queryFn: fetchInimigos,

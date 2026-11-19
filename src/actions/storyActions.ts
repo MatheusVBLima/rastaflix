@@ -36,6 +36,7 @@ export async function addStory(
       : [],
     url: formData.get("url"),
     imageUrl: formData.get("imageUrl"),
+    archived: formData.get("archived") === "true",
   };
 
   const validatedFields = StorySchema.safeParse(rawFormData);
@@ -68,6 +69,7 @@ export async function addStory(
         tags: validatedFields.data.tags,
         url: validatedFields.data.url,
         image_url: validatedFields.data.imageUrl || null,
+        archived: validatedFields.data.archived ?? false,
         user_id: adminUserId,
       },
     ])
@@ -97,9 +99,8 @@ export async function editStory(
   prevState: ActionResponse | undefined,
   formData: FormData
 ): Promise<ActionResponse> {
-  let adminUserId;
   try {
-    adminUserId = await ensureAdmin();
+    await ensureAdmin();
   } catch (error: any) {
     return { success: false, message: error.message };
   }
@@ -116,6 +117,7 @@ export async function editStory(
       : [],
     url: formData.get("url"),
     imageUrl: formData.get("imageUrl"),
+    archived: formData.get("archived") === "true",
   };
 
   const validatedFields = EditStorySchema.safeParse(rawFormData);
@@ -142,6 +144,7 @@ export async function editStory(
       tags: validatedFields.data.tags,
       url: validatedFields.data.url,
       image_url: validatedFields.data.imageUrl || null,
+      archived: validatedFields.data.archived ?? false,
     })
     .eq("id", validatedFields.data.id);
 
@@ -157,6 +160,46 @@ export async function editStory(
   revalidatePath("/admin/historias");
 
   return { success: true, message: "História atualizada com sucesso!" };
+}
+
+// --- ARCHIVE / RESTORE STORY ---
+export async function setStoryArchived(
+  storyId: string,
+  archived: boolean
+): Promise<ActionResponse> {
+  try {
+    await ensureAdmin();
+  } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+
+  if (!storyId) {
+    return { success: false, message: "ID da história não fornecido." };
+  }
+
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase
+    .from("historias")
+    .update({ archived })
+    .eq("id", storyId);
+
+  if (error) {
+    return {
+      success: false,
+      message: `Erro ao atualizar status da história: ${error.message}`,
+    };
+  }
+
+  revalidatePath("/historias");
+  revalidatePath(`/historias/${storyId}`);
+  revalidatePath("/admin/historias");
+
+  return {
+    success: true,
+    message: archived
+      ? "História arquivada. Ela não aparece mais para os usuários."
+      : "História reativada e visível novamente no site.",
+  };
 }
 
 // --- DELETE STORY ---

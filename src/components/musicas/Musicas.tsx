@@ -1,174 +1,107 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import { ViewTransition, useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
-import Image from "next/image";
+import { parseAsString } from "nuqs";
+import { Music2, SearchX } from "lucide-react";
+import { useDebouncedQueryState } from "@/hooks/use-debounced-query-state";
 import { fetchMusicas } from "@/lib/queries";
 import { queryKeys } from "@/lib/query-keys";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Music } from "@/lib/types";
+import type { Music } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Music2, Search } from "lucide-react";
+import { SearchField } from "@/components/layout/SearchField";
+import { ResultCount } from "@/components/layout/ResultCount";
+import { StickyFilterBar } from "@/components/layout/StickyFilterBar";
+import { ShowMore } from "@/components/layout/ShowMore";
+import { MusicCard } from "@/components/cards/MusicCard";
 
-interface MusicasProps {
-  isAdmin?: boolean;
-}
+const PAGE = 24;
 
-/**
- * Renders a searchable, responsive grid of music cards that link to each music's URL.
- *
- * Displays a search input to filter music by title, an appropriate empty state when there are no matches
- * or no music available, and a grid of cards showing each music's thumbnail, title, and a button to play.
- *
- * @param isAdmin - Optional flag indicating admin privileges (provided prop; not used by the component's current UI).
- * @returns A JSX element containing the search input, optional empty-state message, and a responsive grid of linked music cards.
- */
-export function Musicas({ isAdmin }: MusicasProps) {
-  const [searchTerm, setSearchTerm] = useState("");
+export function Musicas() {
+  const [searchTerm, setSearchTerm] = useDebouncedQueryState(
+    "busca",
+    parseAsString.withDefault("").withOptions({ clearOnDefault: true }),
+    300
+  );
+  const [limit, setLimit] = useState(PAGE);
 
-  // Usar useQuery com a mesma queryKey usada no prefetch
-  // A queryFn usa fetchMusicas real para que invalidateQueries funcione corretamente
-  const {
-    data: musicas = [],
-    isLoading,
-    error,
-  } = useQuery<Music[], Error>({
+  const { data: musicas = [], error } = useQuery<Music[], Error>({
     queryKey: queryKeys.musicas.list(),
     queryFn: fetchMusicas,
   });
 
-  const filteredMusicas = useMemo(() => {
-    if (!musicas || !Array.isArray(musicas)) {
-      return [];
-    }
-
-    const musicasList = musicas as Music[];
-
-    const result = musicasList.filter((music: Music) => {
-      const matchesSearchTerm = music.title
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      return matchesSearchTerm;
-    });
-
-    return result;
-  }, [musicas, searchTerm]);
-
-  if (isLoading && !musicas?.length) {
-    return <p>Carregando músicas...</p>;
-  }
+  const search = useDeferredValue(searchTerm);
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return q ? musicas.filter((m) => m.title.toLowerCase().includes(q)) : musicas;
+  }, [musicas, search]);
 
   if (error) {
-    return <p>Erro ao carregar músicas: {error.message}</p>;
+    return (
+      <EmptyState
+        title="Não foi possível carregar as músicas"
+        description={error.message}
+      />
+    );
   }
 
   return (
-    <>
-      <div className="flex flex-col md:flex-row gap-4 items-start">
-        <Input
-          type="text"
-          placeholder="Pesquisar por nome..."
+    <div className="space-y-8">
+      <StickyFilterBar>
+        <SearchField
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm w-full"
+          onChange={(v) => {
+            setLimit(PAGE);
+            setSearchTerm(v);
+          }}
+          label="Buscar músicas"
+          placeholder="Buscar pelo nome"
         />
-      </div>
+        <ResultCount
+          shown={filtered.length}
+          total={musicas.length}
+          noun={["música", "músicas"]}
+          className="sm:ml-auto"
+        />
+      </StickyFilterBar>
 
-      {filteredMusicas.length === 0 && !isLoading && (
-        <EmptyState
-          icon={musicas && musicas.length > 0 && searchTerm ? Search : Music2}
-          title={musicas && musicas.length > 0 && searchTerm ? "Nenhuma música encontrada" : "Nenhuma música cadastrada"}
-          description={
-            musicas && musicas.length > 0 && searchTerm
-              ? `Não encontramos músicas que correspondam a "${searchTerm}". Tente pesquisar com outros termos.`
-              : "Ainda não há músicas cadastradas no sistema. Fique atento para novas adições!"
-          }
-        />
+      {filtered.length === 0 ? (
+        searchTerm ? (
+          <EmptyState
+            icon={SearchX}
+            title={`Nenhuma música com “${searchTerm}”`}
+            action={
+              <Button variant="outline" onClick={() => setSearchTerm("")}>
+                Limpar busca
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState icon={Music2} title="Nenhuma música cadastrada" />
+        )
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
+            {filtered.slice(0, limit).map((music, i) => (
+              <ViewTransition
+                key={music.id}
+                enter="scale-in"
+                exit="scale-out"
+                update="auto"
+                default="none"
+              >
+                <MusicCard music={music} priority={i < 4} />
+              </ViewTransition>
+            ))}
+          </div>
+          <ShowMore
+            shown={Math.min(limit, filtered.length)}
+            total={filtered.length}
+            onMore={() => setLimit((l) => l + PAGE)}
+          />
+        </>
       )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredMusicas.map((music: Music) => (
-          <Link
-            href={music.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block"
-            key={music.id}
-          >
-            <Card
-              key={music.id}
-              className="flex flex-col h-full overflow-hidden group pt-0"
-            >
-              <div className="flex flex-col h-full">
-                {music.url && (
-                  <div className="relative w-full pt-[56.25%] overflow-hidden">
-                    <Image
-                      src={(() => {
-                        try {
-                          // Tentar extrair ID do YouTube da URL
-                          const urlObj = new URL(music.url);
-                          if (
-                            urlObj.hostname.includes("youtube.com") ||
-                            urlObj.hostname.includes("youtu.be")
-                          ) {
-                            // Extrair videoId para URLs padrão do YouTube
-                            let videoId = urlObj.searchParams.get("v");
-
-                            // Formato youtu.be/ID
-                            if (
-                              !videoId &&
-                              urlObj.hostname.includes("youtu.be")
-                            ) {
-                              videoId = urlObj.pathname.substring(1);
-                            }
-
-                            if (videoId) {
-                              // Construir URL da thumbnail diretamente
-                              return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-                            }
-                          }
-                          // Se não conseguir extrair do YouTube, usar a URL da imagem salva
-                          return music.imageUrl || "/placeholder.png";
-                        } catch (e) {
-                          // Fallback para qualquer erro
-                          return music.imageUrl || "/placeholder.png";
-                        }
-                      })()}
-                      alt={`Imagem para ${music.title}`}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      className="object-cover object-center transition-transform duration-300 ease-in-out group-hover:scale-105"
-                      onError={(e) => {
-                        // Fallback para imagem padrão se a thumbnail falhar
-                        const imgElement = e.currentTarget;
-                        imgElement.src = "/placeholder.png";
-                      }}
-                    />
-                  </div>
-                )}
-
-                <CardContent className="p-4 flex-grow">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-lg font-semibold hover:text-primary transition-colors line-clamp-2">
-                      {music.title}
-                    </h3>
-                  </div>
-                </CardContent>
-
-                <CardFooter className="p-4 pt-0 mt-auto">
-                  <Button className="w-full" tabIndex={-1}>
-                    Ouvir Música
-                  </Button>
-                </CardFooter>
-              </div>
-            </Card>
-          </Link>
-        ))}
-      </div>
-    </>
+    </div>
   );
 }

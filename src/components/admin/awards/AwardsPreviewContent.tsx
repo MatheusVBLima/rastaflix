@@ -1,14 +1,21 @@
 "use client";
 
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { fetchVotingData } from "@/lib/queries";
-import { VotingData } from "@/lib/types";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Trophy, Calendar, Award } from "lucide-react";
 import Image from "next/image";
+import { useQuery } from "@tanstack/react-query";
+import { Award, ExternalLink } from "lucide-react";
+import { fetchVotingData } from "@/lib/queries";
+import { queryKeys } from "@/lib/query-keys";
+import type { AwardSeason, VotingData } from "@/lib/types";
+import { formatDate } from "@/lib/format";
+import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Loader } from "@/components/ui/loader";
+
+const STATUS_LABEL: Record<AwardSeason["status"], string> = {
+  active: "Votação aberta",
+  closed: "Votação encerrada",
+  draft: "Rascunho",
+};
 
 interface AwardsPreviewContentProps {
   seasonId: string;
@@ -16,129 +23,120 @@ interface AwardsPreviewContentProps {
 
 export function AwardsPreviewContent({ seasonId }: AwardsPreviewContentProps) {
   const { data: votingData, isLoading } = useQuery<VotingData | null>({
-    queryKey: ["votingData", seasonId],
-    queryFn: () => seasonId ? fetchVotingData(seasonId) : null,
+    queryKey: queryKeys.rastaAwards.votingData(seasonId),
+    queryFn: () => (seasonId ? fetchVotingData(seasonId) : null),
     enabled: !!seasonId,
   });
 
   if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="h-12 bg-muted animate-pulse rounded" />
-        <div className="h-64 bg-muted animate-pulse rounded" />
-        <div className="h-64 bg-muted animate-pulse rounded" />
-      </div>
-    );
+    return <Loader label="Carregando preview" showLabel className="py-16" />;
   }
 
   if (!votingData) {
     return (
-      <div className="py-12">
-        <EmptyState
-          icon={Award}
-          title="Nenhum dado disponível"
-          description="Esta temporada ainda não possui categorias ou nominados."
-        />
-      </div>
+      <EmptyState
+        icon={Award}
+        title="Nenhum dado disponível"
+        description="Esta temporada ainda não possui categorias ou indicados."
+      />
     );
   }
 
-  const isActive = votingData.season.status === "active";
-  const isClosed = votingData.season.status === "closed";
-  const isDraft = votingData.season.status === "draft";
+  const { season, categories } = votingData;
+  const isActive = season.status === "active";
+  const isClosed = season.status === "closed";
+  const repeatsPageTitle = season.title.trim().toLowerCase() === "rasta awards";
+  const seasonHeading = repeatsPageTitle && season.description ? season.description : season.title;
+  const seasonDescription = seasonHeading === season.description ? null : season.description;
 
   return (
-    <div>
-      {/* Header */}
-      <div className="mb-8 text-center">
-        <h2 className="text-3xl font-bold mb-2 flex items-center justify-center gap-2">
-          <Trophy className="h-7 w-7 text-yellow-500" />
-          {votingData.season.title}
-        </h2>
-        {votingData.season.description && (
-          <p className="text-muted-foreground mb-4 text-sm">{votingData.season.description}</p>
+    <div className="space-y-6">
+      {/* Cabeçalho da temporada — espelha RastaAwardsVoting */}
+      <section className="space-y-2 rounded-xl border bg-card p-5">
+        <Badge variant={isActive ? "default" : isClosed ? "secondary" : "outline"}>
+          {STATUS_LABEL[season.status]}
+        </Badge>
+        <h3 className="font-display text-2xl font-semibold tracking-tight">
+          {seasonHeading}
+        </h3>
+        {seasonDescription && (
+          <p className="max-w-prose text-sm text-muted-foreground">{seasonDescription}</p>
         )}
-        <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <Calendar className="h-4 w-4" />
-            {new Date(votingData.season.start_date).toLocaleDateString("pt-BR")} -{" "}
-            {new Date(votingData.season.end_date).toLocaleDateString("pt-BR")}
-          </div>
-          <Badge variant={isActive ? "default" : isClosed ? "secondary" : "outline"}>
-            {isActive && "Votação Ativa"}
-            {isClosed && "Votação Encerrada"}
-            {isDraft && "Rascunho"}
-          </Badge>
-        </div>
-      </div>
+        <p className="text-sm tabular-nums text-muted-foreground">
+          {formatDate(season.start_date)} – {formatDate(season.end_date)}
+        </p>
+      </section>
 
-      {/* Categorias */}
-      {votingData.categories.length === 0 ? (
-        <div className="text-center text-muted-foreground py-8">
-          <p>Nenhuma categoria adicionada ainda.</p>
-          <p className="text-sm mt-2">Crie categorias usando o formulário ao lado.</p>
-        </div>
+      {categories.length === 0 ? (
+        <EmptyState
+          icon={Award}
+          title="Nenhuma categoria ainda"
+          description="Crie categorias na aba ao lado para vê-las aqui."
+        />
       ) : (
-        <div className="space-y-6">
-          {votingData.categories.map((category) => (
-            <Card key={category.id}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  {category.name}
-                </CardTitle>
+        <div className="space-y-5">
+          {categories.map((category) => (
+            <section
+              key={category.id}
+              className="space-y-4 rounded-xl border bg-card p-5"
+            >
+              <header className="space-y-1">
+                <h4 className="text-base font-semibold">{category.name}</h4>
                 {category.description && (
-                  <CardDescription>{category.description}</CardDescription>
+                  <p className="text-sm text-muted-foreground">{category.description}</p>
                 )}
-              </CardHeader>
-              <CardContent>
-                {category.nominees.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-6 border rounded-lg bg-muted/20">
-                    <p className="text-sm">Nenhum nominado nesta categoria ainda.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {category.nominees.map((nominee) => (
-                      <div
-                        key={nominee.id}
-                        className="flex items-start space-x-3 rounded-lg border p-4 bg-background"
-                      >
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{nominee.title}</span>
-                          </div>
-                          {nominee.description && (
-                            <p className="text-sm text-muted-foreground">
-                              {nominee.description}
-                            </p>
-                          )}
-                          {nominee.content_link && (
-                            <a
-                              href={nominee.content_link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-primary hover:underline inline-block"
-                            >
-                              Ver conteúdo →
-                            </a>
-                          )}
+              </header>
+
+              {category.nominees.length === 0 ? (
+                <p className="rounded-lg border border-dashed py-6 text-center text-sm text-muted-foreground">
+                  Nenhum indicado nesta categoria ainda.
+                </p>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {category.nominees.map((nominee) => (
+                    <div
+                      key={nominee.id}
+                      className="flex gap-3 rounded-lg border bg-background/60 p-3"
+                    >
+                      {nominee.image_url ? (
+                        <div className="relative size-14 shrink-0 overflow-hidden rounded-md bg-muted">
+                          <Image
+                            src={nominee.image_url}
+                            alt={nominee.title}
+                            fill
+                            sizes="56px"
+                            className="object-cover"
+                            unoptimized
+                          />
                         </div>
-                        {nominee.image_url && (
-                          <div className="relative w-16 h-16 rounded overflow-hidden flex-shrink-0">
-                            <Image
-                              src={nominee.image_url}
-                              alt={nominee.title}
-                              fill
-                              className="object-cover"
-                              unoptimized
-                            />
-                          </div>
+                      ) : null}
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <p className="text-sm font-medium leading-snug">{nominee.title}</p>
+                        {nominee.description && (
+                          <p className="line-clamp-2 text-xs text-muted-foreground">
+                            {nominee.description}
+                          </p>
+                        )}
+                        {nominee.content_link && (
+                          <a
+                            href={nominee.content_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                          >
+                            Ver conteúdo <ExternalLink className="size-3" aria-hidden />
+                          </a>
                         )}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      <span
+                        aria-hidden
+                        className="mt-0.5 size-4 shrink-0 rounded-full border border-muted-foreground/40"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
           ))}
         </div>
       )}

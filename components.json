@@ -22,6 +22,9 @@
     "@kibo-ui": "https://www.kibo-ui.com/r/{name}.json",
     "@reui": "https://reui.io/r/{name}.json",
     "@aceternity": "https://ui.aceternity.com/registry/{name}.json",
-    "@originui": "https://originui.com/r/{name}.json"
+    "@originui": "https://originui.com/r/{name}.json",
+    "@dotmatrix": "https://dotmatrix.zzzzshawn.cloud/r/{name}.json",
+    "@audiocn": "https://www.audiocn.dev/r/{name}.json",
+    "@lucide-animated": "https://lucide-animated.com/r/{name}.json"
   }
 }

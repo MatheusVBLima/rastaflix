@@ -1,14 +1,13 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import { ViewTransition, useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { parseAsString, useQueryState } from "nuqs";
+import { BookOpen, SearchX } from "lucide-react";
 import { useDebouncedQueryState } from "@/hooks/use-debounced-query-state";
-import Link from "next/link";
-import Image from "next/image";
 import { fetchHistorias } from "@/lib/queries";
 import { queryKeys } from "@/lib/query-keys";
-import { Input } from "@/components/ui/input";
+import type { Story } from "@/lib/types";
 import {
   Select,
   SelectContent,
@@ -16,33 +15,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Story } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { ClipboardCopyIcon, CheckIcon, Search, BookOpen } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { SearchField } from "@/components/layout/SearchField";
+import { ResultCount } from "@/components/layout/ResultCount";
+import { StickyFilterBar } from "@/components/layout/StickyFilterBar";
+import { ShowMore } from "@/components/layout/ShowMore";
+import { StoryCard } from "@/components/cards/StoryCard";
+
+const PAGE = 24;
 
 interface HistoriasProps {
   tags: string[];
-  isAdmin?: boolean;
 }
 
-/**
- * Renders a stories listing with title search and tag filtering, handling loading, error, empty-state, and card grid presentations.
- *
- * @param tags - Array of tag values used to populate the tag filter UI
- * @param isAdmin - Optional flag indicating admin mode (currently unused)
- * @returns The React element that displays the stories UI (filters, empty states, and story cards)
- */
-export function Historias({ tags, isAdmin }: HistoriasProps) {
+export function Historias({ tags }: HistoriasProps) {
   const [searchTerm, setSearchTerm] = useDebouncedQueryState(
     "busca",
     parseAsString.withDefault("").withOptions({ clearOnDefault: true }),
@@ -52,183 +39,130 @@ export function Historias({ tags, isAdmin }: HistoriasProps) {
     "tag",
     parseAsString.withDefault("todas").withOptions({ clearOnDefault: true })
   );
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [limit, setLimit] = useState(PAGE);
 
-  // Usar useQuery com a mesma queryKey usada no prefetch
-  // A queryFn usa fetchHistorias real para que invalidateQueries funcione corretamente
-  const {
-    data: historias = [],
-    isLoading,
-    error,
-  } = useQuery<Story[], Error>({
+  const { data: historias = [], error } = useQuery<Story[], Error>({
     queryKey: queryKeys.historias.list(),
     queryFn: fetchHistorias,
   });
 
-  const filteredHistorias = useMemo(() => {
-    if (!historias || !Array.isArray(historias)) {
-      return [];
-    }
+  // Valores adiados: o filtro roda como transição e os cards animam (ViewTransition).
+  const search = useDeferredValue(searchTerm);
+  const tag = useDeferredValue(selectedTag);
 
-    // Garantir que TypeScript entenda historias como array de Story
-    const historiasList = historias as Story[];
-
-    const result = historiasList.filter((story: Story) => {
-      const matchesSearchTerm = story.title
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      const matchesTag =
-        selectedTag && selectedTag !== "todas"
-          ? story.tags.includes(selectedTag)
-          : true;
-      return matchesSearchTerm && matchesTag;
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return historias.filter((story) => {
+      const matchesSearch =
+        !q ||
+        story.title.toLowerCase().includes(q) ||
+        story.description?.toLowerCase().includes(q);
+      const matchesTag = tag === "todas" || story.tags.includes(tag);
+      return matchesSearch && matchesTag;
     });
-    return result;
-  }, [historias, searchTerm, selectedTag]);
+  }, [historias, search, tag]);
 
-  if (isLoading && !historias?.length) {
-    return <p>Carregando histórias...</p>;
+  const hasFilters = !!searchTerm || selectedTag !== "todas";
+
+  function clearFilters() {
+    setSearchTerm("");
+    setSelectedTag("todas");
   }
+
+  function toggleTag(value: string) {
+    setLimit(PAGE);
+    setSelectedTag(selectedTag === value ? "todas" : value);
+  }
+
   if (error) {
-    console.error(
-      "[Historias.tsx] Renderizando: Erro ao carregar histórias:",
-      error.message
+    return (
+      <EmptyState
+        title="Não foi possível carregar as histórias"
+        description={error.message}
+      />
     );
-    return <p>Erro ao carregar histórias: {error.message}</p>;
   }
 
   return (
-    <>
-      <div className="flex flex-col md:flex-row gap-4 items-start">
-        <Input
-          type="text"
-          placeholder="Pesquisar por título..."
+    <div className="space-y-6">
+      <StickyFilterBar>
+        <SearchField
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
+          onChange={(v) => {
+            setLimit(PAGE);
+            setSearchTerm(v);
+          }}
+          label="Buscar histórias"
+          placeholder="Buscar por título ou descrição"
         />
-        <Select value={selectedTag} onValueChange={setSelectedTag}>
-          <SelectTrigger className="w-full md:w-[200px]">
-            <SelectValue placeholder="Filtrar por tag" />
+        <Select
+          value={selectedTag}
+          onValueChange={(v) => {
+            setLimit(PAGE);
+            setSelectedTag(v);
+          }}
+        >
+          <SelectTrigger className="h-10 w-full sm:w-48" aria-label="Filtrar por tag">
+            <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="todas">Todas as Tags</SelectItem>
-            {tags.map((tag) => (
-              <SelectItem key={tag} value={tag}>
-                {tag.charAt(0).toUpperCase() + tag.slice(1)}
+            <SelectItem value="todas">Todas as tags</SelectItem>
+            {tags.map((t) => (
+              <SelectItem key={t} value={t}>
+                #{t}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-      </div>
-
-      {filteredHistorias.length === 0 && !isLoading && (
-        <EmptyState
-          icon={historias && historias.length > 0 && (searchTerm || selectedTag !== "todas") ? Search : BookOpen}
-          title={
-            historias && historias.length > 0 && (searchTerm || selectedTag !== "todas")
-              ? "Nenhuma história encontrada"
-              : "Nenhuma história cadastrada"
-          }
-          description={
-            historias && historias.length > 0 && (searchTerm || selectedTag !== "todas")
-              ? `Não encontramos histórias que correspondam aos filtros atuais.${searchTerm ? ` Termo pesquisado: "${searchTerm}".` : ""}${selectedTag !== "todas" ? ` Tag selecionada: ${selectedTag}.` : ""} Tente ajustar os filtros.`
-              : "Ainda não há histórias cadastradas no sistema. Fique atento para novas adições!"
-          }
+        <ResultCount
+          shown={filtered.length}
+          total={historias.length}
+          noun={["história", "histórias"]}
+          className="sm:ml-auto"
         />
+      </StickyFilterBar>
+
+      {filtered.length === 0 ? (
+        hasFilters ? (
+          <EmptyState
+            icon={SearchX}
+            title="Nenhuma história com esses filtros"
+            action={
+              <Button variant="outline" onClick={clearFilters}>
+                Limpar filtros
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState icon={BookOpen} title="Nenhuma história cadastrada" />
+        )
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.slice(0, limit).map((story, i) => (
+              <ViewTransition
+                key={story.id}
+                enter="scale-in"
+                exit="scale-out"
+                update="auto"
+                default="none"
+              >
+                <StoryCard
+                  story={story}
+                  priority={i < 3}
+                  activeTag={selectedTag !== "todas" ? selectedTag : undefined}
+                  onTagClick={toggleTag}
+                />
+              </ViewTransition>
+            ))}
+          </div>
+          <ShowMore
+            shown={Math.min(limit, filtered.length)}
+            total={filtered.length}
+            onMore={() => setLimit((l) => l + PAGE)}
+          />
+        </>
       )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredHistorias.map((story: Story) => (
-          <Link
-            href={story.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block"
-            key={story.id}
-          >
-            <Card className="flex flex-col h-full overflow-hidden group pt-0">
-              <div className="flex flex-col h-full">
-                {story.url && (
-                  <div className="relative w-full pt-[56.25%] overflow-hidden">
-                    <Image
-                      src={(() => {
-                        try {
-                          // Tentar extrair ID do YouTube da URL
-                          const urlObj = new URL(story.url);
-                          if (
-                            urlObj.hostname.includes("youtube.com") ||
-                            urlObj.hostname.includes("youtu.be")
-                          ) {
-                            // Extrair videoId para URLs padrão do YouTube
-                            let videoId = urlObj.searchParams.get("v");
-
-                            // Formato youtu.be/ID
-                            if (
-                              !videoId &&
-                              urlObj.hostname.includes("youtu.be")
-                            ) {
-                              videoId = urlObj.pathname.substring(1);
-                            }
-
-                            if (videoId) {
-                              // Construir URL da thumbnail diretamente usando hqdefault.jpg para maior confiabilidade
-                              return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-                            }
-                          }
-                          // Se não conseguir extrair do YouTube, usar a URL da imagem salva
-                          return story.imageUrl || "/placeholder.png";
-                        } catch (e) {
-                          // Fallback para qualquer erro
-                          return story.imageUrl || "/placeholder.png";
-                        }
-                      })()}
-                      alt={`Imagem para ${story.title}`}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      className="object-cover object-center transition-transform duration-300 ease-in-out group-hover:scale-105"
-                      onError={(e) => {
-                        // Fallback para imagem padrão se a thumbnail falhar
-                        const imgElement = e.currentTarget;
-                        imgElement.src = "/placeholder.png";
-                      }}
-                    />
-                  </div>
-                )}
-
-                <div className="flex flex-col flex-grow p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-lg font-semibold hover:text-primary transition-colors line-clamp-2">
-                      {story.title}
-                    </h3>
-                  </div>
-
-                  {story.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                      {story.description}
-                    </p>
-                  )}
-
-                  <div className="flex flex-wrap gap-1.5 mt-auto mb-4">
-                    {story.tags.map((tag: string) => (
-                      <Badge key={tag} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-
-                  <Button
-                    className="w-full mt-auto cursor-pointer"
-                    tabIndex={-1}
-                  >
-                    Ver História
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </Link>
-        ))}
-      </div>
-    </>
+    </div>
   );
 }

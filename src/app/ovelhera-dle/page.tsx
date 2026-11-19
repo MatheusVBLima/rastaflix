@@ -1,4 +1,6 @@
 import { DLE } from "@/components/dle/DLE";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageTransition } from "@/components/layout/PageTransition";
 import { pageMetadata } from "@/lib/site-metadata";
 
 export const metadata = pageMetadata(
@@ -7,15 +9,13 @@ export const metadata = pageMetadata(
   "/ovelhera-dle"
 );
 
-/**
- * Renders the page layout that hosts the DLE component.
- *
- * @returns A JSX element containing a centered container with padding that wraps the `DLE` component
- */
-export default function page() {
+export default function OvelheraDlePage() {
   return (
-    <div className="container mx-auto py-10 min-h-screen">
-      <DLE />
-    </div>
+    <PageTransition>
+      <div className="container mx-auto space-y-8 px-4 py-10 md:px-6">
+        <PageHeader slug="ovelhera-dle" title="Ovelhera DLE" />
+        <DLE />
+      </div>
+    </PageTransition>
   );
 }

@@ -1,7 +1,9 @@
 import { Suspense } from "react";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Kalam, Unbounded } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
+import { shadcn } from "@clerk/themes";
+import { ptBR } from "@clerk/localizations";
 import { HeaderShell } from "@/components/HeaderShell";
 import { Header } from "@/components/Header";
 import { ThemeProvider } from "@/components/provider/ThemeProvider";
@@ -11,6 +13,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { siteMetadata } from "@/lib/site-metadata";
+import { paletteInitScript } from "@/lib/palettes";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,6 +23,18 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const unbounded = Unbounded({
+  variable: "--font-unbounded",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+});
+
+const kalam = Kalam({
+  variable: "--font-kalam",
+  subsets: ["latin"],
+  weight: ["700"],
 });
 
 export const metadata = siteMetadata;
@@ -39,14 +54,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider dynamic>
+    <ClerkProvider dynamic appearance={{ theme: shadcn }} localization={ptBR}>
       <html lang="pt-BR" suppressHydrationWarning>
         <head>
           <link rel="icon" href="/favicon.png" sizes="32" />
           <meta httpEquiv="Permissions-Policy" content="interest-cohort=()" />
+          {/* Aplica a paleta salva antes da pintura (sem piscar). */}
+          <script dangerouslySetInnerHTML={{ __html: paletteInitScript }} />
         </head>
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          className={`${geistSans.variable} ${geistMono.variable} ${unbounded.variable} ${kalam.variable} antialiased`}
         >
           <Providers>
             <NuqsAdapter>
@@ -55,21 +72,12 @@ export default function RootLayout({
               defaultTheme="dark"
               enableSystem
               disableTransitionOnChange
-              themes={[
-                "light",
-                "dark",
-                "system",
-                "vercel",
-                "cosmic",
-                "tangerine",
-                "maconha",
-              ]}
             >
               <div className="flex flex-col min-h-screen">
                 <Suspense fallback={<Header isAdmin={false} />}>
                   <HeaderShell />
                 </Suspense>
-                <main className="flex-1">{children}</main>
+                <main className="flex-1 overflow-x-clip">{children}</main>
               </div>
               <Toaster />
             </ThemeProvider>

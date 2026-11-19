@@ -2,13 +2,9 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
-import {
-  Show,
-  ClerkLoading,
-  ClerkLoaded,
-} from "@clerk/nextjs";
+import { usePathname, useRouter } from "next/navigation";
+import { Show, ClerkLoading, ClerkLoaded } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import {
   NavigationMenu,
@@ -19,7 +15,6 @@ import {
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
-import { ThemeSwitcher } from "@/components/theme/ThemeSwitcher";
 import {
   Sheet,
   SheetClose,
@@ -28,157 +23,56 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Separator } from "./ui/separator";
 import { Skeleton } from "./ui/skeleton";
-import {
-  MenuIcon,
-  BookOpen,
-  Music,
-  Zap,
-  Award,
-  Users,
-  Gamepad,
-  Trophy,
-  Lock,
-  Film,
-} from "lucide-react";
 import { LiveIndicator } from "./LiveIndicator";
 import { UserMenu } from "./UserMenu";
 import { prefetchRouteData } from "@/lib/prefetch";
+import { useAnimatedIcon, type AnimatedIconHandle } from "@/hooks/use-animated-icon";
+import { BookTextIcon } from "@/components/icons/animated/book-text";
+import { Disc3Icon } from "@/components/icons/animated/disc-3";
+import { FlameIcon } from "@/components/icons/animated/flame";
+import { ClapIcon } from "@/components/icons/animated/clap";
+import { SparklesIcon } from "@/components/icons/animated/sparkles";
+import { SmileIcon } from "@/components/icons/animated/smile";
+import { HandFistIcon } from "@/components/icons/animated/hand-fist";
+import { LayoutGridIcon } from "@/components/icons/animated/layout-grid";
+import { MenuIcon } from "@/components/icons/animated/menu";
 
-const criarDescobrirComponents: {
+type AnimatedIcon = React.ComponentType<
+  { size?: number; className?: string; "aria-hidden"?: boolean } & React.RefAttributes<AnimatedIconHandle>
+>;
+
+interface NavItem {
   title: string;
   href: string;
-  description: string;
-  icon: React.ReactNode;
-}[] = [
-  {
-    title: "Histórias",
-    href: "/historias",
-    description: "Histórias que o dog tenta esconder",
-    icon: <BookOpen className="h-6 w-6 text-green-600 mb-2" />,
-  },
-  {
-    title: "Músicas",
-    href: "/musicas",
-    description: "Descubra e compartilhe novas músicas",
-    icon: <Music className="h-6 w-6 text-yellow-500 mb-2" />,
-  },
-  {
-    title: "Esculachos",
-    href: "/esculachos",
-    description: "Momentos épicos da live",
-    icon: <Zap className="h-6 w-6 text-red-600 mb-2" />,
-  },
-  {
-    title: "Clipes",
-    href: "/clipes",
-    description: "Melhores momentos das lives",
-    icon: <Film className="h-6 w-6 text-purple-500 mb-2" />,
-  },
+  description?: string;
+  icon: AnimatedIcon;
+}
+
+const contaAquela: NavItem[] = [
+  { title: "Histórias", href: "/historias", description: "O acervo de histórias", icon: BookTextIcon },
+  { title: "Músicas", href: "/musicas", icon: Disc3Icon },
+  { title: "Esculachos", href: "/esculachos", description: "Áudios para ouvir e baixar", icon: FlameIcon },
+  { title: "Clipes", href: "/clipes", description: "Twitch e Kick", icon: ClapIcon },
 ];
 
-const universoOvelheraComponents: {
-  title: string;
-  href: string;
-  description: string;
-  icon: React.ReactNode;
-}[] = [
-  {
-    title: "Rasta Awards",
-    href: "/rasta-awards",
-    description: "Vote nos melhores momentos e conteúdos do ano",
-    icon: <Trophy className="h-6 w-6 text-yellow-500 mb-2" />,
-  },
-  {
-    title: "Ovelhera DLE",
-    href: "/ovelhera-dle",
-    description: "Diga qual a história de acordo com os emojis",
-    icon: <Gamepad className="h-6 w-6 text-green-600 mb-2" />,
-  },
-  {
-    title: "Inimigos",
-    href: "/inimigos",
-    description: "Conheça os antagonistas dessa jornada rastafari",
-    icon: <Users className="h-6 w-6 text-red-600 mb-2" />,
-  },
-  {
-    title: "Bingo Rastafari",
-    href: "/bingo",
-    description: "Marque os momentos icônicos que acontecem na live",
-    icon: <Award className="h-6 w-6 text-yellow-600 mb-2" />,
-  },
+const universoOvelhera: NavItem[] = [
+  { title: "Rasta Awards", href: "/rasta-awards", description: "Votação anual", icon: SparklesIcon },
+  { title: "Ovelhera DLE", href: "/ovelhera-dle", description: "Adivinhe pelos emojis", icon: SmileIcon },
+  { title: "Inimigos", href: "/inimigos", description: "O mural da vingança", icon: HandFistIcon },
+  { title: "Bingo Rastafari", href: "/bingo", description: "Cartela da live", icon: LayoutGridIcon },
 ];
 
-const adminComponents: {
-  title: string;
-  href: string;
-  description: string;
-  icon: React.ReactNode;
-}[] = [
-  {
-    title: "Gerenciar Awards",
-    href: "/admin/rasta-awards",
-    description: "Gerencie temporadas, categorias e nominados.",
-    icon: <Trophy className="h-6 w-6 text-yellow-500 mb-2" />,
-  },
-  {
-    title: "Gerenciar Histórias",
-    href: "/admin/historias",
-    description: "Gerencie as histórias existentes.",
-    icon: <BookOpen className="h-6 w-6 text-green-600 mb-2" />,
-  },
-  {
-    title: "Gerenciar Músicas",
-    href: "/admin/musicas",
-    description: "Gerencie as músicas existentes.",
-    icon: <Music className="h-6 w-6 text-yellow-500 mb-2" />,
-  },
-  {
-    title: "Gerenciar Esculachos",
-    href: "/admin/esculachos",
-    description: "Gerencie os esculachos existentes.",
-    icon: <Zap className="h-6 w-6 text-red-600 mb-2" />,
-  },
-  {
-    title: "Gerenciar Inimigos",
-    href: "/admin/inimigos",
-    description: "Gerencie os inimigos existentes.",
-    icon: <Users className="h-6 w-6 text-red-600 mb-2" />,
-  },
-  {
-    title: "Gerenciar Clipes",
-    href: "/admin/clipes",
-    description: "Gerencie os clipes das lives.",
-    icon: <Film className="h-6 w-6 text-purple-500 mb-2" />,
-  },
-];
-
-/**
- * Renders the main navigation header with responsive menus, authentication-aware UI, and dynamic admin controls.
- *
- * Displays categorized navigation menus, a logo, theme switcher, and user authentication controls. Admin-specific menu items are shown only for authenticated users with admin privileges, determined asynchronously. The header adapts for mobile devices with a collapsible menu.
- *
- */
 interface HeaderProps {
   isAdmin: boolean;
 }
 
-/**
- * Render the top site header containing navigation, mobile menu, theme and user controls.
- *
- * The header includes desktop dropdown navigation, a mobile slide-over menu, Clerk-based
- * auth controls, an optional admin menu when `isAdmin` is true, and hover/focus route
- * prefetching for navigation links.
- *
- * @param isAdmin - If `true`, render admin navigation items and links.
- * @returns The header JSX element containing the site navigation, controls, and menus.
- */
+const subscribeNoop = () => () => {};
+
 export function Header({ isAdmin }: HeaderProps) {
   const router = useRouter();
-  const prefetchTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined
-  );
+  const pathname = usePathname();
+  const timeout = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const runPrefetch = React.useCallback(
     (href: string) => {
@@ -188,335 +82,253 @@ export function Header({ isAdmin }: HeaderProps) {
     [router]
   );
 
-  const handlePrefetch = React.useCallback(
+  const prefetch = React.useCallback(
     (href: string) => {
-      if (prefetchTimeoutRef.current) {
-        clearTimeout(prefetchTimeoutRef.current);
-      }
-      prefetchTimeoutRef.current = setTimeout(() => runPrefetch(href), 300);
+      clearTimeout(timeout.current);
+      timeout.current = setTimeout(() => runPrefetch(href), 300);
     },
     [runPrefetch]
   );
 
-  const handlePrefetchImmediate = React.useCallback(
+  const prefetchNow = React.useCallback(
     (href: string) => {
-      if (prefetchTimeoutRef.current) {
-        clearTimeout(prefetchTimeoutRef.current);
-      }
+      clearTimeout(timeout.current);
       runPrefetch(href);
     },
     [runPrefetch]
   );
 
-  return (
-    <header className="py-4 px-6 border-b sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex justify-between items-center">
-        {/* Logo à esquerda */}
-        <div>
-          <Link href="/" className="text-2xl font-bold">
-            <Image
-              src="/logo.png"
-              alt="Logotipo Rastaflix"
-              width={50}
-              height={50}
-              className="rounded-full"
-            />
-          </Link>
-        </div>
+  const mounted = React.useSyncExternalStore(subscribeNoop, () => true, () => false);
 
-        {/* Navegação no centro com NavigationMenu */}
-        <div className="hidden md:flex items-center">
-          <LiveIndicator />
-          <NavigationMenu className="mr-4 ml-2">
+  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const groupActive = (items: NavItem[]) => items.some((i) => isActive(i.href));
+
+  return (
+    <header
+      className="glass-bar sticky top-0 z-50"
+      style={{ viewTransitionName: "site-header" }}
+    >
+      <div className="container mx-auto flex h-16 items-center gap-4 px-4 md:px-6">
+        <Link
+          href="/"
+          transitionTypes={pathname === "/" ? undefined : ["nav-back"]}
+          className="flex items-center gap-2.5 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <Image
+            src="/logo.png"
+            alt=""
+            width={36}
+            height={36}
+            className="rounded-full"
+            priority
+          />
+          <span className="font-display text-lg font-semibold tracking-tight">Rastaflix</span>
+        </Link>
+
+        {/* Desktop */}
+        <nav aria-label="Principal" className="hidden flex-1 items-center md:flex">
+          <NavigationMenu viewport={false} className="ml-4">
             <NavigationMenuList>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger>Conta Aquela</NavigationMenuTrigger>
-                <NavigationMenuContent className="bg-background/40">
-                  <ul className="grid w-[400px] gap-2 p-1 md:w-[500px] md:grid-cols-2 lg:w-[600px] relative">
-                    <li className="row-span-3">
-                      <NavigationMenuLink asChild>
-                        <Link
-                          className="flex h-full w-full select-none flex-col justify-end rounded-md p-6 no-underline outline-none focus:shadow-md transition-all duration-200 hover:shadow-xl hover:scale-[1.02] relative overflow-hidden"
-                          href="/"
-                          style={{
-                            backgroundImage:
-                              "url('/Glowing Star Abstract.jpeg')",
-                            backgroundSize: "cover",
-                            backgroundPosition: "center",
-                          }}
-                        >
-                          <div className="absolute inset-0 bg-black/25 rounded-md"></div>
-                          <div className="relative z-10">
-                            <div className="mb-2 mt-4 text-xl font-bold text-white">
-                              Rastaflix
-                            </div>
-                            <p className="text-sm leading-tight text-white/90">
-                              Sua plataforma de entretenimento e comunidade.
-                            </p>
-                          </div>
-                        </Link>
-                      </NavigationMenuLink>
-                    </li>
-                    {criarDescobrirComponents.map((component) => (
-                      <ListItem
-                        key={component.title}
-                        title={component.title}
-                        href={component.href}
-                        icon={component.icon}
-                        backgroundImage="/Sweeping Light Arc.jpeg"
-                        className="bg-cover bg-center"
-                        onPrefetch={handlePrefetch}
-                        onPrefetchFocus={handlePrefetchImmediate}
-                      >
-                        {component.description}
-                      </ListItem>
-                    ))}
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger>Universo Ovelhera</NavigationMenuTrigger>
-                <NavigationMenuContent className="bg-background/40">
-                  <ul className="grid w-[400px] gap-2 p-1 md:w-[500px] md:grid-cols-2 lg:w-[600px] relative">
-                    {universoOvelheraComponents.map((component) => (
-                      <ListItem
-                        key={component.title}
-                        title={component.title}
-                        href={component.href}
-                        icon={component.icon}
-                        backgroundImage="/Glowing Star Abstract.jpeg"
-                        onPrefetch={handlePrefetch}
-                        onPrefetchFocus={handlePrefetchImmediate}
-                      >
-                        {component.description}
-                      </ListItem>
-                    ))}
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
+              <NavGroup
+                label="Conta aquela"
+                items={contaAquela}
+                active={groupActive(contaAquela)}
+                isActive={isActive}
+                onPrefetch={prefetch}
+                onPrefetchNow={prefetchNow}
+              />
+              <NavGroup
+                label="Universo Ovelhera"
+                items={universoOvelhera}
+                active={groupActive(universoOvelhera)}
+                isActive={isActive}
+                onPrefetch={prefetch}
+                onPrefetchNow={prefetchNow}
+              />
             </NavigationMenuList>
           </NavigationMenu>
-          <ClerkLoading>
-            <Skeleton className="h-8 w-20" />
-          </ClerkLoading>
+        </nav>
 
-          <Show when="signed-in">
-            {isAdmin ? (
+        <div className="ml-auto flex items-center gap-2 md:ml-0">
+          <LiveIndicator />
+          {/* O estado do Clerk só existe no cliente: até montar, mostra o skeleton
+              (o servidor renderiza o mesmo, então não há erro de hidratação). */}
+          {!mounted ? (
+            <Skeleton className="size-9 rounded-full" />
+          ) : (
+            <>
+              <ClerkLoading>
+                <Skeleton className="size-9 rounded-full" />
+              </ClerkLoading>
               <ClerkLoaded>
-                <NavigationMenu>
-                  <NavigationMenuList>
-                    <NavigationMenuItem>
-                      <NavigationMenuTrigger>Admin</NavigationMenuTrigger>
-                      <NavigationMenuContent className="bg-background/40">
-                        <ul className="grid w-[400px] gap-2 p-1 md:w-[500px] md:grid-cols-2 lg:w-[600px] relative">
-                          {adminComponents.map((component) => (
-                            <ListItem
-                              key={component.title}
-                              title={component.title}
-                              href={component.href}
-                              icon={component.icon}
-                              backgroundImage="/Glowing Star Abstract.jpeg"
-                              onPrefetch={handlePrefetch}
-                        onPrefetchFocus={handlePrefetchImmediate}
-                            >
-                              {component.description}
-                            </ListItem>
-                          ))}
-                        </ul>
-                      </NavigationMenuContent>
-                    </NavigationMenuItem>
-                  </NavigationMenuList>
-                </NavigationMenu>
+                <Show when="signed-in">
+                  <UserMenu isAdmin={isAdmin} />
+                </Show>
+                <Show when="signed-out">
+                  <Button variant="outline" size="sm" asChild className="hidden sm:inline-flex">
+                    <Link href="/sign-in">Entrar</Link>
+                  </Button>
+                </Show>
               </ClerkLoaded>
-            ) : null}
-          </Show>
-        </div>
-
-        {/* UserButton e Tema à direita */}
-        <div className="flex items-center gap-4">
-          {/* Live Indicator Mobile */}
-          <div className="md:hidden">
-            <LiveIndicator />
-          </div>
-          {/* Menu Mobile */}
-          <div className="md:hidden">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <MenuIcon />
-                  <span className="sr-only">Abrir menu</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-                <SheetHeader>
-                  <SheetTitle className="text-left">Navegação</SheetTitle>
-                </SheetHeader>
-                <nav className="flex flex-col gap-2 py-4">
-                  <Separator />
-                  <h4 className="py-1 px-3 text-sm font-semibold text-muted-foreground tracking-wider uppercase">
-                    Conta Aquela
-                  </h4>
-                  {criarDescobrirComponents.map((item) => (
-                    <SheetClose asChild key={item.href}>
-                      <Link
-                        href={item.href}
-                        className="block py-2 px-3 mx-2 rounded-md hover:bg-accent"
-                        onMouseEnter={() => handlePrefetch(item.href)}
-                        onFocus={() => handlePrefetchImmediate(item.href)}
-                      >
-                        {item.title}
-                      </Link>
-                    </SheetClose>
-                  ))}
-                  <Separator />
-                  <h4 className="py-1 px-3 text-sm font-semibold text-muted-foreground tracking-wider uppercase">
-                    Universo Ovelhera
-                  </h4>
-                  {universoOvelheraComponents.map((item) => (
-                    <SheetClose asChild key={item.href}>
-                      <Link
-                        href={item.href}
-                        className="block py-2 px-3 mx-2 rounded-md hover:bg-accent"
-                        onMouseEnter={() => handlePrefetch(item.href)}
-                        onFocus={() => handlePrefetchImmediate(item.href)}
-                      >
-                        {item.title}
-                      </Link>
-                    </SheetClose>
-                  ))}
-                  <Separator />
-                  <ClerkLoaded>
-                    <Show when="signed-in">
-                      {isAdmin && (
-                        <>
-                          <SheetClose asChild>
-                            <Link
-                              href="/admin"
-                              className="block py-2 px-3 mx-2 rounded-md hover:bg-accent text-sm font-medium"
-                            >
-                              Painel Admin
-                            </Link>
-                          </SheetClose>
-                          {adminComponents.map((item) => (
-                            <SheetClose asChild key={item.href}>
-                              <Link
-                                href={item.href}
-                                className="block py-2 px-3 mx-2 rounded-md hover:bg-accent text-sm"
-                              >
-                                {item.title}
-                              </Link>
-                            </SheetClose>
-                          ))}
-                          <Separator />
-                        </>
-                      )}
-                    </Show>
-                  </ClerkLoaded>
-                  <ClerkLoaded>
-                    <Show when="signed-in">
-                      <SheetClose asChild>
-                        <Link
-                          href="/perfil"
-                          className="block py-2 px-3 mx-2 rounded-md hover:bg-accent text-sm font-medium"
-                        >
-                          Meu Perfil
-                        </Link>
-                      </SheetClose>
-                    </Show>
-                    <Show when="signed-out">
-                      <SheetClose asChild>
-                        <Link
-                          href="/sign-in"
-                          className="block py-2 px-3 mx-2 rounded-md hover:bg-accent text-sm font-medium"
-                        >
-                          <Lock className="mr-2 h-4 w-4 inline-block" /> Admin
-                          Login
-                        </Link>
-                      </SheetClose>
-                    </Show>
-                  </ClerkLoaded>
-                </nav>
-              </SheetContent>
-            </Sheet>
-          </div>
-          <ThemeSwitcher />
-          <ClerkLoading>
-            <Skeleton className="h-8 w-8 rounded-full" />
-          </ClerkLoading>
-
-          <Show when="signed-in">
-            <ClerkLoaded>
-              <UserMenu />
-            </ClerkLoaded>
-          </Show>
-          <Show when="signed-out">
-            <ClerkLoaded>
-              <Button variant="outline" asChild size="sm">
-                <Link href="/sign-in">
-                  Login
-                </Link>
-              </Button>
-            </ClerkLoaded>
-          </Show>
+            </>
+          )}
+          <MobileMenu
+            isActive={isActive}
+            onPrefetch={prefetch}
+            onPrefetchNow={prefetchNow}
+          />
         </div>
       </div>
     </header>
   );
 }
 
-interface ListItemProps extends Omit<React.ComponentPropsWithoutRef<typeof Link>, "href"> {
-  href: string;
-  title: string;
-  icon?: React.ReactNode;
-  backgroundImage?: string;
-  onPrefetch?: (href: string) => void;
-  onPrefetchFocus?: (href: string) => void;
+/* ------------------------------------------------------------------ */
+
+function NavGroup({
+  label,
+  items,
+  active,
+  isActive,
+  onPrefetch,
+  onPrefetchNow,
+}: {
+  label: string;
+  items: NavItem[];
+  active: boolean;
+  isActive: (href: string) => boolean;
+  onPrefetch: (href: string) => void;
+  onPrefetchNow: (href: string) => void;
+}) {
+  return (
+    <NavigationMenuItem>
+      <NavigationMenuTrigger
+        className={cn("relative border-0 bg-transparent shadow-none dark:bg-transparent", active && "text-foreground after:absolute after:inset-x-3 after:-bottom-[13px] after:h-0.5 after:rounded-full after:bg-primary")}
+      >
+        {label}
+      </NavigationMenuTrigger>
+      <NavigationMenuContent>
+        <ul className="grid w-[30rem] grid-cols-2 gap-1 p-1">
+          {items.map((item) => (
+            <NavLink
+              key={item.href}
+              item={item}
+              active={isActive(item.href)}
+              onPrefetch={onPrefetch}
+              onPrefetchNow={onPrefetchNow}
+            />
+          ))}
+        </ul>
+      </NavigationMenuContent>
+    </NavigationMenuItem>
+  );
 }
 
-const ListItem = React.forwardRef<React.ElementRef<"a">, ListItemProps>(
-  (
-    { className, title, children, href, icon, backgroundImage, onPrefetch, onPrefetchFocus, ...props },
-    ref
-  ) => {
-    return (
-      <li>
-        <NavigationMenuLink asChild>
+function NavLink({
+  item,
+  active,
+  onPrefetch,
+  onPrefetchNow,
+}: {
+  item: NavItem;
+  active: boolean;
+  onPrefetch: (href: string) => void;
+  onPrefetchNow: (href: string) => void;
+}) {
+  const icon = useAnimatedIcon<AnimatedIconHandle>();
+  const Icon = item.icon;
+
+  return (
+    <li>
+      <NavigationMenuLink asChild active={active}>
+        <Link
+          href={item.href}
+          aria-current={active ? "page" : undefined}
+          onMouseEnter={() => {
+            icon.handlers.onMouseEnter();
+            onPrefetch(item.href);
+          }}
+          onMouseLeave={icon.handlers.onMouseLeave}
+          onFocus={() => {
+            icon.handlers.onFocus();
+            onPrefetchNow(item.href);
+          }}
+          onBlur={icon.handlers.onBlur}
+          className="flex flex-row items-start gap-3 rounded-md p-3 transition-colors hover:bg-accent focus:bg-accent data-[active=true]:bg-accent/60"
+        >
+          <Icon ref={icon.ref} size={18} aria-hidden className="mt-0.5 shrink-0 text-primary" />
+          <span className="space-y-1">
+            <span className="block text-sm font-medium leading-none">{item.title}</span>
+            {item.description && (
+              <span className="block text-sm leading-snug text-muted-foreground">
+                {item.description}
+              </span>
+            )}
+          </span>
+        </Link>
+      </NavigationMenuLink>
+    </li>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
+function MobileMenu({
+  isActive,
+  onPrefetch,
+  onPrefetchNow,
+}: {
+  isActive: (href: string) => boolean;
+  onPrefetch: (href: string) => void;
+  onPrefetchNow: (href: string) => void;
+}) {
+  const menu = useAnimatedIcon<AnimatedIconHandle>();
+
+  const group = (title: string, items: NavItem[]) => (
+    <div className="space-y-1">
+      <p className="px-3 text-xs font-medium text-muted-foreground">{title}</p>
+      {items.map((item) => (
+        <SheetClose asChild key={item.href}>
           <Link
-            href={href}
-            ref={ref}
-            onMouseEnter={() => onPrefetch?.(href)}
-            onFocus={() => (onPrefetchFocus ?? onPrefetch)?.(href)}
-            className={cn(
-              "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:shadow-lg hover:scale-[1.02] bg-card",
-              className
-            )}
-            style={{
-              ...(props as { style?: React.CSSProperties }).style,
-              ...(backgroundImage
-                ? {
-                    backgroundImage: `url(${backgroundImage})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    position: "relative",
-                  }
-                : {}),
-            }}
-            {...props}
+            href={item.href}
+            aria-current={isActive(item.href) ? "page" : undefined}
+            onMouseEnter={() => onPrefetch(item.href)}
+            onFocus={() => onPrefetchNow(item.href)}
+            className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent aria-[current=page]:bg-accent aria-[current=page]:text-foreground"
           >
-            {backgroundImage && (
-              <div className="absolute inset-0" style={{ zIndex: 0 }}></div>
-            )}
-            <div className="relative z-10">
-              {icon}
-              <div className="text-sm font-medium leading-none mb-1">
-                {title}
-              </div>
-              <p className="line-clamp-2 text-sm leading-snug">{children}</p>
-            </div>
+            <item.icon size={18} aria-hidden className="text-primary" />
+            {item.title}
           </Link>
-        </NavigationMenuLink>
-      </li>
-    );
-  }
-);
-ListItem.displayName = "ListItem";
+        </SheetClose>
+      ))}
+    </div>
+  );
+
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="md:hidden" aria-label="Abrir menu" {...menu.handlers}>
+          <MenuIcon ref={menu.ref} size={20} aria-hidden />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-[300px] overflow-y-auto sm:w-[360px]">
+        <SheetHeader>
+          <SheetTitle className="text-left font-display">Rastaflix</SheetTitle>
+        </SheetHeader>
+        <nav aria-label="Principal" className="flex flex-col gap-6 px-2 pb-6">
+          {group("Conta aquela", contaAquela)}
+          {group("Universo Ovelhera", universoOvelhera)}
+          <ClerkLoaded>
+            <Show when="signed-out">
+              <SheetClose asChild>
+                <Button asChild variant="outline" className="mx-3">
+                  <Link href="/sign-in">Entrar</Link>
+                </Button>
+              </SheetClose>
+            </Show>
+          </ClerkLoaded>
+        </nav>
+      </SheetContent>
+    </Sheet>
+  );
+}

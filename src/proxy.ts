@@ -11,6 +11,7 @@ const publicRoutes = createRouteMatcher([
   "/esculachos(.*)",
   "/clipes(.*)",
   "/rasta-awards(.*)",
+  "/aparencia(.*)",
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/api/webhooks(.*)",

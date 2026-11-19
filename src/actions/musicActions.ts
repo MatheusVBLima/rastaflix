@@ -27,6 +27,7 @@ export async function addMusic(formData: FormData): Promise<ActionResponse> {
     title: formData.get("title") as string,
     url: formData.get("url") as string,
     imageUrl: formData.get("imageUrl") as string | null,
+    archived: formData.get("archived") === "true",
   };
 
   try {
@@ -41,6 +42,7 @@ export async function addMusic(formData: FormData): Promise<ActionResponse> {
           title: validatedData.title,
           url: validatedData.url,
           image_url: validatedData.imageUrl, // Usar a imagem do formulário
+          archived: validatedData.archived ?? false,
         },
       ])
       .select();
@@ -94,6 +96,7 @@ export async function editMusic(formData: FormData): Promise<ActionResponse> {
     title: formData.get("title") as string,
     url: formData.get("url") as string,
     imageUrl: formData.get("imageUrl") as string | null,
+    archived: formData.get("archived") === "true",
   };
 
   try {
@@ -106,6 +109,7 @@ export async function editMusic(formData: FormData): Promise<ActionResponse> {
         title: validatedData.title,
         url: validatedData.url,
         image_url: validatedData.imageUrl, // Usar a imagem do formulário
+        archived: validatedData.archived ?? false,
       })
       .eq("id", validatedData.id);
 
@@ -140,6 +144,54 @@ export async function editMusic(formData: FormData): Promise<ActionResponse> {
     return {
       success: false,
       message: "Erro ao editar música. Tente novamente mais tarde.",
+    };
+  }
+}
+
+export async function setMusicArchived(
+  id: string,
+  archived: boolean
+): Promise<ActionResponse> {
+  const isAdmin = await getIsAdmin();
+  if (!isAdmin) {
+    return {
+      success: false,
+      message: "Você não tem permissão para alterar o status de músicas.",
+    };
+  }
+
+  if (!id) {
+    return { success: false, message: "ID da música não fornecido." };
+  }
+
+  try {
+    const supabase = getSupabaseAdmin();
+    const { error } = await supabase
+      .from("musicas")
+      .update({ archived })
+      .eq("id", id);
+
+    if (error) {
+      return {
+        success: false,
+        message: `Erro ao atualizar status da música: ${error.message}`,
+      };
+    }
+
+    revalidatePath("/musicas");
+    revalidatePath("/admin/musicas");
+
+    return {
+      success: true,
+      message: archived
+        ? "Música arquivada. Ela não aparece mais para os usuários."
+        : "Música reativada e visível novamente no site.",
+    };
+  } catch (error) {
+    console.error("Erro ao alterar status da música:", error);
+    return {
+      success: false,
+      message: "Erro ao alterar status da música. Tente novamente mais tarde.",
     };
   }
 }

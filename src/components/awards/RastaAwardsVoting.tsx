@@ -1,46 +1,52 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import { useRef, useState, useTransition, type KeyboardEvent, type Ref } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
-import { fetchActiveSeason, fetchVotingData, fetchUserVotes, fetchAllCategoriesWithResults } from "@/lib/queries";
+import Image from "next/image";
+import Link from "next/link";
+import NumberFlow from "@number-flow/react";
+import { toast } from "sonner";
+import { Award, Check, ExternalLink, Lock, Trophy } from "lucide-react";
+import { useRovingRadio } from "@/hooks/use-roving-radio";
+import {
+  fetchActiveSeason,
+  fetchVotingData,
+  fetchUserVotes,
+  fetchAllCategoriesWithResults,
+} from "@/lib/queries";
 import { queryKeys } from "@/lib/query-keys";
 import { submitVote } from "@/actions/awardActions";
-import { AwardSeason, VotingData, AwardVote, CategoryWithResults } from "@/lib/types";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type {
+  AwardNominee,
+  AwardSeason,
+  AwardVote,
+  CategoryWithResults,
+  VotingData,
+} from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Progress } from "@/components/ui/progress";
-import { toast } from "sonner";
-import { Loader2, Trophy, Lock, CheckCircle2, Calendar, Info, Award, Users } from "lucide-react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import Link from "next/link";
-import Image from "next/image";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ButtonLoader } from "@/components/ui/loader";
+import { RastaAwardsSkeleton } from "./RastaAwardsSkeleton";
 import { LoginDialog } from "./LoginDialog";
+import { celebrate } from "@/lib/celebrate";
+import { formatDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
-/**
- * Render the Rasta Awards voting interface, handling loading, auth gating, active voting, and closed-season results.
- *
- * Renders:
- * - Skeleton placeholders while auth or data are loading.
- * - An empty state when no active season exists.
- * - The active voting UI where authenticated users can submit votes (prompts login when unauthenticated).
- * - The closed-season results view with vote counts, percentages, and winner highlighting.
- *
- * The component also coordinates vote submission and cache invalidation, and exposes a login dialog when needed.
- *
- * @returns The React element tree for the Rasta Awards voting UI.
- */
+const STATUS_LABEL: Record<AwardSeason["status"], string> = {
+  active: "Votação aberta",
+  closed: "Votação encerrada",
+  draft: "Rascunho",
+};
+
 export function RastaAwardsVoting() {
-  // Usar hook do Clerk diretamente no cliente para garantir autenticação correta em produção
   const { userId, isLoaded } = useAuth();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [votingCategoryId, setVotingCategoryId] = useState<string | null>(null);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const queryClient = useQueryClient();
+  const celebrated = useRef(false);
 
   const { data: activeSeason } = useQuery<AwardSeason | null>({
     queryKey: queryKeys.rastaAwards.activeSeason(),
@@ -69,21 +75,27 @@ export function RastaAwardsVoting() {
     queryKey: activeSeason
       ? queryKeys.rastaAwards.results(activeSeason.id)
       : ["awardsResults", "pending"],
-    queryFn: () => activeSeason ? fetchAllCategoriesWithResults(activeSeason.id) : Promise.resolve([]),
+    queryFn: () =>
+      activeSeason
+        ? fetchAllCategoriesWithResults(activeSeason.id)
+        : Promise.resolve([]),
     enabled: !!activeSeason && activeSeason.status === "closed",
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 5 * 60 * 1000,
   });
+
+  const totalCategories = votingData?.categories.length ?? 0;
+  const votedCount = userVotes.length;
 
   async function handleVote(categoryId: string, nomineeId: string) {
     if (!userId) {
       setShowLoginDialog(true);
       return;
     }
-
     if (!activeSeason) {
       toast.error("Nenhuma temporada ativa");
       return;
     }
+    const alreadyVotedHere = userVotes.some((v) => v.category_id === categoryId);
 
     setVotingCategoryId(categoryId);
     startTransition(async () => {
@@ -96,7 +108,18 @@ export function RastaAwardsVoting() {
 
       if (result.success) {
         toast.success(result.message);
-        queryClient.invalidateQueries({ queryKey: ["userVotes", userId, activeSeason.id] });
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.rastaAwards.userVotes(userId, activeSeason.id),
+        });
+        // Último voto que faltava: comemora uma vez.
+        if (
+          !alreadyVotedHere &&
+          votedCount + 1 === totalCategories &&
+          !celebrated.current
+        ) {
+          celebrated.current = true;
+          void celebrate();
+        }
       } else {
         toast.error(result.message);
       }
@@ -104,289 +127,308 @@ export function RastaAwardsVoting() {
     });
   }
 
-  // Verificar voto do usuário para uma categoria
   function getUserVoteForCategory(categoryId: string): string | null {
-    const vote = userVotes.find((v) => v.category_id === categoryId);
-    return vote?.nominee_id || null;
+    return userVotes.find((v) => v.category_id === categoryId)?.nominee_id ?? null;
   }
 
-  // Aguardar o Clerk carregar para evitar flash de conteúdo incorreto
-  if (!isLoaded) {
-    return (
-      <div className="max-w-4xl mx-auto">
-        <div className="space-y-4">
-          <div className="h-12 bg-muted animate-pulse rounded" />
-          <div className="h-64 bg-muted animate-pulse rounded" />
-        </div>
-      </div>
-    );
-  }
+  if (!isLoaded) return <RastaAwardsSkeleton />;
 
   if (!activeSeason) {
     return (
-      <div className="max-w-4xl mx-auto py-12">
-        <EmptyState
-          icon={Award}
-          title="Nenhuma votação ativa"
-          description="Não há nenhuma temporada de votação ativa no momento. Fique atento às próximas edições do Rasta Awards!"
-        />
-      </div>
+      <EmptyState
+        icon={Award}
+        title="Nenhuma votação aberta"
+        description="Quando a próxima edição do Rasta Awards começar, a votação aparece aqui."
+      />
     );
   }
 
-  if (!votingData) {
-    return (
-      <div className="max-w-4xl mx-auto">
-        <div className="space-y-4">
-          <div className="h-12 bg-muted animate-pulse rounded" />
-          <div className="h-64 bg-muted animate-pulse rounded" />
-          <div className="h-64 bg-muted animate-pulse rounded" />
-        </div>
-      </div>
-    );
-  }
+  if (!votingData) return <RastaAwardsSkeleton />;
 
   const isActive = activeSeason.status === "active";
   const isClosed = activeSeason.status === "closed";
+  const { season } = votingData;
+  // Se a temporada se chama só "Rasta Awards", o título repetiria o da página:
+  // aí a descrição (ex.: "Nova Era 52") vira o título do bloco.
+  const repeatsPageTitle = season.title.trim().toLowerCase() === "rasta awards";
+  const seasonHeading = repeatsPageTitle && season.description ? season.description : season.title;
+  const seasonDescription = seasonHeading === season.description ? null : season.description;
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold mb-2 flex items-center justify-center gap-2">
-          <Trophy className="h-8 w-8 text-yellow-500" />
-          {votingData.season.title}
-        </h1>
-        {votingData.season.description && (
-          <p className="text-muted-foreground mb-4">{votingData.season.description}</p>
-        )}
-        <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <Calendar className="h-4 w-4" />
-            {new Date(votingData.season.start_date).toLocaleDateString("pt-BR")} -{" "}
-            {new Date(votingData.season.end_date).toLocaleDateString("pt-BR")}
-          </div>
+    <div className="max-w-4xl space-y-8">
+      {/* Temporada */}
+      <section className="flex flex-col gap-4 rounded-xl border bg-card p-6 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-2">
           <Badge variant={isActive ? "default" : isClosed ? "secondary" : "outline"}>
-            {isActive && "Votação Ativa"}
-            {isClosed && "Votação Encerrada"}
-            {!isActive && !isClosed && "Rascunho"}
+            {STATUS_LABEL[season.status]}
           </Badge>
+          <h2 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
+            {seasonHeading}
+          </h2>
+          {seasonDescription && (
+            <p className="max-w-prose text-sm text-muted-foreground">
+              {seasonDescription}
+            </p>
+          )}
+          <p className="text-sm tabular-nums text-muted-foreground">
+            {formatDate(season.start_date)} – {formatDate(season.end_date)}
+          </p>
         </div>
-      </div>
 
-      {/* Status de autenticação */}
+        {isActive && userId && totalCategories > 0 && (
+          <div className="min-w-48 space-y-2">
+            <p className="text-sm text-muted-foreground">
+              <NumberFlow value={votedCount} className="font-display text-2xl font-semibold text-foreground" />
+              <span className="text-foreground"> / {totalCategories}</span> categorias votadas
+            </p>
+            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
+                style={{ width: `${(votedCount / totalCategories) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
+      </section>
+
       {!userId && isActive && (
-        <Alert className="mb-6 border-primary/50 bg-primary/5">
-          <Lock className="h-4 w-4" />
-          <AlertTitle>Faça login para votar</AlertTitle>
-          <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-3 mt-2">
-            <span>Você precisa estar logado para participar da votação.</span>
-            <Button asChild size="sm" className="w-fit">
-              <Link href="/sign-in">
-                Fazer Login
-              </Link>
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Votação encerrada */}
-      {isClosed && (
-        <Alert className="mb-6">
-          <Info className="h-4 w-4" />
-          <AlertTitle>Votação Encerrada</AlertTitle>
-          <AlertDescription>
-            Esta temporada já foi encerrada. Os resultados foram divulgados!
-          </AlertDescription>
-        </Alert>
+        <div className="flex flex-col gap-3 rounded-xl border border-primary/40 bg-primary/5 p-4 sm:flex-row sm:items-center">
+          <Lock className="size-4 shrink-0 text-primary" aria-hidden />
+          <p className="flex-1 text-sm">Entre na sua conta para votar.</p>
+          <Button asChild size="sm" className="w-fit">
+            <Link href="/sign-in">Entrar</Link>
+          </Button>
+        </div>
       )}
 
       {/* Categorias */}
       <div className="space-y-6">
-        {isClosed && resultsData ? (
-          // === EXIBIR RESULTADOS ===
-          resultsData.map((category) => {
-            const sortedNominees = [...category.nominees].sort((a, b) =>
-              (b.vote_count || 0) - (a.vote_count || 0)
-            );
+        {isClosed && resultsData
+          ? resultsData.map((category) => (
+              <ResultsCategory key={category.id} category={category} />
+            ))
+          : votingData.categories.map((category) => {
+              const userVote = getUserVoteForCategory(category.id);
+              const isVoting = votingCategoryId === category.id;
+              const disabled = !isActive || isVoting;
 
-            // Find the highest vote count
-            const maxVotes = sortedNominees.length > 0 ? (sortedNominees[0].vote_count || 0) : 0;
-
-            return (
-              <Card key={category.id}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    {category.name}
-                    <Badge variant="outline" className="ml-auto">
-                      <Users className="h-3 w-3 mr-1" />
-                      {category.total_votes} votos
-                    </Badge>
-                  </CardTitle>
-                  {category.description && (
-                    <CardDescription>{category.description}</CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {sortedNominees.map((nominee) => {
-                      // Winner: has the max vote count and it's greater than 0
-                      const isWinner = (nominee.vote_count || 0) === maxVotes && maxVotes > 0;
-                      return (
-                        <div key={nominee.id} className="space-y-2">
-                          <div className="flex items-start space-x-3 rounded-lg border p-4">
-                            <div className="flex-1 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  {isWinner && <Trophy className="h-4 w-4 text-yellow-500" />}
-                                  <span className={isWinner ? "font-bold" : "font-medium"}>
-                                    {nominee.title}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm text-muted-foreground">
-                                    {nominee.vote_count || 0} votos
-                                  </span>
-                                  <Badge variant="secondary">
-                                    {nominee.percentage?.toFixed(1) || 0}%
-                                  </Badge>
-                                </div>
-                              </div>
-                              {nominee.description && (
-                                <p className="text-sm text-muted-foreground">
-                                  {nominee.description}
-                                </p>
-                              )}
-                              {nominee.content_link && (
-                                <a
-                                  href={nominee.content_link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-sm text-primary hover:underline"
-                                >
-                                  Ver conteúdo →
-                                </a>
-                              )}
-                            </div>
-                            {nominee.image_url && (
-                              <div className="relative w-16 h-16 rounded overflow-hidden flex-shrink-0">
-                                <Image
-                                  src={nominee.image_url}
-                                  alt={nominee.title}
-                                  fill
-                                  className="object-cover"
-                                  unoptimized
-                                />
-                              </div>
-                            )}
-                          </div>
-                          <Progress value={nominee.percentage || 0} className="h-2" />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })
-        ) : (
-          // === EXIBIR VOTAÇÃO ===
-          votingData.categories.map((category) => {
-            const userVote = getUserVoteForCategory(category.id);
-            const isVoting = votingCategoryId === category.id;
-
-            return (
-              <Card key={category.id}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    {category.name}
-                    {userVote && (
-                      <Badge variant="outline" className="ml-auto">
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Você votou
-                      </Badge>
+              return (
+                <section
+                  key={category.id}
+                  aria-labelledby={`cat-${category.id}`}
+                  className="space-y-4 rounded-xl border bg-card p-5 sm:p-6"
+                >
+                  <header className="flex items-start justify-between gap-4">
+                    <div className="space-y-1">
+                      <h3 id={`cat-${category.id}`} className="text-lg font-semibold">
+                        {category.name}
+                      </h3>
+                      {category.description && (
+                        <p className="text-sm text-muted-foreground">
+                          {category.description}
+                        </p>
+                      )}
+                    </div>
+                    {isVoting ? (
+                      <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <ButtonLoader label="Registrando voto" />
+                        Registrando
+                      </span>
+                    ) : (
+                      userVote && (
+                        <Badge variant="outline" className="shrink-0 gap-1 border-primary/40 text-primary">
+                          <Check /> Votado
+                        </Badge>
+                      )
                     )}
-                  </CardTitle>
-                  {category.description && (
-                    <CardDescription>{category.description}</CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  <RadioGroup
-                    value={userVote || undefined}
-                    onValueChange={(nomineeId: string) => handleVote(category.id, nomineeId)}
-                    disabled={!isActive || isVoting}
-                  >
-                    <div className="space-y-3">
-                      {category.nominees.map((nominee) => (
-                        <div
-                          key={nominee.id}
-                          onClick={() => handleVote(category.id, nominee.id)}
-                          className={`flex items-start space-x-3 rounded-lg border p-4 transition-colors ${
-                            userVote === nominee.id
-                              ? "border-primary bg-primary/5"
-                              : "hover:bg-accent"
-                          } ${!isActive || isVoting ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
-                        >
-                          <RadioGroupItem
-                            value={nominee.id}
-                            id={nominee.id}
-                            disabled={!isActive || isVoting}
-                            className="pointer-events-none"
-                          />
-                          <div className="flex-1 space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{nominee.title}</span>
-                              {userVote === nominee.id && (
-                                <CheckCircle2 className="h-4 w-4 text-primary" />
-                              )}
-                            </div>
-                            {nominee.description && (
-                              <p className="text-sm text-muted-foreground">
-                                {nominee.description}
-                              </p>
-                            )}
-                            {nominee.content_link && (
-                              <a
-                                href={nominee.content_link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm text-primary hover:underline"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                Ver conteúdo →
-                              </a>
-                            )}
-                          </div>
-                          {nominee.image_url && (
-                            <div className="relative w-16 h-16 rounded overflow-hidden">
-                              <Image
-                                src={nominee.image_url}
-                                alt={nominee.title}
-                                fill
-                                className="object-cover"
-                                unoptimized
-                              />
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </RadioGroup>
-                  {isVoting && (
-                    <div className="flex items-center justify-center mt-4 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Registrando voto...
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })
-        )}
+                  </header>
+
+                  <NomineeRadioGroup
+                    categoryId={category.id}
+                    nominees={category.nominees}
+                    selectedNomineeId={userVote}
+                    disabled={disabled}
+                    onSelect={(nomineeId) => handleVote(category.id, nomineeId)}
+                  />
+                </section>
+              );
+            })}
       </div>
 
       <LoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} />
     </div>
+  );
+}
+
+function NomineeRadioGroup({
+  categoryId,
+  nominees,
+  selectedNomineeId,
+  disabled,
+  onSelect,
+}: {
+  categoryId: string;
+  nominees: AwardNominee[];
+  selectedNomineeId: string | null;
+  disabled: boolean;
+  onSelect: (nomineeId: string) => void;
+}) {
+  const radio = useRovingRadio({
+    count: nominees.length,
+    activeIndex: nominees.findIndex((n) => n.id === selectedNomineeId),
+    disabled,
+  });
+
+  return (
+    <div
+      role="radiogroup"
+      aria-labelledby={`cat-${categoryId}`}
+      className="grid gap-3 sm:grid-cols-2"
+    >
+      {nominees.map((nominee, index) => {
+        const { ref, tabIndex, onKeyDown } = radio.getItemProps(index);
+        return (
+          <NomineeOption
+            key={nominee.id}
+            buttonRef={ref}
+            tabIndex={tabIndex}
+            onKeyDown={onKeyDown}
+            nominee={nominee}
+            selected={selectedNomineeId === nominee.id}
+            disabled={disabled}
+            onSelect={() => onSelect(nominee.id)}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function NomineeOption({
+  buttonRef,
+  tabIndex,
+  onKeyDown,
+  nominee,
+  selected,
+  disabled,
+  onSelect,
+}: {
+  buttonRef: Ref<HTMLButtonElement>;
+  tabIndex: number;
+  onKeyDown: (e: KeyboardEvent<HTMLButtonElement>) => void;
+  nominee: AwardNominee;
+  selected: boolean;
+  disabled: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "group relative flex gap-3 rounded-lg border p-3 transition-[border-color,background-color,box-shadow]",
+        selected
+          ? "border-primary bg-primary/5 ring-1 ring-primary"
+          : "hover:border-foreground/20 hover:bg-accent/40",
+        disabled && !selected && "opacity-60"
+      )}
+    >
+      {nominee.image_url ? (
+        <div className="relative size-16 shrink-0 overflow-hidden rounded-md bg-muted">
+          <Image src={nominee.image_url} alt="" fill className="object-cover" sizes="64px" unoptimized />
+        </div>
+      ) : null}
+      <div className="min-w-0 flex-1 space-y-1">
+        <button
+          ref={buttonRef}
+          type="button"
+          role="radio"
+          aria-checked={selected}
+          tabIndex={tabIndex}
+          onKeyDown={onKeyDown}
+          disabled={disabled}
+          onClick={onSelect}
+          className="text-left font-medium leading-snug outline-none after:absolute after:inset-0 after:rounded-lg after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-ring disabled:cursor-not-allowed"
+        >
+          {nominee.title}
+        </button>
+        {nominee.description && (
+          <p className="line-clamp-2 text-sm text-muted-foreground">{nominee.description}</p>
+        )}
+        {nominee.content_link && (
+          <a
+            href={nominee.content_link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="relative z-10 inline-flex items-center gap-1 text-sm text-primary hover:underline"
+          >
+            Ver conteúdo <ExternalLink className="size-3" aria-hidden />
+          </a>
+        )}
+      </div>
+      <span
+        aria-hidden
+        className={cn(
+          "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+          selected ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"
+        )}
+      >
+        {selected && <Check className="size-3" />}
+      </span>
+    </div>
+  );
+}
+
+export function ResultsCategory({ category }: { category: CategoryWithResults }) {
+  const nominees = [...category.nominees].sort(
+    (a, b) => (b.vote_count || 0) - (a.vote_count || 0)
+  );
+  const maxVotes = nominees[0]?.vote_count || 0;
+
+  return (
+    <section className="space-y-4 rounded-xl border bg-card p-5 sm:p-6">
+      <header className="flex items-baseline justify-between gap-4">
+        <h3 className="text-lg font-semibold">{category.name}</h3>
+        <p className="shrink-0 text-sm tabular-nums text-muted-foreground">
+          <NumberFlow value={category.total_votes} /> votos
+        </p>
+      </header>
+
+      <ol className="space-y-3">
+        {nominees.map((nominee) => {
+          const votes = nominee.vote_count || 0;
+          const pct = nominee.percentage || 0;
+          const isWinner = votes === maxVotes && maxVotes > 0;
+          return (
+            <li key={nominee.id} className="space-y-1.5">
+              <div className="flex items-baseline justify-between gap-4">
+                <span className={cn("flex items-center gap-2", isWinner ? "font-semibold" : "text-muted-foreground")}>
+                  {isWinner && <Trophy className="size-4 text-primary" aria-label="Vencedor" />}
+                  {nominee.title}
+                </span>
+                <span className="shrink-0 text-sm tabular-nums">
+                  <NumberFlow
+                    value={pct}
+                    format={{ maximumFractionDigits: 1 }}
+                    suffix="%"
+                    className={isWinner ? "font-semibold" : "text-muted-foreground"}
+                  />
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    <NumberFlow value={votes} /> votos
+                  </span>
+                </span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-muted">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-[width] duration-700 ease-out",
+                    isWinner ? "bg-primary" : "bg-muted-foreground/40"
+                  )}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }

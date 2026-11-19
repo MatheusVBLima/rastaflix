@@ -24,4 +24,7 @@ export const nicknames: string[] = [
   "Múmia triste",
   "Dono da bola",
   "Noiado",
+  "Cafuçu",
+  "Sequeira",
+  "Michael Jackson ao contrário",
 ];

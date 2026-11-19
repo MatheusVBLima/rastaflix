@@ -33,7 +33,7 @@ export const historias = [
     iframe: "https://www.youtube.com/embed/GTV-qMwhamQ?si=VfPjC223ALnNg1hg",
   },
   {
-    id: 2,
+    id: 3,
     palavrasChave: [
       ["galo", "trans"],
       ["galo", "transgênero"],
@@ -44,7 +44,7 @@ export const historias = [
     iframe: "https://youtube.com/embed/U9nbyWqU2kE?si=DB84Rc4_SAw8E4mq",
   },
   {
-    id: 3,
+    id: 4,
     palavrasChave: [
       ["tio", "diabo"],
       ["tio", "apanhando"],
@@ -57,7 +57,7 @@ export const historias = [
     iframe: "https://www.youtube.com/embed/IZ8fK110yL4?si=zsdW3wW_38FxRhTB",
   },
   {
-    id: 4,
+    id: 5,
 
     palavrasChave: [
       ["mulher", "cobra"],
@@ -68,14 +68,14 @@ export const historias = [
   },
 
   {
-    id: 5,
+    id: 6,
     palavrasChave: [["mulher", "carro"]],
     emojis: ["👱🏻‍♀️", "👉", "🚗", "🗣️", "🐑"],
     iframe: "https://www.youtube.com/embed/12GLZ4NWDAk?si=DgFDEfWgzc_8gHcj",
   },
 
   {
-    id: 6,
+    id: 7,
     palavrasChave: [
       ["egua", "gostosa"],
       ["mae", "gostosa"],
@@ -84,7 +84,7 @@ export const historias = [
     iframe: "https://www.youtube.com/embed/kCcbgeovHOw?si=t9P13JDoUj--5N4p",
   },
   {
-    id: 7,
+    id: 8,
     palavrasChave: [
       ["tempero", "mineiro"],
       ["saga", "tempero"],
@@ -96,13 +96,13 @@ export const historias = [
     iframe: "https://www.youtube.com/embed/5xjvVA79TAQ?si=L8lGlRe8GLXdb6fH",
   },
   {
-    id: 8,
+    id: 9,
     palavrasChave: [["avô", "ilha"]],
     emojis: ["🏝️", "🇷🇴", "👴🏻", "🛩️", "💰"],
     iframe: "https://www.youtube.com/embed/WvxedUpQlZQ?si=YAU3FWeHj5t0UADV",
   },
   {
-    id: 9,
+    id: 10,
     palavrasChave: [
       ["virgi", "ovelha"],
       ["virgem", "ovelha"],

@@ -24,6 +24,7 @@ export async function addClipe(formData: FormData): Promise<ClipeActionResponse>
     url: formData.get("url") as string,
     thumbnail_url: (formData.get("thumbnail_url") as string) || "",
     plataforma: formData.get("plataforma") as string,
+    archived: formData.get("archived") === "true",
   };
 
   try {
@@ -38,6 +39,7 @@ export async function addClipe(formData: FormData): Promise<ClipeActionResponse>
           url: validatedData.url,
           thumbnail_url: validatedData.thumbnail_url || null,
           plataforma: validatedData.plataforma,
+          archived: validatedData.archived ?? false,
         },
       ])
       .select()
@@ -95,6 +97,7 @@ export async function editClipe(formData: FormData): Promise<ClipeActionResponse
     url: formData.get("url") as string,
     thumbnail_url: (formData.get("thumbnail_url") as string) || "",
     plataforma: formData.get("plataforma") as string,
+    archived: formData.get("archived") === "true",
   };
 
   try {
@@ -108,6 +111,7 @@ export async function editClipe(formData: FormData): Promise<ClipeActionResponse
         url: validatedData.url,
         thumbnail_url: validatedData.thumbnail_url || null,
         plataforma: validatedData.plataforma,
+        archived: validatedData.archived ?? false,
       })
       .eq("id", validatedData.id)
       .select()
@@ -146,6 +150,54 @@ export async function editClipe(formData: FormData): Promise<ClipeActionResponse
     return {
       success: false,
       message: "Erro ao editar clipe. Tente novamente mais tarde.",
+    };
+  }
+}
+
+export async function setClipeArchived(
+  id: string,
+  archived: boolean
+): Promise<ClipeActionResponse> {
+  const isAdmin = await getIsAdmin();
+  if (!isAdmin) {
+    return {
+      success: false,
+      message: "Você não tem permissão para alterar o status de clipes.",
+    };
+  }
+
+  if (!id) {
+    return { success: false, message: "ID do clipe não fornecido." };
+  }
+
+  try {
+    const supabase = getSupabaseAdmin();
+    const { error } = await supabase
+      .from("clipes")
+      .update({ archived })
+      .eq("id", id);
+
+    if (error) {
+      return {
+        success: false,
+        message: `Erro ao atualizar status do clipe: ${error.message}`,
+      };
+    }
+
+    revalidatePath("/clipes");
+    revalidatePath("/admin/clipes");
+
+    return {
+      success: true,
+      message: archived
+        ? "Clipe arquivado. Ele não aparece mais para os usuários."
+        : "Clipe reativado e visível novamente no site.",
+    };
+  } catch (error) {
+    console.error("Erro ao alterar status do clipe:", error);
+    return {
+      success: false,
+      message: "Erro ao alterar status do clipe. Tente novamente mais tarde.",
     };
   }
 }

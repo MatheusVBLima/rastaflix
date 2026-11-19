@@ -1,402 +1,285 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { historias } from "@/data/dle";
-import confetti from "canvas-confetti";
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle, XCircle, Trophy, Clock } from "lucide-react";
-import { Badge } from "../ui/badge";
+import { AnimatePresence, motion } from "motion/react";
+import NumberFlow from "@number-flow/react";
 import twemoji from "twemoji";
+import { Check, Lock, X } from "lucide-react";
+import { historias } from "@/data/dle";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { celebrate, celebrateText } from "@/lib/celebrate";
+import { cn } from "@/lib/utils";
 
-type VerificarPalpiteType =
-  | "Verificar"
-  | "Próxima Fase"
-  | "Fim das histórias";
+type BotaoEstado = "Verificar" | "Próxima fase" | "Fim das histórias";
 type TentativasPorFase = Record<number, number>;
+
+const MAX_EMOJIS = 5;
+
+function removerAcentuacao(str: string) {
+  return str.normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
 
 export function DLE() {
   const [historiaAtual, setHistoriaAtual] = useState(0);
   const [emojisVisiveis, setEmojisVisiveis] = useState(1);
   const [palpite, setPalpite] = useState("");
-  const [mensagem, setMensagem] = useState("");
   const [tentativas, setTentativas] = useState<string[]>([]);
   const [acertou, setAcertou] = useState(false);
-  const [tentativasCorretas, setTentativasCorretas] = useState<string[]>([]);
-  const [botaoVerificarPalpite, setBotaoVerificarPalpite] =
-    useState<VerificarPalpiteType>("Verificar");
-  const [tentativasPorFase, setTentativasPorFase] = useState<TentativasPorFase>(
-    {}
-  );
+  const [palpiteCorreto, setPalpiteCorreto] = useState<string | null>(null);
+  const [botao, setBotao] = useState<BotaoEstado>("Verificar");
+  const [tentativasPorFase, setTentativasPorFase] = useState<TentativasPorFase>({});
   const [fasesCompletas, setFasesCompletas] = useState<number[]>([]);
-  const [emojisReveladosPorFase, setEmojisReveladosPorFase] = useState<
-    Record<number, number>
-  >({});
+  const [emojisReveladosPorFase, setEmojisReveladosPorFase] = useState<Record<number, number>>({});
+
   const botaoRef = useRef<HTMLButtonElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const emojiContainerRef = useRef<HTMLDivElement>(null);
-  const placardoRef = useRef<HTMLDivElement>(null);
+  const placarRef = useRef<HTMLOListElement>(null);
 
-  // Função para aplicar Twemoji a um elemento
-  const aplicarTwemoji = (elemento: HTMLElement | null) => {
-    if (elemento) {
-      twemoji.parse(elemento, {
-        folder: "svg",
-        ext: ".svg",
-        className: "emoji",
-      });
-    }
-  };
+  const historia = historias[historiaAtual];
+  const ultimaFase = historiaAtual === historias.length - 1;
 
-  // Aplicar Twemoji aos emojis quando eles mudarem
   useEffect(() => {
-    aplicarTwemoji(emojiContainerRef.current);
-    aplicarTwemoji(placardoRef.current);
+    for (const el of [emojiContainerRef.current, placarRef.current]) {
+      if (el) twemoji.parse(el, { folder: "svg", ext: ".svg", className: "emoji" });
+    }
   }, [emojisVisiveis, historiaAtual, fasesCompletas]);
 
   useEffect(() => {
-    if (botaoVerificarPalpite === "Próxima Fase" && botaoRef.current) {
-      botaoRef.current.focus();
-    }
-  }, [botaoVerificarPalpite]);
+    if (botao === "Próxima fase") botaoRef.current?.focus();
+    if (botao === "Verificar") inputRef.current?.focus({ preventScroll: true });
+  }, [botao]);
 
-  const resetarJogo = () => {
-    const novoIndice = (historiaAtual + 1) % historias.length;
-    setHistoriaAtual(novoIndice);
+  function proximaFase() {
+    setHistoriaAtual((i) => (i + 1) % historias.length);
     setEmojisVisiveis(1);
     setPalpite("");
-    setMensagem("");
     setTentativas([]);
     setAcertou(false);
-    setBotaoVerificarPalpite("Verificar");
-    setTentativasCorretas([]);
-  };
+    setPalpiteCorreto(null);
+    setBotao("Verificar");
+  }
 
-  const reiniciarDoZero = () => {
+  function reiniciarDoZero() {
     setHistoriaAtual(0);
     setEmojisVisiveis(1);
     setPalpite("");
-    setMensagem("");
     setTentativas([]);
     setAcertou(false);
-    setBotaoVerificarPalpite("Verificar");
-    setTentativasCorretas([]);
+    setPalpiteCorreto(null);
+    setBotao("Verificar");
     setTentativasPorFase({});
     setFasesCompletas([]);
     setEmojisReveladosPorFase({});
-  };
+  }
 
-  const verificarPalpite = () => {
-    if (botaoVerificarPalpite === "Próxima Fase") {
-      resetarJogo();
-      return;
-    }
+  function verificarPalpite() {
+    if (botao === "Próxima fase") return proximaFase();
+    if (botao === "Fim das histórias" || !palpite.trim()) return;
 
-    if (botaoVerificarPalpite === "Fim das histórias") {
-      return;
-    }
-
-    const removerAcentuacao = (str: string) => {
-      return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    };
-
-    const palpiteSemAcentuacao = removerAcentuacao(palpite.toLowerCase());
-    const palavrasPalpite = palpiteSemAcentuacao.split(/\s+/);
-
-    const acertou = historias[historiaAtual].palavrasChave?.some((subarray) =>
-      subarray.every((palavra) =>
-        palavrasPalpite.includes(removerAcentuacao(palavra.toLowerCase()))
-      )
+    const palavras = removerAcentuacao(palpite.toLowerCase()).split(/\s+/);
+    const correto = historia.palavrasChave?.some((grupo) =>
+      grupo.every((p) => palavras.includes(removerAcentuacao(p.toLowerCase())))
     );
 
-    if (acertou) {
-      setMensagem("Parabéns! Você acertou!");
+    if (correto) {
       setAcertou(true);
-      setTentativasCorretas([...tentativasCorretas, palpite]);
-      setBotaoVerificarPalpite(
-        historiaAtual === historias.length - 1
-          ? "Fim das histórias"
-          : "Próxima Fase"
-      );
-
-      // Atualizar tentativas por fase e fases completas
-      const tentativasAtuais = tentativas.length + 1; // +1 para contar a tentativa correta
-      setTentativasPorFase((prev) => ({
-        ...prev,
-        [historiaAtual]: tentativasAtuais,
-      }));
-      setEmojisReveladosPorFase((prev) => ({
-        ...prev,
-        [historiaAtual]: emojisVisiveis,
-      }));
-
+      setPalpiteCorreto(palpite);
+      setBotao(ultimaFase ? "Fim das histórias" : "Próxima fase");
+      setTentativasPorFase((prev) => ({ ...prev, [historiaAtual]: tentativas.length + 1 }));
+      setEmojisReveladosPorFase((prev) => ({ ...prev, [historiaAtual]: emojisVisiveis }));
       if (!fasesCompletas.includes(historiaAtual)) {
         setFasesCompletas((prev) => [...prev, historiaAtual]);
       }
-
-      confetti();
+      if (ultimaFase) void celebrateText("ZEROU", "#16a34a");
+      else void celebrate();
     } else {
-      setMensagem("Tente novamente!");
-      setBotaoVerificarPalpite("Verificar");
-      if (emojisVisiveis < 5) {
-        setEmojisVisiveis(emojisVisiveis + 1);
-      }
-
-      setTentativas([...tentativas, palpite]);
+      if (emojisVisiveis < MAX_EMOJIS) setEmojisVisiveis(emojisVisiveis + 1);
+      setTentativas([palpite, ...tentativas]);
     }
     setPalpite("");
-  };
+  }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Card do Jogo - Ocupa 2/3 do espaço em telas grandes */}
-      <Card className="lg:col-span-2 ">
-        <CardHeader className="flex flex-col gap-2 items-center">
-          <CardTitle className="text-2xl font-bold text-center">
-            Qual história é descrita por esses emojis?
-          </CardTitle>
-          <CardDescription className="text-center text-muted-foreground">
-            Cada resposta contém pelo menos 2 palavras
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4 items-center">
-          <div className="flex justify-center mb-4 text-5xl">
-            {historias[historiaAtual].emojis
-              .slice(0, emojisVisiveis)
-              .map((emoji, index) => (
-                <span key={index} className="mx-2 animate-pulse">
-                  {emoji}
-                </span>
-              ))}
-          </div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (botaoVerificarPalpite === "Verificar") {
-                verificarPalpite();
-              } else if (botaoVerificarPalpite === "Próxima Fase") {
-                resetarJogo();
-              }
-            }}
-            className="max-w-96 w-full flex flex-col gap-4"
-          >
-            <Input
-              type="text"
-              value={botaoVerificarPalpite === "Verificar" ? palpite : ""}
-              onChange={(e) => setPalpite(e.target.value)}
-              placeholder="Digite o nome da história"
-              disabled={botaoVerificarPalpite !== "Verificar"}
-            />
-            <Button
-              type="submit"
-              className={`w-full px-4 py-2 font-bold cursor-pointer ${
-                botaoVerificarPalpite === "Próxima Fase"
-                  ? "bg-green-600 hover:bg-green-700"
-                  : ""
-              }`}
-              ref={botaoRef}
-              disabled={botaoVerificarPalpite === "Fim das histórias"}
-            >
-              {botaoVerificarPalpite}
-            </Button>
-            {botaoVerificarPalpite === "Fim das histórias" && (
-              <Button
-                type="button"
-                onClick={reiniciarDoZero}
-                variant="default"
-                className="w-full px-4 py-2 font-bold cursor-pointer"
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      {/* Jogo */}
+      <section
+        aria-labelledby="dle-pergunta"
+        className="flex flex-col items-center gap-8 rounded-2xl border bg-card p-6 sm:p-10 lg:col-span-2"
+      >
+        <div className="space-y-2 text-center">
+          <p className="font-mono text-sm tabular-nums text-muted-foreground">
+            Fase {historiaAtual + 1} de {historias.length}
+          </p>
+          <h2 id="dle-pergunta" className="font-display text-xl font-semibold tracking-tight sm:text-2xl">
+            Qual história esses emojis contam?
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            A resposta tem pelo menos duas palavras. Cada erro revela mais um emoji.
+          </p>
+        </div>
+
+        {/* Emojis: os não revelados aparecem como espaços vazios */}
+        <div ref={emojiContainerRef} className="flex justify-center gap-2 sm:gap-4" aria-live="polite">
+          {Array.from({ length: MAX_EMOJIS }).map((_, i) => {
+            const emoji = historia.emojis[i];
+            const visible = i < emojisVisiveis || acertou;
+            return (
+              <div
+                key={`${historiaAtual}-${i}`}
+                className={cn(
+                  "flex size-14 items-center justify-center rounded-xl text-4xl sm:size-20 sm:text-5xl [&_img.emoji]:size-9 sm:[&_img.emoji]:size-12",
+                  visible ? "bg-muted/60" : "border-2 border-dashed border-muted"
+                )}
               >
-                Jogar Novamente
-              </Button>
-            )}
-          </form>
-          {mensagem && (
-            <p
-              className={`mt-4 font-bold text-center ${
-                acertou ? "text-green-500" : "text-yellow-500"
-              }`}
-            >
-              {mensagem}
-            </p>
+                <AnimatePresence>
+                  {visible && emoji && (
+                    <motion.span
+                      initial={{ scale: 0.4, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 420, damping: 24 }}
+                    >
+                      {emoji}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
+        </div>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            verificarPalpite();
+          }}
+          className="flex w-full max-w-md flex-col gap-3 sm:flex-row"
+        >
+          <label htmlFor="dle-palpite" className="sr-only">
+            Seu palpite
+          </label>
+          <Input
+            ref={inputRef}
+            id="dle-palpite"
+            value={botao === "Verificar" ? palpite : ""}
+            onChange={(e) => setPalpite(e.target.value)}
+            placeholder="Nome da história"
+            disabled={botao !== "Verificar"}
+            autoComplete="off"
+            className="h-11"
+          />
+          {botao === "Fim das histórias" ? (
+            <Button type="button" onClick={reiniciarDoZero} className="h-11">
+              Jogar de novo
+            </Button>
+          ) : (
+            <Button ref={botaoRef} type="submit" className="h-11 min-w-32">
+              {botao}
+            </Button>
           )}
-          {acertou && (
-            <div className="mt-4 rounded-lg overflow-hidden border border-gray-700 ">
+        </form>
+
+        {/* Resultado da fase */}
+        {acertou && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full space-y-4"
+          >
+            <p className="flex items-center justify-center gap-2 font-medium text-success">
+              <Check className="size-5" aria-hidden />
+              Acertou com “{palpiteCorreto}”
+            </p>
+            <div className="mx-auto aspect-video w-full max-w-xl overflow-hidden rounded-xl border">
               <iframe
-                width="580"
-                height="315"
-                src={historias[historiaAtual].iframe}
-                title="YouTube video player"
-                frameBorder="0"
+                src={historia.iframe}
+                title="Vídeo da história"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 referrerPolicy="strict-origin-when-cross-origin"
                 allowFullScreen
-                className="w-[300px] h-[225px] md:w-[580px] md:h-[315px]"
+                className="size-full"
               />
             </div>
-          )}
+          </motion.div>
+        )}
 
-          <div className="flex flex-col w-full mt-6">
-            {(tentativas.length > 0 || tentativasCorretas.length > 0) && (
-              <div className="grid grid-cols-1 gap-3 w-full">
-                <div className="flex flex-col gap-2">
-                  {tentativasCorretas.map((tentativa, index) => (
-                    <div
-                      key={`correct-${index}`}
-                      className="flex items-center p-3 rounded-lg bg-green-100 border border-green-300 text-green-800"
-                    >
-                      <div className="mr-3">
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                      </div>
-                      <p className="font-medium">{tentativa}</p>
-                    </div>
-                  ))}
-                </div>
+        {tentativas.length > 0 && !acertou && (
+          <ul className="w-full max-w-md space-y-2" aria-label="Palpites errados">
+            <AnimatePresence initial={false}>
+              {tentativas.map((t, i) => (
+                <motion.li
+                  key={`${tentativas.length - i}-${t}`}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm"
+                >
+                  <X className="size-4 shrink-0 text-destructive" aria-hidden />
+                  <span className="truncate">{t}</span>
+                </motion.li>
+              ))}
+            </AnimatePresence>
+          </ul>
+        )}
+      </section>
 
-                <div className="flex flex-col gap-2">
-                  {tentativas
-                    .slice()
-                    .reverse()
-                    .map((tentativa, index) => (
-                      <div
-                        key={`wrong-${index}`}
-                        className="flex items-center p-3 rounded-lg bg-red-100 border border-red-300 text-red-800"
-                      >
-                        <div className="mr-3">
-                          <XCircle className="h-5 w-5 text-red-600" />
-                        </div>
-                        <p className="font-medium">{tentativa}</p>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Card de Placar - Ocupa 1/3 do espaço em telas grandes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-primary" />
+      {/* Placar */}
+      <aside aria-labelledby="dle-placar" className="space-y-4 rounded-2xl border bg-card p-6">
+        <div className="flex items-baseline justify-between">
+          <h2 id="dle-placar" className="font-semibold">
             Placar
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Seu progresso no jogo
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <Card className=" p-4">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-lg font-medium">Progresso</h3>
-              <Badge>
-                {fasesCompletas.length}/{historias.length}
-              </Badge>
-            </div>
-            <div className="w-full bg-primary/20 rounded-full h-2.5">
-              <div
-                className="bg-primary h-2.5 rounded-full"
-                style={{
-                  width: `${(fasesCompletas.length / historias.length) * 100}%`,
-                }}
-              ></div>
-            </div>
-          </Card>
+          </h2>
+          <p className="font-display text-2xl font-semibold tabular-nums">
+            <NumberFlow value={fasesCompletas.length} />
+            <span className="text-muted-foreground">/{historias.length}</span>
+          </p>
+        </div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
+            style={{ width: `${(fasesCompletas.length / historias.length) * 100}%` }}
+          />
+        </div>
 
-          <div>
-            <div>
-              <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
-                Tentativas por Fase
-              </h3>
-              <div className="space-y-4">
-                {historias.map((historia, index) => {
-                  const isFaseAtual = index === historiaAtual;
-                  const isFaseCompleta = fasesCompletas.includes(index);
-                  const isFaseFutura =
-                    !isFaseCompleta && index !== historiaAtual;
+        <ol ref={placarRef} className="space-y-2">
+          {historias.map((h, index) => {
+            const atual = index === historiaAtual;
+            const completa = fasesCompletas.includes(index);
+            const revelados = atual
+              ? h.emojis.slice(0, emojisVisiveis)
+              : completa
+                ? h.emojis.slice(0, emojisReveladosPorFase[index] || MAX_EMOJIS)
+                : [];
 
-                  return (
-                    <Card key={index} className="p-3 rounded-lg gap-0">
-                      <CardHeader className="p-0 mb-2">
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 rounded-full border flex items-center justify-center mr-2 text-muted-foreground">
-                              {index + 1}
-                            </div>
-                            <span className="text-sm font-medium">
-                              {isFaseAtual
-                                ? "Fase Atual"
-                                : isFaseCompleta
-                                ? "Completada"
-                                : "Não iniciada"}
-                            </span>
-                          </div>
-                          <div className="flex items-center">
-                            {isFaseCompleta ? (
-                              <div className="flex items-center">
-                                <span className="text-sm mr-2">
-                                  {tentativasPorFase[index] || 0} tentativas
-                                </span>
-                                <CheckCircle className="h-4 w-4 text-green-500" />
-                              </div>
-                            ) : isFaseAtual ? (
-                              <Badge className="text-sm text-yellow-600 bg-yellow-200 border ring-yellow-600">
-                                Em andamento
-                              </Badge>
-                            ) : (
-                              <span className="text-sm text-muted-foreground">
-                                Bloqueada
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="p-0 mt-2">
-                        <div className="flex justify-center space-x-2">
-                          {isFaseAtual
-                            ? // Mostrar apenas os emojis revelados na fase atual
-                              historia.emojis
-                                .slice(0, emojisVisiveis)
-                                .map((emoji, emojiIndex) => (
-                                  <span key={emojiIndex} className="text-2xl">
-                                    {emoji}
-                                  </span>
-                                ))
-                            : isFaseCompleta
-                            ? // Mostrar apenas os emojis que foram revelados quando o usuário acertou
-                              historia.emojis
-                                .slice(0, emojisReveladosPorFase[index] || 5)
-                                .map((emoji, emojiIndex) => (
-                                  <span key={emojiIndex} className="text-2xl">
-                                    {emoji}
-                                  </span>
-                                ))
-                            : // Mostrar todos os emojis com blur para fases futuras
-                              historia.emojis.map((emoji, emojiIndex) => (
-                                <span
-                                  key={emojiIndex}
-                                  className="text-2xl filter blur-sm opacity-50"
-                                >
-                                  {emoji}
-                                </span>
-                              ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            return (
+              <li
+                key={index}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg border px-3 py-2",
+                  atual && "border-primary/60 bg-primary/5"
+                )}
+              >
+                <span className="w-5 font-mono text-xs tabular-nums text-muted-foreground">
+                  {index + 1}
+                </span>
+                <span className="flex flex-1 gap-1 text-lg [&_img.emoji]:size-5">
+                  {completa || atual ? (
+                    revelados.map((e, i) => <span key={i}>{e}</span>)
+                  ) : (
+                    <Lock className="size-4 text-muted-foreground/60" aria-label="Bloqueada" />
+                  )}
+                </span>
+                {completa && (
+                  <span className="text-xs tabular-nums text-muted-foreground">
+                    {tentativasPorFase[index]}{" "}
+                    {tentativasPorFase[index] === 1 ? "tentativa" : "tentativas"}
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </aside>
     </div>
   );
 }

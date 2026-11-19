@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchAllSeasons, fetchActiveSeason } from "@/lib/queries";
-import { AwardSeason } from "@/lib/types";
-import { AwardsPreviewContent } from "./AwardsPreviewContent";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Award } from "lucide-react";
+import { fetchActiveSeason, fetchAllSeasons } from "@/lib/queries";
+import { queryKeys } from "@/lib/query-keys";
+import type { AwardSeason } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Select,
   SelectContent,
@@ -14,90 +15,82 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Info } from "lucide-react";
+import { AwardsPreviewContent } from "./AwardsPreviewContent";
+
+const STATUS_LABEL: Record<AwardSeason["status"], string> = {
+  active: "Votação aberta",
+  closed: "Encerrada",
+  draft: "Rascunho",
+};
 
 export function AwardsPreviewSidebar() {
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>("");
 
-  // Buscar todas as temporadas para o dropdown
   const { data: allSeasons = [] } = useQuery<AwardSeason[]>({
-    queryKey: ["seasons"],
+    queryKey: queryKeys.rastaAwards.seasons(),
     queryFn: fetchAllSeasons,
   });
 
-  // Buscar temporada ativa para auto-seleção
   const { data: activeSeason } = useQuery<AwardSeason | null>({
-    queryKey: ["activeSeason"],
+    queryKey: queryKeys.rastaAwards.activeSeason(),
     queryFn: fetchActiveSeason,
   });
 
-  // Auto-selecionar temporada mais recente (ativa ou última criada) ao montar
   useEffect(() => {
-    if (allSeasons.length > 0 && !selectedSeasonId) {
-      // Prioriza temporada ativa, senão pega a primeira da lista (mais recente)
-      const seasonToSelect = activeSeason || allSeasons[0];
-      setSelectedSeasonId(seasonToSelect.id);
-    }
+    if (allSeasons.length === 0) return;
+    if (selectedSeasonId && allSeasons.some((s) => s.id === selectedSeasonId)) return;
+    const seasonToSelect = activeSeason ?? allSeasons[0];
+    if (seasonToSelect) setSelectedSeasonId(seasonToSelect.id);
   }, [allSeasons, activeSeason, selectedSeasonId]);
 
   return (
     <div className="space-y-6">
-      {/* Alert de modo preview */}
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription className="flex items-center gap-2">
-          <Badge variant="secondary">Modo Preview</Badge>
-          <span className="text-sm">
-            Alterações salvam automaticamente e aparecem aqui em tempo real
-          </span>
-        </AlertDescription>
-      </Alert>
-
-      {/* Seletor de temporada com botão de fechar */}
-      <div className="space-y-2">
-        <label htmlFor="season-select" className="text-sm font-medium">
-          Selecione a Temporada
-        </label>
-        <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
-          <SelectTrigger id="season-select">
-            <SelectValue placeholder="Escolha uma temporada..." />
-          </SelectTrigger>
-          <SelectContent>
-            {allSeasons.map((season) => (
-              <SelectItem key={season.id} value={season.id}>
-                <div className="flex items-center gap-2">
-                  <span>{season.title}</span>
-                  <Badge
-                    variant={
-                      season.status === "active"
-                        ? "default"
-                        : season.status === "closed"
-                        ? "secondary"
-                        : "outline"
-                    }
-                    className="text-xs"
-                  >
-                    {season.status === "active" && "Ativa"}
-                    {season.status === "closed" && "Encerrada"}
-                    {season.status === "draft" && "Rascunho"}
-                  </Badge>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="flex flex-col gap-3 rounded-xl border bg-muted/40 p-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex-1 space-y-1.5">
+          <label htmlFor="preview-season-select" className="text-sm font-medium">
+            Temporada
+          </label>
+          <Select value={selectedSeasonId || undefined} onValueChange={setSelectedSeasonId}>
+            <SelectTrigger id="preview-season-select" className="h-10 bg-background">
+              <SelectValue placeholder="Escolha uma temporada" />
+            </SelectTrigger>
+            <SelectContent>
+              {allSeasons.map((season) => (
+                <SelectItem key={season.id} value={season.id}>
+                  <span className="flex items-center gap-2">
+                    <span>
+                      {season.description
+                        ? `${season.title} · ${season.description}`
+                        : `${season.title} ${season.year}`}
+                    </span>
+                    <Badge
+                      variant={
+                        season.status === "active"
+                          ? "default"
+                          : season.status === "closed"
+                            ? "secondary"
+                            : "outline"
+                      }
+                      className="text-[11px]"
+                    >
+                      {STATUS_LABEL[season.status]}
+                    </Badge>
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Preview da votação */}
       {selectedSeasonId ? (
         <AwardsPreviewContent seasonId={selectedSeasonId} />
       ) : (
-        <div className="flex items-center justify-center p-12 text-center text-muted-foreground">
-          <div>
-            <Info className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Selecione uma temporada para visualizar o preview</p>
-          </div>
-        </div>
+        <EmptyState
+          icon={Award}
+          title="Nenhuma temporada selecionada"
+          description="Crie ou escolha uma temporada acima para visualizar o preview."
+        />
       )}
     </div>
   );

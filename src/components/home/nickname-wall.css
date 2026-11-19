@@ -1,0 +1,210 @@
+/* Muro de tijolo realista + remendos de cimento da home */
+
+.brick-wall-band {
+  position: relative;
+  border-bottom: 3px solid rgba(0, 0, 0, 0.45);
+  box-shadow:
+    inset 0 18px 26px -10px rgba(0, 0, 0, 0.55),
+    inset 0 -16px 24px -10px rgba(0, 0, 0, 0.5);
+}
+
+.dark .brick-wall-band {
+  border-bottom-color: rgba(0, 0, 0, 0.85);
+  box-shadow:
+    inset 0 22px 30px -10px rgba(0, 0, 0, 0.85),
+    inset 0 -18px 26px -10px rgba(0, 0, 0, 0.8);
+}
+
+/* Pingadeira / beiral de concreto no topo do muro */
+.brick-wall-cap {
+  height: 11px;
+  background-color: #9e9990;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.38) 0%,
+      rgba(255, 255, 255, 0.08) 38%,
+      rgba(0, 0, 0, 0.34) 100%
+    ),
+    url("/textures/cement-plaster.webp");
+  background-size: 100% 100%, 340px auto;
+  background-repeat: no-repeat, repeat-x;
+  box-shadow:
+    0 5px 12px rgba(0, 0, 0, 0.52),
+    0 2px 3px rgba(0, 0, 0, 0.4);
+}
+
+.dark .brick-wall-cap {
+  background-color: #4f4b45;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.16) 0%,
+      rgba(18, 16, 14, 0.48) 45%,
+      rgba(0, 0, 0, 0.82) 100%
+    ),
+    url("/textures/cement-plaster.webp");
+  box-shadow:
+    0 7px 16px rgba(0, 0, 0, 0.85),
+    0 2px 4px rgba(0, 0, 0, 0.72);
+}
+
+/* Superfície fotográfica real do muro de tijolo aparente */
+.brick-wall-surface {
+  background-color: #7a4230;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(14, 10, 8, 0.34) 0%,
+      rgba(14, 10, 8, 0.06) 24%,
+      rgba(14, 10, 8, 0.08) 76%,
+      rgba(10, 7, 5, 0.38) 100%
+    ),
+    url("/textures/brick-wall.webp");
+  background-size: 100% 100%, 560px auto;
+  background-position: 0 0, 0 center;
+  background-repeat: no-repeat, repeat;
+}
+
+.dark .brick-wall-surface {
+  background-color: #2f1a13;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(8, 6, 5, 0.62) 0%,
+      rgba(16, 12, 10, 0.36) 28%,
+      rgba(14, 10, 8, 0.4) 74%,
+      rgba(6, 5, 4, 0.72) 100%
+    ),
+    url("/textures/brick-wall.webp");
+  background-size: 100% 100%, 560px auto;
+  background-position: 0 0, 0 center;
+  background-repeat: no-repeat, repeat;
+}
+
+/* Camada externa: sombra real do relevo do reboco sobre os tijolos */
+.cement-patch-wrap {
+  position: relative;
+  filter:
+    drop-shadow(0 6px 8px rgba(0, 0, 0, 0.65))
+    drop-shadow(0 2px 2px rgba(0, 0, 0, 0.55));
+  transition: transform 220ms ease-out, filter 220ms ease-out;
+}
+.cement-patch-wrap:hover {
+  transform: scale(1.045);
+  filter:
+    drop-shadow(0 8px 12px rgba(0, 0, 0, 0.72))
+    drop-shadow(0 2px 3px rgba(0, 0, 0, 0.58));
+}
+
+/* Respingo fino de argamassa seca ao redor do remendo nos tijolos */
+.cement-patch-wrap::before {
+  content: "";
+  position: absolute;
+  inset: -5px -7px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(182, 178, 170, 0.36) 35%,
+    rgba(160, 156, 148, 0.14) 68%,
+    transparent 95%
+  );
+  filter: blur(3px);
+  pointer-events: none;
+  z-index: -1;
+}
+.dark .cement-patch-wrap::before {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(150, 146, 138, 0.28) 35%,
+    rgba(120, 116, 108, 0.1) 68%,
+    transparent 95%
+  );
+}
+
+/* Remendo de cimento rústico com textura fotográfica de argamassa */
+.cement-patch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1.85rem 0.6rem;
+  background-color: #b4afa6;
+  background-image:
+    radial-gradient(ellipse 90% 65% at 24% 20%, rgba(255, 255, 255, 0.3), transparent 58%),
+    radial-gradient(ellipse 80% 70% at 80% 85%, rgba(20, 18, 15, 0.34), transparent 62%),
+    linear-gradient(155deg, rgba(226, 222, 215, 0.42) 0%, rgba(164, 160, 152, 0.22) 55%, rgba(78, 74, 68, 0.46) 100%),
+    url("/textures/cement-plaster.webp");
+  background-size: 100% 100%, 100% 100%, 100% 100%, 340px auto;
+  background-repeat: no-repeat, no-repeat, no-repeat, repeat;
+  box-shadow:
+    inset 0 3px 4px rgba(255, 255, 255, 0.42),
+    inset 0 -4px 6px rgba(0, 0, 0, 0.42),
+    inset 3px 0 4px rgba(255, 255, 255, 0.22),
+    inset -3px 0 5px rgba(0, 0, 0, 0.3);
+}
+
+.dark .cement-patch {
+  background-color: #9e9990;
+  background-image:
+    radial-gradient(ellipse 90% 65% at 24% 20%, rgba(255, 255, 255, 0.2), transparent 58%),
+    radial-gradient(ellipse 80% 70% at 80% 85%, rgba(10, 9, 8, 0.46), transparent 64%),
+    linear-gradient(155deg, rgba(196, 192, 184, 0.28) 0%, rgba(132, 128, 120, 0.2) 52%, rgba(48, 45, 40, 0.56) 100%),
+    url("/textures/cement-plaster.webp");
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.28),
+    inset 0 -5px 7px rgba(0, 0, 0, 0.52),
+    inset 3px 0 4px rgba(255, 255, 255, 0.14),
+    inset -3px 0 5px rgba(0, 0, 0, 0.38);
+}
+
+/* 5 formatos orgânicos irregulares de remendo espalhado na colher de pedreiro */
+.cement-patch-0 {
+  clip-path: polygon(
+    2% 20%, 8% 8%, 18% 4%, 34% 7%, 52% 1%, 70% 5%, 86% 2%, 95% 11%,
+    99% 28%, 97% 54%, 100% 76%, 94% 92%, 82% 97%, 64% 93%, 44% 99%,
+    24% 95%, 9% 98%, 2% 84%, 0% 58%, 3% 38%
+  );
+}
+.cement-patch-1 {
+  clip-path: polygon(
+    1% 28%, 7% 11%, 22% 3%, 41% 5%, 60% 0%, 79% 6%, 93% 4%, 98% 18%,
+    100% 44%, 96% 70%, 98% 88%, 88% 96%, 71% 99%, 50% 94%, 31% 98%,
+    13% 93%, 3% 88%, 0% 66%, 2% 46%
+  );
+}
+.cement-patch-2 {
+  clip-path: polygon(
+    3% 14%, 14% 3%, 31% 6%, 49% 2%, 69% 5%, 88% 1%, 97% 14%, 100% 36%,
+    97% 62%, 99% 84%, 90% 96%, 74% 94%, 55% 99%, 35% 95%, 17% 99%,
+    5% 90%, 0% 72%, 2% 42%
+  );
+}
+.cement-patch-3 {
+  clip-path: polygon(
+    2% 24%, 10% 7%, 26% 2%, 46% 6%, 66% 1%, 83% 7%, 95% 5%, 99% 22%,
+    98% 50%, 100% 78%, 92% 94%, 78% 98%, 59% 95%, 40% 99%, 20% 94%,
+    7% 97%, 1% 80%, 0% 52%
+  );
+}
+.cement-patch-4 {
+  clip-path: polygon(
+    4% 12%, 19% 4%, 38% 1%, 57% 6%, 77% 2%, 92% 8%, 99% 24%, 97% 52%,
+    99% 80%, 93% 94%, 76% 99%, 54% 95%, 34% 98%, 14% 94%, 3% 86%,
+    0% 62%, 2% 34%
+  );
+}
+
+/* Texto riscado/gravado fundo no cimento fresco */
+.cement-text {
+  color: rgba(24, 22, 18, 0.88);
+  text-shadow:
+    0 1.5px 0 rgba(255, 255, 255, 0.42),
+    0 -1px 1.5px rgba(0, 0, 0, 0.44),
+    1px 0 0 rgba(255, 255, 255, 0.18);
+}
+.dark .cement-text {
+  color: rgba(22, 20, 17, 0.92);
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.34),
+    0 -1px 1.5px rgba(0, 0, 0, 0.52);
+}

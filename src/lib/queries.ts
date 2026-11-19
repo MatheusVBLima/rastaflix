@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   Story,
   Music,
@@ -18,39 +18,69 @@ import {
   UserAchievement,
 } from "./types";
 
+let supabaseDirectClient: SupabaseClient | null = null;
+
 /**
- * Helper para criar cliente Supabase
- * Nota: Não usa "use server" - pode ser chamado tanto no servidor quanto no cliente
+ * Helper singleton para cliente Supabase anônimo (leitura pública).
+ * Nota: Não usa "use server" - pode ser chamado tanto no servidor quanto no cliente.
  */
-function getSupabaseClientDirect() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      global: {
-        headers: {},
-      },
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
+function getSupabaseClientDirect(): SupabaseClient {
+  if (!supabaseDirectClient) {
+    supabaseDirectClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {},
+        },
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
+  }
+  return supabaseDirectClient;
+}
+
+function isMissingArchivedColumn(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  return error.code === "42703" || Boolean(error.message?.includes("archived"));
 }
 
 // ========================================
 // HISTÓRIAS (Stories)
 // ========================================
 
-export async function fetchHistorias(): Promise<Story[]> {
+async function queryHistorias(includeArchived: boolean): Promise<Story[]> {
   const supabase = getSupabaseClientDirect();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("historias")
-    .select("id, title, description, tags, url, image_url, created_at")
+    .select("id, title, description, tags, url, image_url, archived, created_at")
     .order("created_at", { ascending: false });
 
+  if (!includeArchived) {
+    query = query.eq("archived", false);
+  }
+
+  const { data, error } = await query;
+
   if (error) {
+    if (isMissingArchivedColumn(error)) {
+      const fallback = await supabase
+        .from("historias")
+        .select("id, title, description, tags, url, image_url, created_at")
+        .order("created_at", { ascending: false });
+      if (fallback.error || !fallback.data) return [];
+      return fallback.data.map((story) => ({
+        ...story,
+        description: story.description || "",
+        tags: story.tags || [],
+        imageUrl: story.image_url,
+        archived: false,
+      }));
+    }
     console.error("Erro ao buscar histórias do Supabase:", error);
     return [];
   }
@@ -59,13 +89,23 @@ export async function fetchHistorias(): Promise<Story[]> {
     return [];
   }
 
-  // Mapear os dados para a interface Story
   return data.map((story) => ({
     ...story,
     description: story.description || "",
     tags: story.tags || [],
     imageUrl: story.image_url,
+    archived: Boolean(story.archived),
   }));
+}
+
+/** Histórias visíveis ao público (exclui arquivadas). */
+export async function fetchHistorias(): Promise<Story[]> {
+  return queryHistorias(false);
+}
+
+/** Todas as histórias para a tabela do admin (ativas e arquivadas). */
+export async function fetchAdminHistorias(): Promise<Story[]> {
+  return queryHistorias(true);
 }
 
 export async function fetchStoryById(
@@ -104,6 +144,7 @@ export async function fetchStoryById(
       tags: data.tags || [],
       url: data.url,
       imageUrl: data.image_url,
+      archived: Boolean(data.archived),
       created_at: data.created_at,
     };
 
@@ -118,15 +159,36 @@ export async function fetchStoryById(
 // MÚSICAS (Music)
 // ========================================
 
-export async function fetchMusicas(): Promise<Music[]> {
+async function queryMusicas(includeArchived: boolean): Promise<Music[]> {
   const supabase = getSupabaseClientDirect();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("musicas")
-    .select("id, title, url, image_url, created_at")
+    .select("id, title, url, image_url, archived, created_at")
     .order("created_at", { ascending: false });
 
+  if (!includeArchived) {
+    query = query.eq("archived", false);
+  }
+
+  const { data, error } = await query;
+
   if (error) {
+    if (isMissingArchivedColumn(error)) {
+      const fallback = await supabase
+        .from("musicas")
+        .select("id, title, url, image_url, created_at")
+        .order("created_at", { ascending: false });
+      if (fallback.error || !fallback.data) return [];
+      return fallback.data.map((music) => ({
+        ...music,
+        imageUrl: music.image_url,
+        id: music.id || "",
+        title: music.title || "",
+        url: music.url || "",
+        archived: false,
+      }));
+    }
     console.error("Erro ao buscar músicas do Supabase:", error);
     return [];
   }
@@ -141,7 +203,18 @@ export async function fetchMusicas(): Promise<Music[]> {
     id: music.id || "",
     title: music.title || "",
     url: music.url || "",
+    archived: Boolean(music.archived),
   }));
+}
+
+/** Músicas visíveis ao público (exclui arquivadas). */
+export async function fetchMusicas(): Promise<Music[]> {
+  return queryMusicas(false);
+}
+
+/** Todas as músicas para a tabela do admin (ativas e arquivadas). */
+export async function fetchAdminMusicas(): Promise<Music[]> {
+  return queryMusicas(true);
 }
 
 export async function fetchMusicById(
@@ -655,45 +728,67 @@ export async function fetchAllCategoriesWithResults(
 // CLIPES
 // ========================================
 
-/**
- * Buscar todos os clipes (ordenados por data de criação DESC)
- */
-export async function fetchClipes(): Promise<Clipe[]> {
+async function queryClipes(
+  includeArchived: boolean,
+  platform?: ClipePlatform
+): Promise<Clipe[]> {
   const supabase = getSupabaseClientDirect();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("clipes")
-    .select("id, titulo, url, thumbnail_url, plataforma, created_at")
+    .select("id, titulo, url, thumbnail_url, plataforma, archived, created_at")
     .order("created_at", { ascending: false });
 
+  if (!includeArchived) {
+    query = query.eq("archived", false);
+  }
+  if (platform) {
+    query = query.eq("plataforma", platform);
+  }
+
+  const { data, error } = await query;
+
   if (error) {
+    if (isMissingArchivedColumn(error)) {
+      let fallbackQuery = supabase
+        .from("clipes")
+        .select("id, titulo, url, thumbnail_url, plataforma, created_at")
+        .order("created_at", { ascending: false });
+      if (platform) {
+        fallbackQuery = fallbackQuery.eq("plataforma", platform);
+      }
+      const fallback = await fallbackQuery;
+      if (fallback.error || !fallback.data) return [];
+      return fallback.data.map((c) => ({ ...c, archived: false }));
+    }
     console.error("Erro ao buscar clipes do Supabase:", error);
     return [];
   }
 
-  return data || [];
+  return (data || []).map((c) => ({ ...c, archived: Boolean(c.archived) }));
 }
 
 /**
- * Buscar clipes por plataforma
+ * Clipes visíveis ao público (exclui arquivados).
+ */
+export async function fetchClipes(): Promise<Clipe[]> {
+  return queryClipes(false);
+}
+
+/**
+ * Todos os clipes para a tabela do admin (ativos e arquivados).
+ */
+export async function fetchAdminClipes(): Promise<Clipe[]> {
+  return queryClipes(true);
+}
+
+/**
+ * Buscar clipes públicos por plataforma (exclui arquivados).
  */
 export async function fetchClipesByPlatform(
   platform: ClipePlatform
 ): Promise<Clipe[]> {
-  const supabase = getSupabaseClientDirect();
-
-  const { data, error } = await supabase
-    .from("clipes")
-    .select("id, titulo, url, thumbnail_url, plataforma, created_at")
-    .eq("plataforma", platform)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error(`Erro ao buscar clipes da plataforma ${platform}:`, error);
-    return [];
-  }
-
-  return data || [];
+  return queryClipes(false, platform);
 }
 
 /**
@@ -780,4 +875,44 @@ export async function fetchUserAchievements(
   }
 
   return data || [];
+}
+
+// ========================================
+// ADMIN COUNTS
+// ========================================
+
+export interface AdminCounts {
+  historias: number;
+  musicas: number;
+  esculachos: number;
+  clipes: number;
+  inimigos: number;
+  seasons: number;
+}
+
+export async function fetchAdminCounts(): Promise<AdminCounts> {
+  const supabase = getSupabaseClientDirect();
+  const tables = [
+    "historias",
+    "musicas",
+    "esculachos",
+    "clipes",
+    "inimigos",
+    "award_seasons",
+  ] as const;
+
+  const results = await Promise.all(
+    tables.map((table) =>
+      supabase.from(table).select("id", { count: "exact", head: true })
+    )
+  );
+
+  return {
+    historias: results[0].count ?? 0,
+    musicas: results[1].count ?? 0,
+    esculachos: results[2].count ?? 0,
+    clipes: results[3].count ?? 0,
+    inimigos: results[4].count ?? 0,
+    seasons: results[5].count ?? 0,
+  };
 }

@@ -1,27 +1,55 @@
-import type { LucideIcon } from "lucide-react";
+import { ViewTransition, type ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 interface PageHeaderProps {
-  icon: LucideIcon;
   title: string;
-  description: string;
+  /** Usado para o morph do título vindo da home (`page-title-<slug>`). */
+  slug?: string;
+  description?: string;
+  /** Conteúdo à direita do título (ações, contadores). */
+  aside?: ReactNode;
+  className?: string;
 }
 
 /**
- * Renders a page header with an icon, a main title, and a supporting description.
- *
- * @param icon - A Lucide icon component to render to the left of the title
- * @param title - The main heading text displayed as an `h1`
- * @param description - Supporting text displayed below the title
- * @returns The header element containing the icon, title, and description
+ * Cabeçalho das páginas de conteúdo. O título usa a fonte display e,
+ * quando há `slug`, participa do morph com o card correspondente da home.
  */
-export function PageHeader({ icon: Icon, title, description }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  slug,
+  description,
+  aside,
+  className,
+}: PageHeaderProps) {
+  const heading = (
+    <h1 className="font-display text-4xl font-semibold leading-[0.95] tracking-tight sm:text-5xl md:text-6xl">
+      {title}
+    </h1>
+  );
+
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-3">
-        <Icon className="size-6 text-primary" />
-        <h1 className="text-2xl font-bold">{title}</h1>
+    <header
+      className={cn(
+        "flex flex-col gap-4 border-b pb-6 md:flex-row md:items-end md:justify-between",
+        className
+      )}
+    >
+      <div className="space-y-3">
+        {slug ? (
+          <ViewTransition name={`page-title-${slug}`} share="morph" default="none">
+            {heading}
+          </ViewTransition>
+        ) : (
+          heading
+        )}
+        {description && (
+          <p className="max-w-prose text-base text-muted-foreground">
+            {description}
+          </p>
+        )}
       </div>
-      <p className="text-muted-foreground">{description}</p>
-    </div>
+      {aside && <div className="shrink-0">{aside}</div>}
+    </header>
   );
 }

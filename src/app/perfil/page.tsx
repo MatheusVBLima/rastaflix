@@ -1,7 +1,7 @@
 import { Suspense } from "react";
-import { User } from "lucide-react";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { PageTransition } from "@/components/layout/PageTransition";
 import { UserProfile } from "@/components/user/UserProfile";
 import { Metadata } from "next";
 import { getIsAdmin } from "@/lib/auth";
@@ -10,7 +10,7 @@ import { queryKeys } from "@/lib/query-keys";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
-  title: "Meu Perfil | Rastaflix",
+  title: "Meu perfil",
   description: "Visualize suas informações e atividades na Rastaflix.",
 };
 
@@ -24,23 +24,21 @@ export const metadata: Metadata = {
  */
 export default function PerfilPage() {
   return (
-    <div className="container mx-auto py-10 min-h-screen space-y-6">
-      <PageHeader
-        icon={User}
-        title="Meu Perfil"
-        description="Suas informações e conquistas na Rastaflix."
-      />
-      <Suspense
-        fallback={
-          <div className="space-y-4">
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-40 w-full" />
-          </div>
-        }
-      >
-        <PerfilContent />
-      </Suspense>
-    </div>
+    <PageTransition>
+      <div className="container mx-auto space-y-8 px-4 py-10 md:px-6">
+        <PageHeader title="Meu perfil" />
+        <Suspense
+          fallback={
+            <div className="space-y-4" aria-busy="true" aria-label="Carregando">
+              <Skeleton className="h-32 w-full rounded-2xl" />
+              <Skeleton className="h-20 w-full rounded-xl" />
+            </div>
+          }
+        >
+          <PerfilContent />
+        </Suspense>
+      </div>
+    </PageTransition>
   );
 }
 
