@@ -14,7 +14,7 @@ Produção: https://rastaflix.vercel.app
 
 ## Rodando localmente
 
-Pré-requisitos: Node 20+, npm e [Docker](https://www.docker.com/) (para o Supabase local).
+Pré-requisitos: Node 20.9+ (recomendado 22 LTS), npm e [Docker](https://www.docker.com/) (para o Supabase local).
 
 ```bash
 git clone https://github.com/<seu-usuario>/rastaflix.git
