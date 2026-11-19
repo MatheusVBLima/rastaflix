@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { getSupabaseClient } from "./commonActions";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import {
   ActionResponse,
@@ -10,7 +10,7 @@ import {
   EditInimigoSchema,
   InimigoActionResponse,
 } from "@/lib/types"; // Tipos a serem criados/definidos
-import { verificarAdmin } from "./commonActions"; // Usar verificarAdmin de commonActions
+import { getIsAdmin } from "@/lib/auth";
 
 // Schema para adicionar um inimigo (simplificado, pode ser igual ao InimigoSchema)
 // Por enquanto, vamos assumir que InimigoSchema cobre a adição.
@@ -25,7 +25,7 @@ import { verificarAdmin } from "./commonActions"; // Usar verificarAdmin de comm
 export async function addInimigo(
   formData: FormData
 ): Promise<InimigoActionResponse> {
-  const isAdmin = await verificarAdmin();
+  const isAdmin = await getIsAdmin();
   if (!isAdmin) {
     return {
       success: false,
@@ -54,7 +54,7 @@ export async function addInimigo(
     };
   }
 
-  const supabase = await getSupabaseClient();
+  const supabase = getSupabaseAdmin();
   if (!supabase) {
     return {
       success: false,
@@ -110,7 +110,7 @@ export async function editInimigo(
   id: string,
   formData: FormData
 ): Promise<InimigoActionResponse> {
-  const isAdmin = await verificarAdmin();
+  const isAdmin = await getIsAdmin();
   if (!isAdmin) {
     return {
       success: false,
@@ -138,7 +138,7 @@ export async function editInimigo(
     };
   }
 
-  const supabase = await getSupabaseClient();
+  const supabase = getSupabaseAdmin();
   if (!supabase) {
     return {
       success: false,
@@ -183,7 +183,7 @@ export async function editInimigo(
  * Apenas administradores podem deletar inimigos.
  */
 export async function deleteInimigo(id: string): Promise<ActionResponse> {
-  const isAdmin = await verificarAdmin();
+  const isAdmin = await getIsAdmin();
   if (!isAdmin) {
     return {
       success: false,
@@ -191,7 +191,7 @@ export async function deleteInimigo(id: string): Promise<ActionResponse> {
     };
   }
 
-  const supabase = await getSupabaseClient();
+  const supabase = getSupabaseAdmin();
   if (!supabase) {
     return {
       success: false,

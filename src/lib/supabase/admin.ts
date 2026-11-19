@@ -1,12 +1,11 @@
+import "server-only";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 /**
- * Create a Supabase client authenticated with the service role key.
+ * Supabase client authenticated with the service role key (bypasses RLS).
  *
- * The returned client is configured with token auto-refresh and session persistence disabled.
- *
- * @returns A `SupabaseClient` authenticated using the service role key.
- * @throws Error if `NEXT_PUBLIC_SUPABASE_URL` or `SUPABASE_SERVICE_ROLE_KEY` is not configured.
+ * Server-only. Every write in the app goes through this client, so callers
+ * MUST authorize the request first (`ensureAdmin()` for content, `auth()` for votes).
  */
 export function getSupabaseAdmin(): SupabaseClient {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

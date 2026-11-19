@@ -2,11 +2,8 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import {
-  getSupabaseClient,
-  verificarAdmin,
-  ensureAdmin,
-} from "./commonActions";
+import { getIsAdmin } from "@/lib/auth";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 // Presumindo que estes tipos e schemas serão definidos em @/lib/types
 import {
   ActionResponse,
@@ -21,7 +18,7 @@ import {
 export async function addEsculacho(
   formData: FormData
 ): Promise<ActionResponse> {
-  const isAdmin = await verificarAdmin();
+  const isAdmin = await getIsAdmin();
   if (!isAdmin) {
     return {
       success: false,
@@ -42,7 +39,7 @@ export async function addEsculacho(
   try {
     const validatedData = EsculachoSchema.parse(rawData);
 
-    const supabase = await getSupabaseClient();
+    const supabase = getSupabaseAdmin();
 
     const { error: insertError } = await supabase
       .from("esculachos")
@@ -94,7 +91,7 @@ export async function addEsculacho(
 export async function editEsculacho(
   formData: FormData
 ): Promise<ActionResponse> {
-  const isAdmin = await verificarAdmin();
+  const isAdmin = await getIsAdmin();
   if (!isAdmin) {
     return {
       success: false,
@@ -116,7 +113,7 @@ export async function editEsculacho(
   try {
     const validatedData = EditEsculachoSchema.parse(rawData);
 
-    const supabase = await getSupabaseClient();
+    const supabase = getSupabaseAdmin();
 
     // Dados para atualizar
     const updateData: {
@@ -181,7 +178,7 @@ export async function deleteEsculacho(id: string): Promise<ActionResponse> {
   // Para delete, é bom garantir que apenas admins possam fazer
   // await ensureAdmin(); // Descomente se quiser lançar erro se não for admin
 
-  const isAdmin = await verificarAdmin();
+  const isAdmin = await getIsAdmin();
   if (!isAdmin) {
     return {
       success: false,
@@ -197,7 +194,7 @@ export async function deleteEsculacho(id: string): Promise<ActionResponse> {
   }
 
   try {
-    const supabase = await getSupabaseClient();
+    const supabase = getSupabaseAdmin();
     const { error } = await supabase.from("esculachos").delete().eq("id", id);
 
     if (error) {

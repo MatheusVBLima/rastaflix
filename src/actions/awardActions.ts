@@ -13,7 +13,8 @@ import {
 } from "@/lib/types";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { getSupabaseClient, ensureAdmin } from "./commonActions";
+import { ensureAdmin } from "@/lib/auth";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { auth } from "@clerk/nextjs/server";
 
 // ========================================
@@ -42,7 +43,7 @@ export async function addSeason(formData: FormData): Promise<ActionResponse> {
   try {
     const validatedData = AwardSeasonSchema.parse(rawData);
 
-    const supabase = await getSupabaseClient();
+    const supabase = getSupabaseAdmin();
     const { error } = await supabase.from("award_seasons").insert([
       {
         year: validatedData.year,
@@ -111,7 +112,7 @@ export async function editSeason(formData: FormData): Promise<ActionResponse> {
   try {
     const validatedData = EditAwardSeasonSchema.parse(rawData);
 
-    const supabase = await getSupabaseClient();
+    const supabase = getSupabaseAdmin();
     const { error } = await supabase
       .from("award_seasons")
       .update({
@@ -170,7 +171,7 @@ export async function deleteSeason(id: string): Promise<ActionResponse> {
   }
 
   try {
-    const supabase = await getSupabaseClient();
+    const supabase = getSupabaseAdmin();
     const { error } = await supabase.from("award_seasons").delete().eq("id", id);
 
     if (error) {
@@ -220,7 +221,7 @@ export async function addCategory(formData: FormData): Promise<ActionResponse> {
   try {
     const validatedData = AwardCategorySchema.parse(rawData);
 
-    const supabase = await getSupabaseClient();
+    const supabase = getSupabaseAdmin();
     const { error } = await supabase.from("award_categories").insert([
       {
         season_id: validatedData.season_id,
@@ -285,7 +286,7 @@ export async function editCategory(formData: FormData): Promise<ActionResponse> 
   try {
     const validatedData = EditAwardCategorySchema.parse(rawData);
 
-    const supabase = await getSupabaseClient();
+    const supabase = getSupabaseAdmin();
     const { error } = await supabase
       .from("award_categories")
       .update({
@@ -342,7 +343,7 @@ export async function deleteCategory(id: string): Promise<ActionResponse> {
   }
 
   try {
-    const supabase = await getSupabaseClient();
+    const supabase = getSupabaseAdmin();
     const { error } = await supabase.from("award_categories").delete().eq("id", id);
 
     if (error) {
@@ -394,7 +395,7 @@ export async function addNominee(formData: FormData): Promise<ActionResponse> {
   try {
     const validatedData = AwardNomineeSchema.parse(rawData);
 
-    const supabase = await getSupabaseClient();
+    const supabase = getSupabaseAdmin();
     const { error } = await supabase.from("award_nominees").insert([
       {
         category_id: validatedData.category_id,
@@ -463,7 +464,7 @@ export async function editNominee(formData: FormData): Promise<ActionResponse> {
   try {
     const validatedData = EditAwardNomineeSchema.parse(rawData);
 
-    const supabase = await getSupabaseClient();
+    const supabase = getSupabaseAdmin();
     const { error } = await supabase
       .from("award_nominees")
       .update({
@@ -522,7 +523,7 @@ export async function deleteNominee(id: string): Promise<ActionResponse> {
   }
 
   try {
-    const supabase = await getSupabaseClient();
+    const supabase = getSupabaseAdmin();
     const { error } = await supabase.from("award_nominees").delete().eq("id", id);
 
     if (error) {
@@ -573,7 +574,7 @@ export async function submitVote(
   try {
     const validatedData = VoteSchema.parse(rawData);
 
-    const supabase = await getSupabaseClient();
+    const supabase = getSupabaseAdmin();
 
     // 2. Verificar se a temporada está ativa
     const { data: season, error: seasonError } = await supabase
@@ -593,6 +594,23 @@ export async function submitVote(
       return {
         success: false,
         message: "A votação desta temporada não está ativa.",
+      };
+    }
+
+    // 2b. Garantir que o nominado pertence à categoria, e a categoria à temporada
+    const { data: nominee } = await supabase
+      .from("award_nominees")
+      .select("id, award_categories!inner(season_id)")
+      .eq("id", validatedData.nominee_id)
+      .eq("category_id", validatedData.category_id)
+      .eq("award_categories.season_id", validatedData.season_id)
+      .maybeSingle();
+
+    if (!nominee) {
+      return {
+        success: false,
+        message: "Nominado inválido para esta categoria.",
+        voted: false,
       };
     }
 
@@ -616,7 +634,7 @@ export async function submitVote(
       console.error("Erro Supabase:", upsertError);
       return {
         success: false,
-        message: `Erro ao registrar voto: ${upsertError.message}`,
+        message: "Erro ao registrar voto. Tente novamente mais tarde.",
       };
     }
 

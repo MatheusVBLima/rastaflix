@@ -7,7 +7,8 @@ import {
   Story,
   EditStorySchema,
 } from "@/lib/types";
-import { getSupabaseClient, ensureAdmin } from "./commonActions";
+import { ensureAdmin } from "@/lib/auth";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 // NOTA: getHistorias() e getAllTags() foram movidos para @/lib/queries
 // Para buscar histórias, use: import { fetchHistorias, getAllTags } from '@/lib/queries'
@@ -56,7 +57,7 @@ export async function addStory(
     };
   }
 
-  const supabase = await getSupabaseClient();
+  const supabase = getSupabaseAdmin();
 
   const { data, error } = await supabase
     .from("historias")
@@ -132,7 +133,7 @@ export async function editStory(
     };
   }
 
-  const supabase = await getSupabaseClient();
+  const supabase = getSupabaseAdmin();
   const { error } = await supabase
     .from("historias")
     .update({
@@ -170,7 +171,7 @@ export async function deleteStory(storyId: string): Promise<ActionResponse> {
     return { success: false, message: "ID da história não fornecido." };
   }
 
-  const supabase = await getSupabaseClient();
+  const supabase = getSupabaseAdmin();
   const { error } = await supabase
     .from("historias")
     .delete()

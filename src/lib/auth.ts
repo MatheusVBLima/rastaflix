@@ -1,4 +1,5 @@
 import { cache } from "react";
+import "server-only";
 import { redirect } from "next/navigation";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 
@@ -25,4 +26,21 @@ export async function requireAdmin(): Promise<void> {
   if (!isAdmin) {
     redirect("/");
   }
+}
+
+/**
+ * Ensure the current user is an admin, throwing otherwise.
+ *
+ * Use in Server Actions and Route Handlers before any write.
+ * @returns The admin's Clerk user ID.
+ */
+export async function ensureAdmin(): Promise<string> {
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("Usuário não autenticado.");
+  }
+  if (!(await getIsAdmin())) {
+    throw new Error("Acesso negado. Requer privilégios de administrador.");
+  }
+  return userId;
 }
