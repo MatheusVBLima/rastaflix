@@ -39,9 +39,22 @@ function verifyMessage(
   hmac: string,
   verifySignature: string
 ): boolean {
-  return crypto.timingSafeEqual(
-    Buffer.from(hmac),
-    Buffer.from(verifySignature)
+  const expected = Buffer.from(hmac);
+  const received = Buffer.from(verifySignature);
+  // timingSafeEqual throws on length mismatch; treat it as an invalid signature.
+  return (
+    expected.length === received.length &&
+    crypto.timingSafeEqual(expected, received)
+  );
+}
+
+// Twitch recommends rejecting messages older than 10 minutes to prevent replays.
+const MAX_MESSAGE_AGE_MS = 10 * 60 * 1000;
+
+function isFresh(timestamp: string): boolean {
+  const sentAt = Date.parse(timestamp);
+  return (
+    Number.isFinite(sentAt) && Math.abs(Date.now() - sentAt) <= MAX_MESSAGE_AGE_MS
   );
 }
 
@@ -78,6 +91,10 @@ export async function POST(request: NextRequest) {
     if (!verifyMessage(hmac, messageSignature)) {
       console.error("Invalid signature");
       return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
+    }
+
+    if (!isFresh(timestamp)) {
+      return NextResponse.json({ error: "Stale message" }, { status: 403 });
     }
 
     const body = JSON.parse(rawBody);

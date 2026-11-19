@@ -8,13 +8,14 @@ import {
 } from "@/lib/types";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { getSupabaseClient, verificarAdmin } from "./commonActions";
+import { getIsAdmin } from "@/lib/auth";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 // NOTA: getMusicas() e getMusicById() foram movidos para @/lib/queries
 // Para buscar músicas, use: import { fetchMusicas, fetchMusicById } from '@/lib/queries'
 
 export async function addMusic(formData: FormData): Promise<ActionResponse> {
-  const isAdmin = await verificarAdmin();
+  const isAdmin = await getIsAdmin();
   if (!isAdmin) {
     return {
       success: false,
@@ -32,7 +33,7 @@ export async function addMusic(formData: FormData): Promise<ActionResponse> {
     // A validação e inserção usarão imageUrl como vier do formulário
     const validatedData = MusicSchema.parse(rawData);
 
-    const supabase = await getSupabaseClient();
+    const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("musicas")
       .insert([
@@ -80,7 +81,7 @@ export async function addMusic(formData: FormData): Promise<ActionResponse> {
 }
 
 export async function editMusic(formData: FormData): Promise<ActionResponse> {
-  const isAdmin = await verificarAdmin();
+  const isAdmin = await getIsAdmin();
   if (!isAdmin) {
     return {
       success: false,
@@ -98,7 +99,7 @@ export async function editMusic(formData: FormData): Promise<ActionResponse> {
   try {
     const validatedData = EditMusicSchema.parse(rawData);
 
-    const supabase = await getSupabaseClient();
+    const supabase = getSupabaseAdmin();
     const { error } = await supabase
       .from("musicas")
       .update({
@@ -144,7 +145,7 @@ export async function editMusic(formData: FormData): Promise<ActionResponse> {
 }
 
 export async function deleteMusic(id: string): Promise<ActionResponse> {
-  const isAdmin = await verificarAdmin();
+  const isAdmin = await getIsAdmin();
   if (!isAdmin) {
     return {
       success: false,
@@ -160,7 +161,7 @@ export async function deleteMusic(id: string): Promise<ActionResponse> {
   }
 
   try {
-    const supabase = await getSupabaseClient();
+    const supabase = getSupabaseAdmin();
     const { error } = await supabase.from("musicas").delete().eq("id", id);
 
     if (error) {

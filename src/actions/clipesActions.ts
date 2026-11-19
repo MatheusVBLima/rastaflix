@@ -7,10 +7,11 @@ import {
 } from "@/lib/types";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { getSupabaseClient, verificarAdmin } from "./commonActions";
+import { getIsAdmin } from "@/lib/auth";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 export async function addClipe(formData: FormData): Promise<ClipeActionResponse> {
-  const isAdmin = await verificarAdmin();
+  const isAdmin = await getIsAdmin();
   if (!isAdmin) {
     return {
       success: false,
@@ -28,7 +29,7 @@ export async function addClipe(formData: FormData): Promise<ClipeActionResponse>
   try {
     const validatedData = ClipeSchema.parse(rawData);
 
-    const supabase = await getSupabaseClient();
+    const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("clipes")
       .insert([
@@ -80,7 +81,7 @@ export async function addClipe(formData: FormData): Promise<ClipeActionResponse>
 }
 
 export async function editClipe(formData: FormData): Promise<ClipeActionResponse> {
-  const isAdmin = await verificarAdmin();
+  const isAdmin = await getIsAdmin();
   if (!isAdmin) {
     return {
       success: false,
@@ -99,7 +100,7 @@ export async function editClipe(formData: FormData): Promise<ClipeActionResponse
   try {
     const validatedData = EditClipeSchema.parse(rawData);
 
-    const supabase = await getSupabaseClient();
+    const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("clipes")
       .update({
@@ -150,7 +151,7 @@ export async function editClipe(formData: FormData): Promise<ClipeActionResponse
 }
 
 export async function deleteClipe(id: string): Promise<ClipeActionResponse> {
-  const isAdmin = await verificarAdmin();
+  const isAdmin = await getIsAdmin();
   if (!isAdmin) {
     return {
       success: false,
@@ -166,7 +167,7 @@ export async function deleteClipe(id: string): Promise<ClipeActionResponse> {
   }
 
   try {
-    const supabase = await getSupabaseClient();
+    const supabase = getSupabaseAdmin();
     const { error } = await supabase.from("clipes").delete().eq("id", id);
 
     if (error) {

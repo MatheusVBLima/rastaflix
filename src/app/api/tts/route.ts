@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { clerkClient, auth } from "@clerk/nextjs/server";
-import { createClient } from "@supabase/supabase-js";
+import { auth } from "@clerk/nextjs/server";
+import { getIsAdmin } from "@/lib/auth";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 // Modelo Pro para melhor qualidade de áudio
 const GEMINI_API_URL =
@@ -14,18 +15,6 @@ interface TTSRequest {
 interface TTSResponse {
   audioUrl?: string;
   error?: string;
-}
-
-// Cliente Supabase com service role para upload
-function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error("Supabase URL ou Service Role Key não configurados");
-  }
-
-  return createClient(supabaseUrl, serviceRoleKey);
 }
 
 /**
@@ -47,23 +36,10 @@ export async function POST(request: Request): Promise<NextResponse<TTSResponse>>
     );
   }
 
-  // Verificar se é admin
-  try {
-    const client = await clerkClient();
-    const user = await client.users.getUser(userId);
-    const isAdmin = user?.privateMetadata?.is_admin === true;
-
-    if (!isAdmin) {
-      return NextResponse.json(
-        { error: "Acesso negado. Apenas administradores podem gerar áudio." },
-        { status: 403 }
-      );
-    }
-  } catch (error) {
-    console.error("Erro ao verificar permissões:", error);
+  if (!(await getIsAdmin())) {
     return NextResponse.json(
-      { error: "Erro ao verificar permissões" },
-      { status: 500 }
+      { error: "Acesso negado. Apenas administradores podem gerar áudio." },
+      { status: 403 }
     );
   }
 

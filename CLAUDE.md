@@ -20,15 +20,14 @@ npm run lint     # Lint codebase
 
 - **Clerk** handles authentication with role-based access control
 - Admin status stored in Clerk's `privateMetadata.is_admin`
-- Server-side admin check: `ensureAdmin()` in [src/actions/commonActions.ts](src/actions/commonActions.ts)
-- Client-side admin check: API route at [src/app/api/check-admin/route.ts](src/app/api/check-admin/route.ts)
+- Admin helpers in [src/lib/auth.ts](src/lib/auth.ts): `getIsAdmin()` (cached boolean), `ensureAdmin()` (throws; use in Server Actions/Route Handlers), `requireAdmin()` (redirects; use in admin pages)
 
 ### Database Integration
 
 - **Supabase** is the primary database
-- Supabase client via `getSupabaseClient()` in [src/actions/commonActions.ts](src/actions/commonActions.ts)
-- Clerk tokens passed to Supabase for RLS
-- All database operations happen through Server Actions
+- **Reads**: anon client in [src/lib/queries.ts](src/lib/queries.ts); RLS allows public `SELECT` only
+- **Writes**: service-role client `getSupabaseAdmin()` in [src/lib/supabase/admin.ts](src/lib/supabase/admin.ts) (server-only, bypasses RLS)
+- RLS grants **no** write access to `anon`/`authenticated` (see `supabase/migrations/`). Every write MUST authorize first: `ensureAdmin()` for content, Clerk `auth()` for user-owned rows (votes, achievements)
 
 ### Data Flow Pattern
 
@@ -88,7 +87,7 @@ Pattern for each type:
 ### Server Actions
 
 - Mark with `"use server"`
-- Use `ensureAdmin()` for admin operations
+- Use `ensureAdmin()` / `getIsAdmin()` from `@/lib/auth` for admin operations, then `getSupabaseAdmin()` for the write
 - Return `ActionResponse` or feature-specific response interface
 - Validate with Zod before database operations
 
