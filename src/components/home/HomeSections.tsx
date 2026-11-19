@@ -8,6 +8,7 @@ import { SparklesIcon } from "@/components/icons/animated/sparkles";
 import { SmileIcon } from "@/components/icons/animated/smile";
 import { HandFistIcon } from "@/components/icons/animated/hand-fist";
 import { LayoutGridIcon } from "@/components/icons/animated/layout-grid";
+import { Gamepad2Icon } from "@/components/icons/animated/gamepad-2";
 import { SectionTile } from "./SectionTile";
 
 /** Grade de seções da home: o acervo primeiro, depois os jogos e a comunidade. */
@@ -52,6 +53,15 @@ export function HomeSections() {
           Universo Ovelhera
         </h2>
         <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <SectionTile
+            href="/jogos"
+            slug="jogos"
+            title="Jogos"
+            description="Ilha do Avô Romeno e os jogos do universo."
+            icon={Gamepad2Icon}
+            featured
+            className="sm:col-span-2 lg:col-span-4"
+          />
           <SectionTile
             href="/rasta-awards"
             slug="rasta-awards"

@@ -4,11 +4,13 @@ import {
   fetchActiveSeason,
   fetchClipes,
   fetchEsculachos,
+  fetchGameLeaderboard,
   fetchHistorias,
   fetchInimigos,
   fetchMusicas,
   fetchVotingData,
 } from "@/lib/queries";
+import { GAME_SLUG } from "@/lib/games/ilha-do-avo/types";
 
 /**
  * Prefetches the historias list into the shared React Query cache.
@@ -91,6 +93,13 @@ export async function prefetchRastaAwards() {
   }
 }
 
+export function prefetchGames() {
+  return getQueryClient().prefetchQuery({
+    queryKey: queryKeys.games.leaderboard(GAME_SLUG),
+    queryFn: () => fetchGameLeaderboard(GAME_SLUG, 15),
+  });
+}
+
 const routePrefetchers: Record<string, () => Promise<unknown>> = {
   "/historias": prefetchHistorias,
   "/musicas": prefetchMusicas,
@@ -98,6 +107,8 @@ const routePrefetchers: Record<string, () => Promise<unknown>> = {
   "/inimigos": prefetchInimigos,
   "/clipes": prefetchClipes,
   "/rasta-awards": prefetchRastaAwards,
+  "/jogos": prefetchGames,
+  "/jogos/ilha-do-avo-romeno": prefetchGames,
 };
 
 /**

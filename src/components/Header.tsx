@@ -36,6 +36,7 @@ import { SparklesIcon } from "@/components/icons/animated/sparkles";
 import { SmileIcon } from "@/components/icons/animated/smile";
 import { HandFistIcon } from "@/components/icons/animated/hand-fist";
 import { LayoutGridIcon } from "@/components/icons/animated/layout-grid";
+import { Gamepad2Icon } from "@/components/icons/animated/gamepad-2";
 import { MenuIcon } from "@/components/icons/animated/menu";
 
 type AnimatedIcon = React.ComponentType<
@@ -57,6 +58,7 @@ const contaAquela: NavItem[] = [
 ];
 
 const universoOvelhera: NavItem[] = [
+  { title: "Jogos", href: "/jogos", description: "Roguelike 3D e mais", icon: Gamepad2Icon },
   { title: "Rasta Awards", href: "/rasta-awards", description: "Votação anual", icon: SparklesIcon },
   { title: "Ovelhera DLE", href: "/ovelhera-dle", description: "Adivinhe pelos emojis", icon: SmileIcon },
   { title: "Inimigos", href: "/inimigos", description: "O mural da vingança", icon: HandFistIcon },
