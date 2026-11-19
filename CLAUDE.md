@@ -118,17 +118,7 @@ Pattern for each type:
 
 ## Environment Variables
 
-```
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-CLERK_SECRET_KEY
-NEXT_PUBLIC_CLERK_SIGN_IN_URL
-NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL
-NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL
-NEXT_PUBLIC_POSTHOG_KEY
-NEXT_PUBLIC_POSTHOG_HOST
-```
+See [.env.example](.env.example) for the full list (required vs optional) with comments. Keep it updated whenever code reads a new `process.env` variable.
 
 ## Path Aliases
 
