@@ -29,9 +29,11 @@ cp .env.example .env.local
 npx supabase start
 ```
 
-O comando imprime `API URL`, `anon key` e `service_role key`. Coloque esses valores em `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` no `.env.local`.
+Na primeira vez ele baixa as imagens Docker, aplica todas as migrations de `supabase/migrations/` e carrega dados de exemplo de `supabase/seed.sql`.
 
-> **Limitação conhecida:** as tabelas mais antigas (`historias`, `musicas`, `esculachos`, `inimigos`, `award_*`) foram criadas antes de o projeto usar migrations, então `supabase/migrations/` ainda não recria o banco do zero. Enquanto isso não for resolvido, abra uma issue se precisar mexer nessas tabelas.
+Para ver as chaves, rode `npx supabase status`. Coloque `API URL`, `anon key` e `service_role key` em `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` no `.env.local`.
+
+Para recriar o banco do zero (migrations + seed): `npx supabase db reset`.
 
 ### 2. Login (Clerk)
 
