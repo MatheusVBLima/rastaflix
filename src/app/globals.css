@@ -899,6 +899,24 @@ body {
   }
 }
 
+/* Escala fluida em telas grandes: a partir de 1920px o rem cresce com a
+   largura da viewport (≈117% em 2560px, 150% em 3840px). Breakpoints do
+   Tailwind usam o rem padrão do navegador, então não são afetados. */
+@layer base {
+  @media (min-width: 1920px) {
+    html {
+      font-size: min(calc(0.5rem + 0.4167vw), 1.5rem);
+    }
+  }
+}
+
+/* Container mais largo em telas grandes (padrão do Tailwind para em 96rem). */
+@utility container {
+  @media (min-width: 120rem) {
+    max-width: 108rem;
+  }
+}
+
 @layer base {
   h1, h2, h3 {
     text-wrap: balance;

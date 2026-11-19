@@ -17,7 +17,7 @@ export default function Home() {
           />
 
           <div className="relative overflow-hidden">
-            <div className="container relative mx-auto grid grid-cols-1 items-center gap-4 px-4 pt-10 md:min-h-[440px] md:grid-cols-12 md:gap-6 md:px-6 md:pt-0 lg:min-h-[520px]">
+            <div className="container relative mx-auto grid grid-cols-1 items-center gap-4 px-4 pt-10 md:min-h-[27.5rem] md:grid-cols-12 md:gap-6 md:px-6 md:pt-0 lg:min-h-[32.5rem]">
               <div className="relative z-10 md:col-span-5 md:py-16 lg:py-20">
                 <h1 className="font-display text-5xl font-semibold leading-[0.9] tracking-[-0.04em] sm:text-6xl md:text-6xl lg:text-[4.75rem] xl:text-[5.75rem]">
                   Rastaflix
@@ -27,7 +27,7 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="relative flex items-end justify-center md:col-span-7 md:h-full md:min-h-[440px] md:justify-end lg:min-h-[520px]">
+              <div className="relative flex items-end justify-center md:col-span-7 md:h-full md:min-h-[27.5rem] md:justify-end lg:min-h-[32.5rem]">
                 {/* Rim light suave atrás das cabeças para separar do fundo escuro */}
                 <div
                   aria-hidden
@@ -38,13 +38,14 @@ export default function Home() {
                   alt="Gabriel Scutasu (Ovelhera)"
                   priority
                   sizes="(max-width: 768px) 100vw, 60vw"
-                  className="pointer-events-none h-auto w-full max-w-[440px] translate-y-4 select-none object-contain drop-shadow-[0_20px_36px_rgba(0,0,0,0.45)] sm:max-w-[520px] sm:translate-y-5 md:max-w-[620px] md:translate-y-7 lg:max-w-[740px] lg:translate-y-8"
+                  className="pointer-events-none h-auto w-full max-w-[27.5rem] translate-y-4 select-none object-contain drop-shadow-[0_20px_36px_rgba(0,0,0,0.45)] sm:max-w-[32.5rem] sm:translate-y-5 md:max-w-[38.75rem] md:translate-y-7 lg:max-w-[46.25rem] lg:translate-y-8"
                 />
               </div>
             </div>
           </div>
 
-          <div className="relative z-10">
+          {/* Em telas muito largas o muro acompanha o conteúdo e esmaece nas pontas */}
+          <div className="relative z-10 min-[120rem]:mx-auto min-[120rem]:max-w-[112rem] min-[120rem]:[mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
             <NicknameMarquee />
           </div>
         </section>
