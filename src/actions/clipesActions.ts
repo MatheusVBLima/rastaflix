@@ -61,7 +61,7 @@ export async function addClipe(formData: FormData): Promise<ClipeActionResponse>
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const fieldErrors = error.errors.map((err) => ({
+      const fieldErrors = error.issues.map((err) => ({
         field: err.path.join("."),
         message: err.message,
       }));
@@ -131,7 +131,7 @@ export async function editClipe(formData: FormData): Promise<ClipeActionResponse
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const fieldErrors = error.errors.map((err) => ({
+      const fieldErrors = error.issues.map((err) => ({
         field: err.path.join("."),
         message: err.message,
       }));

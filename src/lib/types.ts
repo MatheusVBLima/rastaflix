@@ -28,7 +28,7 @@ export const StorySchema = z.object({
 
 // Adicionar EditStorySchema aqui, estendendo StorySchema
 export const EditStorySchema = StorySchema.extend({
-  id: z.string({ required_error: "ID da história é obrigatório para edição" }),
+  id: z.string({ error: "ID da história é obrigatório para edição" }),
 });
 
 // Schema para músicas
@@ -115,12 +115,7 @@ export const EditEsculachoSchema = EsculachoSchema.extend({
 
 // Tipos e Schemas para Inimigos
 export const InimigoStatusSchema = z.enum(["pendente", "vingado"], {
-  errorMap: (issue, ctx) => {
-    if (issue.code === z.ZodIssueCode.invalid_enum_value) {
-      return { message: "Status inválido. Use 'pendente' ou 'vingado'." };
-    }
-    return { message: ctx.defaultError };
-  },
+  error: "Status inválido. Use 'pendente' ou 'vingado'.",
 });
 
 export interface Inimigo {
@@ -410,7 +405,7 @@ export const ClipeSchema = z.object({
   url: z.string().url({ message: "URL inválida." }),
   thumbnail_url: z.string().url({ message: "URL da thumbnail inválida." }).optional().or(z.literal("")),
   plataforma: z.enum(["twitch", "kick"], {
-    errorMap: () => ({ message: "Plataforma deve ser twitch ou kick." }),
+    error: "Plataforma deve ser twitch ou kick.",
   }),
 });
 
