@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Loader } from "@/components/ui/loader";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AdminTable } from "@/components/admin/AdminTable";
 import { ResultsCategory } from "@/components/awards/RastaAwardsVoting";
 import { categoryColumns, nomineeColumns, seasonColumns } from "./columns";
@@ -157,13 +157,43 @@ function NomineesTable({ categoryId, seasonId }: { categoryId: string; seasonId:
   );
 }
 
+function AwardsResultsSkeleton() {
+  return (
+    <div
+      className="grid gap-6 lg:grid-cols-2"
+      aria-busy="true"
+      aria-label="Carregando resultados"
+    >
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="space-y-4 rounded-xl border bg-card p-5 sm:p-6">
+          <div className="flex items-baseline justify-between gap-4">
+            <Skeleton className="h-6 w-44" />
+            <Skeleton className="h-4 w-16" />
+          </div>
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, j) => (
+              <div key={j} className="space-y-1.5">
+                <div className="flex items-baseline justify-between gap-4">
+                  <Skeleton className={j === 0 ? "h-4 w-40" : "h-4 w-32"} />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+                <Skeleton className="h-2 w-full rounded-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Results({ seasonId }: { seasonId: string }) {
   const { data = [], isLoading } = useQuery<CategoryWithResults[]>({
     queryKey: ["results", seasonId],
     queryFn: () => fetchAllCategoriesWithResults(seasonId),
   });
 
-  if (isLoading) return <Loader label="Carregando resultados" showLabel className="py-16" />;
+  if (isLoading) return <AwardsResultsSkeleton />;
   if (data.length === 0) return <EmptyState title="Nenhuma categoria nesta temporada" />;
 
   return (

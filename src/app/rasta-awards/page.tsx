@@ -9,9 +9,15 @@ import {
 import { RastaAwardsVoting } from "@/components/awards/RastaAwardsVoting";
 import { RastaAwardsSkeleton } from "@/components/awards/RastaAwardsSkeleton";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { auth } from "@clerk/nextjs/server";
 import { getQueryClient } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
-import { fetchActiveSeason, fetchVotingData } from "@/lib/queries";
+import {
+  fetchActiveSeason,
+  fetchAllCategoriesWithResults,
+  fetchUserVotes,
+  fetchVotingData,
+} from "@/lib/queries";
 import { pageMetadata } from "@/lib/site-metadata";
 
 export const metadata = pageMetadata(
@@ -43,23 +49,47 @@ export default function RastaAwardsPage() {
 
 async function RastaAwardsContent() {
   const queryClient = getQueryClient();
-
-  const activeSeason = await queryClient.fetchQuery({
-    queryKey: queryKeys.rastaAwards.activeSeason(),
-    queryFn: fetchActiveSeason,
-  });
+  const [{ userId }, activeSeason] = await Promise.all([
+    auth().catch(() => ({ userId: null })),
+    queryClient.fetchQuery({
+      queryKey: queryKeys.rastaAwards.activeSeason(),
+      queryFn: fetchActiveSeason,
+    }),
+  ]);
 
   if (activeSeason) {
-    await queryClient.prefetchQuery({
-      queryKey: queryKeys.rastaAwards.votingData(activeSeason.id),
-      queryFn: () => fetchVotingData(activeSeason.id),
-    });
+    const prefetches: Promise<unknown>[] = [
+      queryClient.prefetchQuery({
+        queryKey: queryKeys.rastaAwards.votingData(activeSeason.id),
+        queryFn: () => fetchVotingData(activeSeason.id),
+      }),
+    ];
+
+    if (userId) {
+      prefetches.push(
+        queryClient.prefetchQuery({
+          queryKey: queryKeys.rastaAwards.userVotes(userId, activeSeason.id),
+          queryFn: () => fetchUserVotes(userId, activeSeason.id),
+        })
+      );
+    }
+
+    if (activeSeason.status === "closed") {
+      prefetches.push(
+        queryClient.prefetchQuery({
+          queryKey: queryKeys.rastaAwards.results(activeSeason.id),
+          queryFn: () => fetchAllCategoriesWithResults(activeSeason.id),
+        })
+      );
+    }
+
+    await Promise.all(prefetches);
   }
 
   return (
     <ErrorBoundary>
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <RastaAwardsVoting />
+        <RastaAwardsVoting initialUserId={userId ?? null} />
       </HydrationBoundary>
     </ErrorBoundary>
   );

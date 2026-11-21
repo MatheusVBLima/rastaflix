@@ -34,7 +34,7 @@ export function ThemeSwitcher() {
   const mounted = React.useSyncExternalStore(subscribe, () => true, () => false);
   const icon = useAnimatedIcon<AnimatedIconHandle>();
 
-  const Icon = !mounted || theme === "system" ? SparklesIcon : theme === "light" ? SunIcon : MoonIcon;
+  const Icon = !mounted ? MoonIcon : theme === "system" ? SparklesIcon : theme === "light" ? SunIcon : MoonIcon;
   const swatchMode = resolvedTheme === "light" ? "light" : "dark";
 
   return (

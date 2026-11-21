@@ -149,7 +149,7 @@ function ModeOption({
         <span className="block font-medium">{label}</span>
         {hint && <span className="block text-sm text-muted-foreground">{hint}</span>}
       </span>
-      {selected && <SelectedMark />}
+      <SelectedMark visible={selected} />
     </button>
   );
 }
@@ -196,15 +196,21 @@ function PaletteOption({
           <span className="block font-medium">{name}</span>
           <span className="block truncate text-sm text-muted-foreground">{description}</span>
         </span>
-        {selected && <SelectedMark />}
+        <SelectedMark visible={selected} />
       </div>
     </button>
   );
 }
 
-function SelectedMark() {
+function SelectedMark({ visible }: { visible: boolean }) {
   return (
-    <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+    <span
+      aria-hidden
+      className={cn(
+        "flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-[opacity,transform] duration-150",
+        visible ? "scale-100 opacity-100" : "scale-75 opacity-0"
+      )}
+    >
       <Check className="size-3.5" aria-hidden />
     </span>
   );

@@ -16,17 +16,7 @@ import { cn } from "@/lib/utils";
 import { KickLogo } from "@/components/icons/KickLogo";
 import { TwitchLogo } from "@/components/icons/TwitchLogo";
 import { queryKeys } from "@/lib/query-keys";
-
-interface LiveStatus {
-  is_live_twitch: boolean;
-  is_live_kick: boolean;
-  twitch_stream_title?: string | null;
-  kick_stream_title?: string | null;
-  twitch_viewer_count?: number | null;
-  kick_viewer_count?: number | null;
-  twitch_username: string;
-  kick_username: string;
-}
+import type { LiveStatus } from "@/lib/types";
 
 /**
  * Fetches the current live-stream status from the backend endpoint.
@@ -42,31 +32,28 @@ async function fetchLiveStatus(): Promise<LiveStatus> {
   return response.json();
 }
 
+interface LiveIndicatorProps {
+  initialStatus?: LiveStatus | null;
+}
+
 /**
  * Render a live-status control that indicates whether Twitch or Kick streams are live and provides links to each channel.
  *
- * When the status is loading, a disabled "Lives" button is shown. Once loaded, a button reflects the overall live state and opens a dropdown with per-provider items that show stream title (when live), viewer count (when available), a live indicator, and an external link to the channel.
- *
- * @returns A JSX element: a live indicator button or dropdown containing Twitch and Kick status items with links, titles, and viewer counts.
+ * Uses server-provided `initialStatus` so SSR and first paint already match the live/offline state
+ * without flicker or horizontal layout shift, while refreshing in the background.
  */
-export function LiveIndicator() {
-  const { data: status, isLoading } = useQuery({
+export function LiveIndicator({ initialStatus = null }: LiveIndicatorProps) {
+  const { data: status } = useQuery({
     queryKey: queryKeys.liveStatus.all(),
     queryFn: fetchLiveStatus,
+    initialData: initialStatus ?? undefined,
+    // Marca como desatualizado apenas para atualizar em segundo plano sem entrar em loading.
+    initialDataUpdatedAt: 0,
     staleTime: 60_000,
     refetchInterval: 60_000,
   });
 
-  const isLive = status?.is_live_twitch || status?.is_live_kick;
-
-  if (isLoading) {
-    return (
-      <Button variant="ghost" size="sm" className="gap-2" disabled>
-        <Radio className="h-4 w-4" />
-        <span className="hidden sm:inline">Lives</span>
-      </Button>
-    );
-  }
+  const isLive = Boolean(status?.is_live_twitch || status?.is_live_kick);
 
   return (
     <DropdownMenu>

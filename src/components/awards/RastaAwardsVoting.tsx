@@ -40,20 +40,25 @@ const STATUS_LABEL: Record<AwardSeason["status"], string> = {
   draft: "Rascunho",
 };
 
-export function RastaAwardsVoting() {
-  const { userId, isLoaded } = useAuth();
+export function RastaAwardsVoting({
+  initialUserId = null,
+}: {
+  initialUserId?: string | null;
+}) {
+  const { userId: clerkUserId, isLoaded } = useAuth();
+  const userId = isLoaded ? (clerkUserId ?? null) : initialUserId;
   const [, startTransition] = useTransition();
   const [votingCategoryId, setVotingCategoryId] = useState<string | null>(null);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const queryClient = useQueryClient();
   const celebrated = useRef(false);
 
-  const { data: activeSeason } = useQuery<AwardSeason | null>({
+  const { data: activeSeason, isPending: isSeasonPending } = useQuery<AwardSeason | null>({
     queryKey: queryKeys.rastaAwards.activeSeason(),
     queryFn: fetchActiveSeason,
   });
 
-  const { data: votingData } = useQuery<VotingData | null>({
+  const { data: votingData, isPending: isVotingPending } = useQuery<VotingData | null>({
     queryKey: activeSeason
       ? queryKeys.rastaAwards.votingData(activeSeason.id)
       : ["votingData", "pending"],
@@ -131,7 +136,7 @@ export function RastaAwardsVoting() {
     return userVotes.find((v) => v.category_id === categoryId)?.nominee_id ?? null;
   }
 
-  if (!isLoaded) return <RastaAwardsSkeleton />;
+  if (isSeasonPending) return <RastaAwardsSkeleton />;
 
   if (!activeSeason) {
     return (
@@ -143,7 +148,7 @@ export function RastaAwardsVoting() {
     );
   }
 
-  if (!votingData) return <RastaAwardsSkeleton />;
+  if (isVotingPending || !votingData) return <RastaAwardsSkeleton />;
 
   const isActive = activeSeason.status === "active";
   const isClosed = activeSeason.status === "closed";

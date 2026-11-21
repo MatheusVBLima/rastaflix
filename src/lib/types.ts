@@ -468,3 +468,36 @@ export interface GameScoreActionResponse extends ActionResponse {
   entry?: GameScoreEntry;
   isNewPersonalBest?: boolean;
 }
+
+// ============================================
+// SSR HEADER & AUTH HYDRATION TYPES
+// ============================================
+
+export interface LiveStatus {
+  is_live_twitch: boolean;
+  is_live_kick: boolean;
+  twitch_stream_title?: string | null;
+  kick_stream_title?: string | null;
+  twitch_viewer_count?: number | null;
+  kick_viewer_count?: number | null;
+  twitch_username: string;
+  kick_username: string;
+}
+
+export interface HeaderUser {
+  id: string;
+  fullName: string | null;
+  username: string | null;
+  email: string | null;
+  imageUrl: string;
+  emailVerified: boolean;
+  createdAt: string | null;
+  lastSignInAt: string | null;
+}
+
+export interface HeaderAuthState {
+  isSignedIn: boolean;
+  isAdmin: boolean;
+  user: HeaderUser | null;
+}
+

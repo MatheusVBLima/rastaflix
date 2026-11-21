@@ -25,7 +25,7 @@ export function AppearancePreview({ label }: { label: string }) {
         <h2 id="previa" className="text-sm font-semibold">
           Prévia
         </h2>
-        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="min-h-4 text-xs text-muted-foreground">{label}</p>
       </header>
 
       <div className="space-y-5 p-5">

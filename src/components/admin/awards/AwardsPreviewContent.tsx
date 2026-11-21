@@ -9,13 +9,47 @@ import type { AwardSeason, VotingData } from "@/lib/types";
 import { formatDate } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Loader } from "@/components/ui/loader";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const STATUS_LABEL: Record<AwardSeason["status"], string> = {
   active: "Votação aberta",
   closed: "Votação encerrada",
   draft: "Rascunho",
 };
+
+function AwardsPreviewSkeleton() {
+  return (
+    <div className="space-y-6" aria-busy="true" aria-label="Carregando preview">
+      <div className="space-y-2.5 rounded-xl border bg-card p-5">
+        <Skeleton className="h-5 w-28 rounded-full" />
+        <Skeleton className="h-8 w-2/3" />
+        <Skeleton className="h-4 w-44" />
+      </div>
+      <div className="space-y-5">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="space-y-4 rounded-xl border bg-card p-5">
+            <div className="space-y-1.5">
+              <Skeleton className="h-5 w-48" />
+              <Skeleton className="h-4 w-72 max-w-full" />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {Array.from({ length: 4 }).map((_, j) => (
+                <div key={j} className="flex gap-3 rounded-lg border bg-background/60 p-3">
+                  <Skeleton className="size-14 shrink-0 rounded-md" />
+                  <div className="min-w-0 flex-1 space-y-2 py-0.5">
+                    <Skeleton className="h-4 w-4/5" />
+                    <Skeleton className="h-3.5 w-3/5" />
+                  </div>
+                  <Skeleton className="mt-0.5 size-4 shrink-0 rounded-full" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 interface AwardsPreviewContentProps {
   seasonId: string;
@@ -29,7 +63,7 @@ export function AwardsPreviewContent({ seasonId }: AwardsPreviewContentProps) {
   });
 
   if (isLoading) {
-    return <Loader label="Carregando preview" showLabel className="py-16" />;
+    return <AwardsPreviewSkeleton />;
   }
 
   if (!votingData) {

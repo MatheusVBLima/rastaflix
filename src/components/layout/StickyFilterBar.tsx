@@ -16,12 +16,12 @@ export function StickyFilterBar({
   return (
     <div
       className={cn(
-        "glass-bar glass-bar-sub sticky top-16 z-40 w-screen ml-[calc(50%-50vw)] mr-[calc(50%-50vw)] py-3",
+        "glass-bar glass-bar-sub sticky top-16 z-40 mx-[calc(50%-50vw)] px-[calc(50vw-50%)] py-3",
         "[&_input]:bg-card/90 [&_[data-slot=select-trigger]]:bg-card/90",
         className
       )}
     >
-      <div className="container mx-auto flex flex-col gap-3 px-4 sm:flex-row sm:items-center md:px-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         {children}
       </div>
     </div>

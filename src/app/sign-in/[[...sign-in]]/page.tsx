@@ -5,6 +5,7 @@ import { User } from "lucide-react";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { AuthShowcase } from "@/components/auth/AuthShowcase";
 import { ThemeSwitcher } from "@/components/theme/ThemeSwitcher";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * O formulário do Clerk sem a moldura própria: o card é a página.
@@ -24,6 +25,17 @@ const signInAppearance = {
     formButtonPrimary: "h-11! rounded-lg!",
   },
 };
+
+function SignInFallback() {
+  return (
+    <div className="w-full space-y-6" aria-busy="true" aria-label="Carregando formulário de entrada">
+      <Skeleton className="h-11 w-full rounded-lg" />
+      <div className="flex justify-center">
+        <Skeleton className="h-4 w-36" />
+      </div>
+    </div>
+  );
+}
 
 export default function SignInPage() {
   return (
@@ -54,7 +66,9 @@ export default function SignInPage() {
                 <h1 className="text-2xl font-semibold tracking-tight">Entrar na sua conta</h1>
                 <p className="text-sm text-muted-foreground">Use sua conta do Discord.</p>
               </div>
-              <SignIn appearance={signInAppearance} />
+              <div className="w-full min-h-[6.25rem]">
+                <SignIn appearance={signInAppearance} fallback={<SignInFallback />} />
+              </div>
             </div>
 
             <div className="flex items-center justify-between text-sm text-muted-foreground">

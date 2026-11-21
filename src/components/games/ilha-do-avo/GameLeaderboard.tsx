@@ -7,12 +7,66 @@ import { queryKeys } from "@/lib/query-keys";
 import { GAME_SLUG } from "@/lib/games/ilha-do-avo/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 function formatSurvivalTime(totalSeconds: number): string {
   const mins = Math.floor(totalSeconds / 60);
   const secs = totalSeconds % 60;
   return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+}
+
+export function GameLeaderboardSkeleton({ rows = 6 }: { rows?: number }) {
+  return (
+    <div className="overflow-x-auto" aria-busy="true" aria-label="Carregando ranking">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+            <th className="w-12 px-4 py-2.5">#</th>
+            <th className="px-4 py-2.5">Jogador</th>
+            <th className="px-4 py-2.5 text-right">Pontos</th>
+            <th className="hidden px-4 py-2.5 text-right sm:table-cell">Tempo</th>
+            <th className="hidden px-4 py-2.5 text-right md:table-cell">Abates</th>
+            <th className="hidden px-4 py-2.5 text-right md:table-cell">Nível</th>
+            <th className="hidden px-4 py-2.5 text-right lg:table-cell">Morango</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y">
+          {Array.from({ length: rows }).map((_, i) => (
+            <tr key={i}>
+              <td className="px-4 py-3">
+                <Skeleton className="h-4 w-5" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="flex items-center gap-2.5">
+                  <Skeleton className="size-7 shrink-0 rounded-full" />
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-3 w-36" />
+                  </div>
+                </div>
+              </td>
+              <td className="px-4 py-3">
+                <Skeleton className="ml-auto h-5 w-16" />
+              </td>
+              <td className="hidden px-4 py-3 sm:table-cell">
+                <Skeleton className="ml-auto h-4 w-12" />
+              </td>
+              <td className="hidden px-4 py-3 md:table-cell">
+                <Skeleton className="ml-auto h-4 w-10" />
+              </td>
+              <td className="hidden px-4 py-3 md:table-cell">
+                <Skeleton className="ml-auto h-4 w-10" />
+              </td>
+              <td className="hidden px-4 py-3 lg:table-cell">
+                <Skeleton className="ml-auto h-4 w-8" />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 export function GameLeaderboard({ currentUserId }: { currentUserId?: string | null }) {
@@ -38,17 +92,7 @@ export function GameLeaderboard({ currentUserId }: { currentUserId?: string | nu
 
       <div className="overflow-hidden rounded-xl border bg-card">
         {isLoading ? (
-          <div className="divide-y">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center justify-between px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <div className="size-7 animate-pulse rounded-full bg-muted" />
-                  <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-                </div>
-                <div className="h-4 w-20 animate-pulse rounded bg-muted" />
-              </div>
-            ))}
-          </div>
+          <GameLeaderboardSkeleton rows={6} />
         ) : entries.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 px-6 py-10 text-center">
             <Trophy className="size-8 text-muted-foreground/60" aria-hidden />

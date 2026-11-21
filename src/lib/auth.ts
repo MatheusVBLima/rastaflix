@@ -2,18 +2,51 @@ import { cache } from "react";
 import "server-only";
 import { redirect } from "next/navigation";
 import { auth, clerkClient } from "@clerk/nextjs/server";
+import type { HeaderAuthState } from "@/lib/types";
 
-export const getIsAdmin = cache(async (): Promise<boolean> => {
-  const authState = await auth();
-  if (!authState.userId) return false;
+const SIGNED_OUT_AUTH: HeaderAuthState = {
+  isSignedIn: false,
+  isAdmin: false,
+  user: null,
+};
 
+export const getHeaderAuth = cache(async (): Promise<HeaderAuthState> => {
   try {
+    const authState = await auth();
+    if (!authState.userId) return SIGNED_OUT_AUTH;
+
     const client = await clerkClient();
     const user = await client.users.getUser(authState.userId);
-    return user.privateMetadata?.is_admin === true;
+    const primaryEmail = user.emailAddresses.find(
+      (e) => e.id === user.primaryEmailAddressId
+    );
+    const fullName =
+      [user.firstName, user.lastName].filter(Boolean).join(" ").trim() || null;
+
+    return {
+      isSignedIn: true,
+      isAdmin: user.privateMetadata?.is_admin === true,
+      user: {
+        id: user.id,
+        fullName,
+        username: user.username,
+        email: primaryEmail?.emailAddress ?? null,
+        imageUrl: user.imageUrl,
+        emailVerified: primaryEmail?.verification?.status === "verified",
+        createdAt: user.createdAt ? new Date(user.createdAt).toISOString() : null,
+        lastSignInAt: user.lastSignInAt
+          ? new Date(user.lastSignInAt).toISOString()
+          : null,
+      },
+    };
   } catch {
-    return false;
+    return SIGNED_OUT_AUTH;
   }
+});
+
+export const getIsAdmin = cache(async (): Promise<boolean> => {
+  const { isAdmin } = await getHeaderAuth();
+  return isAdmin;
 });
 
 /**

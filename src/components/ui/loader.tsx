@@ -13,7 +13,8 @@ interface LoaderProps {
 }
 
 /**
- * Loader de matriz de pontos para áreas de conteúdo (listas, painéis, páginas).
+ * Loader compacto de matriz de pontos para feedbacks pontuais/inline.
+ * Para páginas, tabelas e painéis de conteúdo, prefira skeletons fiéis ao layout.
  */
 export function Loader({
   label = "Carregando",

@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Show, ClerkLoading, ClerkLoaded } from "@clerk/nextjs";
+import { useAuth } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import {
   NavigationMenu,
@@ -23,10 +23,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Skeleton } from "./ui/skeleton";
 import { LiveIndicator } from "./LiveIndicator";
 import { UserMenu } from "./UserMenu";
 import { prefetchRouteData } from "@/lib/prefetch";
+import type { HeaderAuthState, LiveStatus } from "@/lib/types";
 import { useAnimatedIcon, type AnimatedIconHandle } from "@/hooks/use-animated-icon";
 import { BookTextIcon } from "@/components/icons/animated/book-text";
 import { Disc3Icon } from "@/components/icons/animated/disc-3";
@@ -65,15 +65,24 @@ const universoOvelhera: NavItem[] = [
   { title: "Bingo Rastafari", href: "/bingo", description: "Cartela da live", icon: LayoutGridIcon },
 ];
 
+const DEFAULT_AUTH: HeaderAuthState = {
+  isSignedIn: false,
+  isAdmin: false,
+  user: null,
+};
+
 interface HeaderProps {
-  isAdmin: boolean;
+  initialAuth?: HeaderAuthState;
+  initialLiveStatus?: LiveStatus | null;
 }
 
-const subscribeNoop = () => () => {};
-
-export function Header({ isAdmin }: HeaderProps) {
+export function Header({
+  initialAuth = DEFAULT_AUTH,
+  initialLiveStatus = null,
+}: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { isLoaded, isSignedIn } = useAuth();
   const timeout = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const runPrefetch = React.useCallback(
@@ -100,7 +109,7 @@ export function Header({ isAdmin }: HeaderProps) {
     [runPrefetch]
   );
 
-  const mounted = React.useSyncExternalStore(subscribeNoop, () => true, () => false);
+  const signedIn = isLoaded ? Boolean(isSignedIn) : initialAuth.isSignedIn;
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const groupActive = (items: NavItem[]) => items.some((i) => isActive(i.href));
@@ -152,29 +161,16 @@ export function Header({ isAdmin }: HeaderProps) {
         </nav>
 
         <div className="ml-auto flex items-center gap-2 md:ml-0">
-          <LiveIndicator />
-          {/* O estado do Clerk só existe no cliente: até montar, mostra o skeleton
-              (o servidor renderiza o mesmo, então não há erro de hidratação). */}
-          {!mounted ? (
-            <Skeleton className="size-9 rounded-full" />
+          <LiveIndicator initialStatus={initialLiveStatus} />
+          {signedIn ? (
+            <UserMenu isAdmin={initialAuth.isAdmin} initialUser={initialAuth.user} />
           ) : (
-            <>
-              <ClerkLoading>
-                <Skeleton className="size-9 rounded-full" />
-              </ClerkLoading>
-              <ClerkLoaded>
-                <Show when="signed-in">
-                  <UserMenu isAdmin={isAdmin} />
-                </Show>
-                <Show when="signed-out">
-                  <Button variant="outline" size="sm" asChild className="hidden sm:inline-flex">
-                    <Link href="/sign-in">Entrar</Link>
-                  </Button>
-                </Show>
-              </ClerkLoaded>
-            </>
+            <Button variant="outline" size="sm" asChild className="hidden sm:inline-flex">
+              <Link href="/sign-in">Entrar</Link>
+            </Button>
           )}
           <MobileMenu
+            signedIn={signedIn}
             isActive={isActive}
             onPrefetch={prefetch}
             onPrefetchNow={prefetchNow}
@@ -276,10 +272,12 @@ function NavLink({
 /* ------------------------------------------------------------------ */
 
 function MobileMenu({
+  signedIn,
   isActive,
   onPrefetch,
   onPrefetchNow,
 }: {
+  signedIn: boolean;
   isActive: (href: string) => boolean;
   onPrefetch: (href: string) => void;
   onPrefetchNow: (href: string) => void;
@@ -320,15 +318,13 @@ function MobileMenu({
         <nav aria-label="Principal" className="flex flex-col gap-6 px-2 pb-6">
           {group("Conta aquela", contaAquela)}
           {group("Universo Ovelhera", universoOvelhera)}
-          <ClerkLoaded>
-            <Show when="signed-out">
-              <SheetClose asChild>
-                <Button asChild variant="outline" className="mx-3">
-                  <Link href="/sign-in">Entrar</Link>
-                </Button>
-              </SheetClose>
-            </Show>
-          </ClerkLoaded>
+          {!signedIn && (
+            <SheetClose asChild>
+              <Button asChild variant="outline" className="mx-3">
+                <Link href="/sign-in">Entrar</Link>
+              </Button>
+            </SheetClose>
+          )}
         </nav>
       </SheetContent>
     </Sheet>

@@ -32,7 +32,7 @@ export default function ClipesPage() {
         <Suspense
           fallback={
             <SkeletonTransition>
-              <CardGridSkeleton variant="video" />
+              <CardGridSkeleton variant="clip" />
             </SkeletonTransition>
           }
         >

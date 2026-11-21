@@ -73,7 +73,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { SearchField } from "@/components/layout/SearchField";
-import { Loader } from "@/components/ui/loader";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DataTablePagination } from "./DataTablePagination";
 import { cn } from "@/lib/utils";
 
@@ -379,11 +379,32 @@ export function DataTable<TData>({
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={visibleColumnIds.length} className="h-48">
-                    <Loader label={`Carregando ${noun[1]}`} showLabel />
-                  </TableCell>
-                </TableRow>
+                Array.from({ length: 8 }).map((_, rowIndex) => (
+                  <TableRow
+                    key={`skeleton-${rowIndex}`}
+                    className="hover:bg-transparent"
+                    aria-busy="true"
+                  >
+                    {visibleColumnIds.map((colId, colIndex) => {
+                      const isFirst = colIndex === 0;
+                      const isActions = colId === "actions";
+                      const widthClass = isActions
+                        ? "ml-auto h-8 w-16"
+                        : isFirst
+                          ? rowIndex % 2 === 0
+                            ? "h-4 w-48 max-w-full"
+                            : "h-4 w-36 max-w-full"
+                          : colIndex % 2 === 1
+                            ? "h-5 w-20"
+                            : "h-4 w-24";
+                      return (
+                        <TableCell key={colId}>
+                          <Skeleton className={widthClass} />
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))
               ) : table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map((row) => (
                   <TableRow key={row.id}>

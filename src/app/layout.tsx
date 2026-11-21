@@ -1,11 +1,9 @@
-import { Suspense } from "react";
 import { Geist, Geist_Mono, Kalam, Unbounded } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { shadcn } from "@clerk/themes";
 import { ptBR } from "@clerk/localizations";
 import { HeaderShell } from "@/components/HeaderShell";
-import { Header } from "@/components/Header";
 import { ThemeProvider } from "@/components/provider/ThemeProvider";
 import Providers from "@/components/provider/Providers";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
@@ -74,9 +72,7 @@ export default function RootLayout({
               disableTransitionOnChange
             >
               <div className="flex flex-col min-h-screen">
-                <Suspense fallback={<Header isAdmin={false} />}>
-                  <HeaderShell />
-                </Suspense>
+                <HeaderShell />
                 <main className="flex-1 overflow-x-clip">{children}</main>
               </div>
               <Toaster />

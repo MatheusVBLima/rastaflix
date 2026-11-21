@@ -15,6 +15,32 @@ type BotaoEstado = "Verificar" | "Próxima fase" | "Fim das histórias";
 type TentativasPorFase = Record<number, number>;
 
 const MAX_EMOJIS = 5;
+const TWEMOJI_IMG_RE = /^<img[^>]+src="([^"]+)"[^>]*\/?>$/;
+
+function getTwemojiSrc(emoji: string): string | null {
+  const html = twemoji.parse(emoji, { folder: "svg", ext: ".svg" });
+  return TWEMOJI_IMG_RE.exec(html)?.[1] ?? null;
+}
+
+function TwemojiIcon({ emoji, className }: { emoji: string; className?: string }) {
+  const src = getTwemojiSrc(emoji);
+  if (!src) {
+    return (
+      <span role="img" aria-label={emoji} className="leading-none">
+        {emoji}
+      </span>
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={emoji}
+      draggable={false}
+      className={cn("emoji inline-block select-none", className)}
+    />
+  );
+}
 
 function removerAcentuacao(str: string) {
   return str.normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -34,17 +60,9 @@ export function DLE() {
 
   const botaoRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const emojiContainerRef = useRef<HTMLDivElement>(null);
-  const placarRef = useRef<HTMLOListElement>(null);
 
   const historia = historias[historiaAtual];
   const ultimaFase = historiaAtual === historias.length - 1;
-
-  useEffect(() => {
-    for (const el of [emojiContainerRef.current, placarRef.current]) {
-      if (el) twemoji.parse(el, { folder: "svg", ext: ".svg", className: "emoji" });
-    }
-  }, [emojisVisiveis, historiaAtual, fasesCompletas]);
 
   useEffect(() => {
     if (botao === "Próxima fase") botaoRef.current?.focus();
@@ -121,7 +139,7 @@ export function DLE() {
         </div>
 
         {/* Emojis: os não revelados aparecem como espaços vazios */}
-        <div ref={emojiContainerRef} className="flex justify-center gap-2 sm:gap-4" aria-live="polite">
+        <div className="flex justify-center gap-2 sm:gap-4" aria-live="polite">
           {Array.from({ length: MAX_EMOJIS }).map((_, i) => {
             const emoji = historia.emojis[i];
             const visible = i < emojisVisiveis || acertou;
@@ -133,14 +151,15 @@ export function DLE() {
                   visible ? "bg-muted/60" : "border-2 border-dashed border-muted"
                 )}
               >
-                <AnimatePresence>
+                <AnimatePresence initial={false}>
                   {visible && emoji && (
                     <motion.span
                       initial={{ scale: 0.4, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ type: "spring", stiffness: 420, damping: 24 }}
+                      className="flex items-center justify-center"
                     >
-                      {emoji}
+                      <TwemojiIcon emoji={emoji} />
                     </motion.span>
                   )}
                 </AnimatePresence>
@@ -241,7 +260,7 @@ export function DLE() {
           />
         </div>
 
-        <ol ref={placarRef} className="space-y-2">
+        <ol className="space-y-2">
           {historias.map((h, index) => {
             const atual = index === historiaAtual;
             const completa = fasesCompletas.includes(index);
@@ -262,9 +281,9 @@ export function DLE() {
                 <span className="w-5 font-mono text-xs tabular-nums text-muted-foreground">
                   {index + 1}
                 </span>
-                <span className="flex flex-1 gap-1 text-lg [&_img.emoji]:size-5">
+                <span className="flex flex-1 items-center gap-1 text-lg [&_img.emoji]:size-5">
                   {completa || atual ? (
-                    revelados.map((e, i) => <span key={i}>{e}</span>)
+                    revelados.map((e, i) => <TwemojiIcon key={i} emoji={e} />)
                   ) : (
                     <Lock className="size-4 text-muted-foreground/60" aria-label="Bloqueada" />
                   )}

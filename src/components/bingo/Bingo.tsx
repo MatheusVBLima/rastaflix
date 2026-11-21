@@ -27,11 +27,13 @@ function BingoCell({
   text,
   checked,
   inLine,
+  animateFlip,
   onToggle,
 }: {
   text: string;
   checked: boolean;
   inLine: boolean;
+  animateFlip: boolean;
   onToggle: () => void;
 }) {
   return (
@@ -43,8 +45,9 @@ function BingoCell({
     >
       <motion.span
         className="absolute inset-0 block [transform-style:preserve-3d]"
+        initial={false}
         animate={{ rotateY: checked ? 180 : 0 }}
-        transition={{ duration: 0.45, ease: [0.2, 0.8, 0.2, 1] }}
+        transition={{ duration: animateFlip ? 0.45 : 0, ease: [0.2, 0.8, 0.2, 1] }}
       >
         {/* Frente */}
         <span className="absolute inset-0 flex items-center justify-center rounded-lg border bg-card p-1.5 text-center text-[0.6rem] font-semibold uppercase leading-tight tracking-wide text-card-foreground shadow-xs transition-colors [backface-visibility:hidden] group-hover:border-primary/50 sm:p-3 sm:text-xs md:text-sm">
@@ -68,6 +71,7 @@ function BingoCell({
 export function Bingo() {
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [loaded, setLoaded] = useState(false);
+  const [canAnimate, setCanAnimate] = useState(false);
   const reset = useAnimatedIcon<AnimatedIconHandle>();
   const prevLines = useRef<number | null>(null);
 
@@ -118,21 +122,24 @@ export function Bingo() {
           <div>
             <dt className="text-sm text-muted-foreground">Marcados</dt>
             <dd className="font-display text-3xl font-semibold tabular-nums">
-              <NumberFlow value={loaded ? marked : 0} />
+              <NumberFlow value={loaded ? marked : 0} animated={canAnimate} />
               <span className="text-muted-foreground">/{total}</span>
             </dd>
           </div>
           <div>
             <dt className="text-sm text-muted-foreground">Linhas</dt>
             <dd className="font-display text-3xl font-semibold tabular-nums">
-              <NumberFlow value={completedLines.length} />
+              <NumberFlow value={completedLines.length} animated={canAnimate} />
             </dd>
           </div>
         </dl>
 
         <Button
           variant="outline"
-          onClick={() => setChecked({})}
+          onClick={() => {
+            setCanAnimate(true);
+            setChecked({});
+          }}
           disabled={marked === 0}
           {...reset.handlers}
         >
@@ -141,19 +148,18 @@ export function Bingo() {
         </Button>
       </div>
 
-      <div
-        className={cn(
-          "grid grid-cols-4 gap-2 rounded-2xl border bg-muted/30 p-2 transition-opacity sm:gap-3 sm:p-4",
-          !loaded && "opacity-0"
-        )}
-      >
+      <div className="grid grid-cols-4 gap-2 rounded-2xl border bg-muted/30 p-2 sm:gap-3 sm:p-4">
         {bingoItems.slice(0, SIZE * SIZE).map((item, idx) => (
           <BingoCell
             key={item.id}
             text={item.text}
             checked={!!checked[item.id]}
             inLine={cellsInLine.has(idx)}
-            onToggle={() => setChecked((prev) => ({ ...prev, [item.id]: !prev[item.id] }))}
+            animateFlip={canAnimate}
+            onToggle={() => {
+              setCanAnimate(true);
+              setChecked((prev) => ({ ...prev, [item.id]: !prev[item.id] }));
+            }}
           />
         ))}
       </div>
