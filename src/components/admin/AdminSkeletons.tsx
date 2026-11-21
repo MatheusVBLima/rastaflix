@@ -81,18 +81,28 @@ export function AdminDashboardSkeleton() {
           </h1>
         </header>
         <SkeletonTransition name="skeleton-admin">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-4 rounded-xl border bg-card p-5"
-              >
-                <Skeleton className="size-6 shrink-0 rounded-md" />
-                <div className="min-w-0 flex-1 space-y-1.5">
-                  <Skeleton className="h-5 w-28" />
-                  <Skeleton className="h-4 w-36 max-w-full" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-12">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="space-y-3 rounded-xl border bg-card p-5 lg:col-span-3">
+                <Skeleton className="h-3.5 w-24" />
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-3 w-40 max-w-full" />
+              </div>
+            ))}
+            {[
+              "sm:col-span-2 lg:col-span-8 h-80",
+              "lg:col-span-4 h-80",
+              "sm:col-span-2 lg:col-span-8 h-72",
+              "sm:col-span-2 lg:col-span-4 h-72",
+              "sm:col-span-2 lg:col-span-7 h-80",
+              "sm:col-span-2 lg:col-span-5 h-80",
+            ].map((cls, i) => (
+              <div key={i} className={`flex flex-col gap-4 rounded-xl border bg-card p-5 ${cls}`}>
+                <div className="space-y-1.5">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-48 max-w-full" />
                 </div>
-                <Skeleton className="size-4 shrink-0" />
+                <Skeleton className="flex-1 rounded-lg" />
               </div>
             ))}
           </div>

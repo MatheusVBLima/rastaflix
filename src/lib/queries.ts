@@ -879,46 +879,6 @@ export async function fetchUserAchievements(
 }
 
 // ========================================
-// ADMIN COUNTS
-// ========================================
-
-export interface AdminCounts {
-  historias: number;
-  musicas: number;
-  esculachos: number;
-  clipes: number;
-  inimigos: number;
-  seasons: number;
-}
-
-export async function fetchAdminCounts(): Promise<AdminCounts> {
-  const supabase = getSupabaseClientDirect();
-  const tables = [
-    "historias",
-    "musicas",
-    "esculachos",
-    "clipes",
-    "inimigos",
-    "award_seasons",
-  ] as const;
-
-  const results = await Promise.all(
-    tables.map((table) =>
-      supabase.from(table).select("id", { count: "exact", head: true })
-    )
-  );
-
-  return {
-    historias: results[0].count ?? 0,
-    musicas: results[1].count ?? 0,
-    esculachos: results[2].count ?? 0,
-    clipes: results[3].count ?? 0,
-    inimigos: results[4].count ?? 0,
-    seasons: results[5].count ?? 0,
-  };
-}
-
-// ========================================
 // JOGOS / LEADERBOARD
 // ========================================
 

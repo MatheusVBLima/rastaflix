@@ -501,3 +501,127 @@ export interface HeaderAuthState {
   user: HeaderUser | null;
 }
 
+
+// ============================================
+// ADMIN: DASHBOARD & USUÁRIOS
+// ============================================
+
+export type AdminUserRole = "admin" | "user";
+
+/** Linha da lista de usuários do painel (sem dados sensíveis além do e-mail). */
+export interface AdminUserRow {
+  id: string;
+  name: string;
+  username: string | null;
+  email: string | null;
+  imageUrl: string | null;
+  role: AdminUserRole;
+  createdAt: string | null;
+  lastSignInAt: string | null;
+  gamesPlayed: number;
+  bestScore: number | null;
+  votes: number;
+}
+
+export interface MonthlyPoint {
+  /** "2026-11" */
+  month: string;
+  [series: string]: number | string;
+}
+
+export interface DailyPoint {
+  /** "2026-11-21" */
+  day: string;
+  value: number;
+}
+
+export interface TopPlayer {
+  userId: string;
+  name: string;
+  avatar: string | null;
+  score: number;
+  plays: number;
+}
+
+export interface AdminDashboardData {
+  users: {
+    total: number;
+    admins: number;
+    newLast30d: number;
+    activeLast30d: number;
+    signupsByMonth: MonthlyPoint[];
+  };
+  content: {
+    counts: {
+      historias: number;
+      musicas: number;
+      esculachos: number;
+      clipes: number;
+      inimigos: number;
+      seasons: number;
+    };
+    byMonth: MonthlyPoint[];
+  };
+  inimigos: { pendente: number; vingado: number };
+  games: {
+    totalPlays: number;
+    uniquePlayers: number;
+    playsLast30d: number;
+    playsByDay: DailyPoint[];
+    topPlayers: TopPlayer[];
+  };
+  awards: {
+    activeSeason: { id: string; title: string; year: number | null } | null;
+    totalVotes: number;
+    uniqueVoters: number;
+  };
+}
+
+export interface AdminUserGameRun {
+  id: string;
+  gameSlug: string;
+  score: number;
+  kills: number;
+  levelReached: number;
+  survivalSeconds: number;
+  bossesDefeated: number;
+  weaponsUsed: string[];
+  createdAt: string;
+}
+
+export interface AdminUserGameSummary {
+  gameSlug: string;
+  plays: number;
+  bestScore: number;
+  totalKills: number;
+  totalSeconds: number;
+  bestLevel: number;
+  bossesDefeated: number;
+  /** Posição do melhor score do usuário no ranking (1 = topo). */
+  rank: number | null;
+  rankedPlayers: number;
+}
+
+export interface AdminUserAwardSeason {
+  seasonId: string;
+  title: string;
+  year: number | null;
+  categoriesVoted: number;
+  totalCategories: number;
+}
+
+export interface AdminUserDetail {
+  id: string;
+  name: string;
+  username: string | null;
+  imageUrl: string | null;
+  role: AdminUserRole;
+  createdAt: string | null;
+  lastSignInAt: string | null;
+  games: AdminUserGameSummary[];
+  recentRuns: AdminUserGameRun[];
+  scoreHistory: { date: string; score: number }[];
+  topWeapons: { weapon: string; count: number }[];
+  awards: AdminUserAwardSeason[];
+  achievements: UserAchievement[];
+}

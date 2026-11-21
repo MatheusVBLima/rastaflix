@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
-import { fetchAdminCounts } from "@/lib/queries";
+import { fetchAdminDashboard } from "@/lib/admin-data";
 import { PageTransition, RevealTransition } from "@/components/layout/PageTransition";
-import { AdminModules } from "@/components/admin/AdminModules";
+import { AdminDashboard } from "@/components/admin/dashboard/AdminDashboard";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -16,7 +16,7 @@ export const metadata = { title: "Painel", robots: { index: false } };
 
 export default async function AdminPage() {
   await requireAdmin();
-  const counts = await fetchAdminCounts();
+  const data = await fetchAdminDashboard();
 
   return (
     <PageTransition name="route-admin">
@@ -42,7 +42,7 @@ export default async function AdminPage() {
           </h1>
         </header>
         <RevealTransition>
-          <AdminModules counts={counts} />
+          <AdminDashboard data={data} />
         </RevealTransition>
       </div>
     </PageTransition>

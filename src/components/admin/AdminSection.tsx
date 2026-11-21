@@ -27,10 +27,13 @@ function toRouteSlug(title: string) {
 export function AdminSection({
   title,
   isLoading = false,
+  parent,
   children,
 }: {
   title: string;
   isLoading?: boolean;
+  /** Nível intermediário no breadcrumb (ex.: Usuários, na página de um usuário). */
+  parent?: { href: string; label: string };
   children: ReactNode;
 }) {
   const slug = toRouteSlug(title);
@@ -56,6 +59,18 @@ export function AdminSection({
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
+              {parent && (
+                <>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link href={parent.href} transitionTypes={["nav-back"]}>
+                        {parent.label}
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                </>
+              )}
               <BreadcrumbItem>
                 <BreadcrumbPage>{title}</BreadcrumbPage>
               </BreadcrumbItem>
