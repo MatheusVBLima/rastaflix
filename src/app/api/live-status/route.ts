@@ -68,6 +68,30 @@ async function getTwitchAccessToken(): Promise<string | null> {
 }
 
 /**
+ * Persists a status update to `streamer_config` without failing the caller if
+ * Supabase admin credentials are missing or the database write errors.
+ */
+async function persistStreamerStatusUpdate(
+  configId: string,
+  payload: Record<string, unknown>,
+  provider: "Twitch" | "Kick"
+): Promise<void> {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { error } = await supabase
+      .from("streamer_config")
+      .update(payload)
+      .eq("id", configId);
+
+    if (error) {
+      console.error(`Erro ao atualizar ${provider} no banco:`, error);
+    }
+  } catch (error) {
+    console.error(`Erro ao persistir ${provider} no banco:`, error);
+  }
+}
+
+/**
  * Determines the current Twitch stream status for a username, updates the corresponding `streamer_config` row, and returns a normalized status object.
  *
  * @param configId - The `streamer_config` row `id` to update.
@@ -93,6 +117,7 @@ async function checkAndUpdateTwitchStatus(
           Authorization: `Bearer ${accessToken}`,
           "Client-Id": process.env.TWITCH_CLIENT_ID!,
         },
+        cache: "no-store",
       }
     );
 
@@ -110,22 +135,19 @@ async function checkAndUpdateTwitchStatus(
           .replace("{height}", "180") ?? null,
     };
 
-    const supabase = getSupabaseAdmin();
-    const { error } = await supabase
-      .from("streamer_config")
-      .update({
+    const now = new Date().toISOString();
+    await persistStreamerStatusUpdate(
+      configId,
+      {
         is_live_twitch: result.is_live,
         twitch_stream_title: result.title,
         twitch_viewer_count: result.viewers,
         twitch_thumbnail_url: result.thumbnail,
-        last_twitch_update: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", configId);
-
-    if (error) {
-      console.error("Erro ao atualizar Twitch no banco:", error);
-    }
+        last_twitch_update: now,
+        updated_at: now,
+      },
+      "Twitch"
+    );
 
     return result;
   } catch (error) {
@@ -160,22 +182,19 @@ async function checkAndUpdateKickStatus(
       thumbnail: kickStatus.thumbnail,
     };
 
-    const supabase = getSupabaseAdmin();
-    const { error } = await supabase
-      .from("streamer_config")
-      .update({
+    const now = new Date().toISOString();
+    await persistStreamerStatusUpdate(
+      configId,
+      {
         is_live_kick: result.is_live,
         kick_stream_title: result.title,
         kick_viewer_count: result.viewers,
         kick_thumbnail_url: result.thumbnail,
-        last_kick_update: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", configId);
-
-    if (error) {
-      console.error("Erro ao atualizar Kick no banco:", error);
-    }
+        last_kick_update: now,
+        updated_at: now,
+      },
+      "Kick"
+    );
 
     return result;
   } catch (error) {
