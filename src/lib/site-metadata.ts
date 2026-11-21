@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 
 export const SITE_NAME = "Rastaflix";
 export const SITE_DESCRIPTION =
-  "Acompanhe a saga do nosso rastafari mineiro - histórias, músicas, esculachos, clipes e o universo Ovelhera.";
-export const SITE_TAGLINE = "Histórias - Músicas - Esculachos - Lives";
+  "Acervo do Universo Ovelhera: histórias, músicas, esculachos, clipes e jogos.";
+export const SITE_TAGLINE = "Histórias, músicas, esculachos e lives";
 
 const openGraphImage = {
   url: "/opengraph-image",

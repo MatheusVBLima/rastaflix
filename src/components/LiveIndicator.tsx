@@ -56,33 +56,31 @@ export function LiveIndicator({ initialStatus = null }: LiveIndicatorProps) {
   const isLive = Boolean(status?.is_live_twitch || status?.is_live_kick);
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           variant={isLive ? "default" : "ghost"}
           size="sm"
+          aria-label={isLive ? "Status das lives: ao vivo" : "Status das lives"}
           className={cn(
             "gap-2 transition-colors",
-            isLive && "bg-red-600 hover:bg-red-700 text-white"
+            isLive && "bg-live text-live-foreground hover:bg-live/90"
           )}
         >
-          <Radio className="h-4 w-4" />
+          <Radio className="h-4 w-4" aria-hidden />
           <span className="hidden sm:inline">
-            {isLive ? "AO VIVO" : "Lives"}
+            {isLive ? "Ao vivo" : "Lives"}
           </span>
           {isLive && (
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-            </span>
+            <span
+              aria-hidden
+              className="inline-flex h-2 w-2 rounded-full bg-live-foreground"
+            />
           )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
-        <DropdownMenuLabel className="flex items-center gap-2">
-          <Radio className="h-4 w-4" />
-          Status das Lives
-        </DropdownMenuLabel>
+        <DropdownMenuLabel>Status das lives</DropdownMenuLabel>
         <DropdownMenuSeparator />
 
         <DropdownMenuItem asChild className="cursor-pointer">
@@ -90,14 +88,14 @@ export function LiveIndicator({ initialStatus = null }: LiveIndicatorProps) {
             href={`https://twitch.tv/${status?.twitch_username || "ovelhera"}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-between w-full"
+            className="flex w-full items-center justify-between"
           >
             <div className="flex items-center gap-2">
               <TwitchLogo className="h-3.5 w-auto" />
               <div className="flex flex-col">
                 <span className="font-medium">Twitch</span>
                 {status?.is_live_twitch && status?.twitch_stream_title && (
-                  <span className="text-xs text-muted-foreground line-clamp-1">
+                  <span className="line-clamp-1 text-xs text-muted-foreground">
                     {status.twitch_stream_title}
                   </span>
                 )}
@@ -107,17 +105,17 @@ export function LiveIndicator({ initialStatus = null }: LiveIndicatorProps) {
               {status?.is_live_twitch ? (
                 <>
                   {status.twitch_viewer_count != null && (
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Users className="h-3 w-3" />
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
+                      <Users className="h-3 w-3" aria-hidden />
                       {status.twitch_viewer_count}
                     </span>
                   )}
-                  <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                  <span aria-label="Ao vivo" className="flex h-2 w-2 rounded-full bg-live" />
                 </>
               ) : (
                 <span className="text-xs text-muted-foreground">Offline</span>
               )}
-              <ExternalLink className="h-3 w-3 text-muted-foreground" />
+              <ExternalLink className="h-3 w-3 text-muted-foreground" aria-hidden />
             </div>
           </Link>
         </DropdownMenuItem>
@@ -127,14 +125,14 @@ export function LiveIndicator({ initialStatus = null }: LiveIndicatorProps) {
             href={`https://kick.com/${status?.kick_username || "ovelheram"}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-between w-full"
+            className="flex w-full items-center justify-between"
           >
             <div className="flex items-center gap-2">
               <KickLogo className="h-3.5 w-auto text-[#53FC18]" />
               <div className="flex flex-col">
                 <span className="font-medium">Kick</span>
                 {status?.is_live_kick && status?.kick_stream_title && (
-                  <span className="text-xs text-muted-foreground line-clamp-1">
+                  <span className="line-clamp-1 text-xs text-muted-foreground">
                     {status.kick_stream_title}
                   </span>
                 )}
@@ -144,17 +142,17 @@ export function LiveIndicator({ initialStatus = null }: LiveIndicatorProps) {
               {status?.is_live_kick ? (
                 <>
                   {status.kick_viewer_count != null && (
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Users className="h-3 w-3" />
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
+                      <Users className="h-3 w-3" aria-hidden />
                       {status.kick_viewer_count}
                     </span>
                   )}
-                  <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                  <span aria-label="Ao vivo" className="flex h-2 w-2 rounded-full bg-live" />
                 </>
               ) : (
                 <span className="text-xs text-muted-foreground">Offline</span>
               )}
-              <ExternalLink className="h-3 w-3 text-muted-foreground" />
+              <ExternalLink className="h-3 w-3 text-muted-foreground" aria-hidden />
             </div>
           </Link>
         </DropdownMenuItem>

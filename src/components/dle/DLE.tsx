@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import NumberFlow from "@number-flow/react";
 import twemoji from "twemoji";
-import { Check, Lock, X } from "lucide-react";
+import { Check, Copy, Lock, X } from "lucide-react";
+import { toast } from "sonner";
 import { historias } from "@/data/dle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,19 @@ import { cn } from "@/lib/utils";
 type BotaoEstado = "Verificar" | "Próxima fase" | "Fim das histórias";
 type TentativasPorFase = Record<number, number>;
 
+interface SavedDleState {
+  historiaAtual: number;
+  emojisVisiveis: number;
+  tentativas: string[];
+  acertou: boolean;
+  palpiteCorreto: string | null;
+  botao: BotaoEstado;
+  tentativasPorFase: TentativasPorFase;
+  fasesCompletas: number[];
+  emojisReveladosPorFase: Record<number, number>;
+}
+
+const STORAGE_KEY = "ovelhera_dle_v1";
 const MAX_EMOJIS = 5;
 const TWEMOJI_IMG_RE = /^<img[^>]+src="([^"]+)"[^>]*\/?>$/;
 
@@ -57,12 +71,74 @@ export function DLE() {
   const [tentativasPorFase, setTentativasPorFase] = useState<TentativasPorFase>({});
   const [fasesCompletas, setFasesCompletas] = useState<number[]>([]);
   const [emojisReveladosPorFase, setEmojisReveladosPorFase] = useState<Record<number, number>>({});
+  const [loaded, setLoaded] = useState(false);
+  const [copiedResult, setCopiedResult] = useState(false);
+  const reduceMotion = useReducedMotion() ?? false;
 
   const botaoRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const historia = historias[historiaAtual];
+  const historia = historias[historiaAtual] ?? historias[0];
   const ultimaFase = historiaAtual === historias.length - 1;
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<SavedDleState>;
+        if (
+          typeof parsed.historiaAtual === "number" &&
+          parsed.historiaAtual >= 0 &&
+          parsed.historiaAtual < historias.length
+        ) {
+          setHistoriaAtual(parsed.historiaAtual);
+          setEmojisVisiveis(parsed.emojisVisiveis ?? 1);
+          setTentativas(Array.isArray(parsed.tentativas) ? parsed.tentativas : []);
+          setAcertou(Boolean(parsed.acertou));
+          setPalpiteCorreto(parsed.palpiteCorreto ?? null);
+          setBotao(parsed.botao ?? "Verificar");
+          setTentativasPorFase(parsed.tentativasPorFase ?? {});
+          setFasesCompletas(Array.isArray(parsed.fasesCompletas) ? parsed.fasesCompletas : []);
+          setEmojisReveladosPorFase(parsed.emojisReveladosPorFase ?? {});
+        }
+      }
+    } catch {
+      /* sem storage: começa do zero */
+    } finally {
+      setLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    try {
+      const snapshot: SavedDleState = {
+        historiaAtual,
+        emojisVisiveis,
+        tentativas,
+        acertou,
+        palpiteCorreto,
+        botao,
+        tentativasPorFase,
+        fasesCompletas,
+        emojisReveladosPorFase,
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+    } catch {
+      /* ignore */
+    }
+  }, [
+    loaded,
+    historiaAtual,
+    emojisVisiveis,
+    tentativas,
+    acertou,
+    palpiteCorreto,
+    botao,
+    tentativasPorFase,
+    fasesCompletas,
+    emojisReveladosPorFase,
+  ]);
 
   useEffect(() => {
     if (botao === "Próxima fase") botaoRef.current?.focus();
@@ -90,6 +166,29 @@ export function DLE() {
     setTentativasPorFase({});
     setFasesCompletas([]);
     setEmojisReveladosPorFase({});
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function copiarResultado() {
+    const linhas = historias.map((h, idx) => {
+      const tries = tentativasPorFase[idx];
+      const revealed = emojisReveladosPorFase[idx] ?? MAX_EMOJIS;
+      const icons = h.emojis.slice(0, revealed).join("");
+      return `${idx + 1}. ${icons} (${tries ?? 1} ${tries === 1 ? "tentativa" : "tentativas"})`;
+    });
+    const texto = `Ovelhera DLE (${fasesCompletas.length}/${historias.length})\n${linhas.join("\n")}`;
+    try {
+      await navigator.clipboard.writeText(texto);
+      setCopiedResult(true);
+      toast.success("Resultado copiado");
+      setTimeout(() => setCopiedResult(false), 1800);
+    } catch {
+      toast.error("Não foi possível copiar o resultado");
+    }
   }
 
   function verificarPalpite() {
@@ -154,9 +253,13 @@ export function DLE() {
                 <AnimatePresence initial={false}>
                   {visible && emoji && (
                     <motion.span
-                      initial={{ scale: 0.4, opacity: 0 }}
+                      initial={reduceMotion ? false : { scale: 0.85, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: "spring", stiffness: 420, damping: 24 }}
+                      transition={
+                        reduceMotion
+                          ? { duration: 0 }
+                          : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }
+                      }
                       className="flex items-center justify-center"
                     >
                       <TwemojiIcon emoji={emoji} />
@@ -189,9 +292,19 @@ export function DLE() {
             className="h-11"
           />
           {botao === "Fim das histórias" ? (
-            <Button type="button" onClick={reiniciarDoZero} className="h-11">
-              Jogar de novo
-            </Button>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={copiarResultado} className="h-11">
+                {copiedResult ? (
+                  <Check className="size-4" aria-hidden />
+                ) : (
+                  <Copy className="size-4" aria-hidden />
+                )}
+                Copiar resultado
+              </Button>
+              <Button type="button" onClick={reiniciarDoZero} className="h-11">
+                Jogar de novo
+              </Button>
+            </div>
           ) : (
             <Button ref={botaoRef} type="submit" className="h-11 min-w-32">
               {botao}
@@ -202,13 +315,16 @@ export function DLE() {
         {/* Resultado da fase */}
         {acertou && (
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
+            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={
+              reduceMotion ? { duration: 0 } : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }
+            }
             className="w-full space-y-4"
           >
             <p className="flex items-center justify-center gap-2 font-medium text-success">
               <Check className="size-5" aria-hidden />
-              Acertou com “{palpiteCorreto}”
+              Acertou com "{palpiteCorreto}"
             </p>
             <div className="mx-auto aspect-video w-full max-w-xl overflow-hidden rounded-xl border">
               <iframe
@@ -229,8 +345,11 @@ export function DLE() {
               {tentativas.map((t, i) => (
                 <motion.li
                   key={`${tentativas.length - i}-${t}`}
-                  initial={{ opacity: 0, x: -8 }}
+                  initial={reduceMotion ? false : { opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
+                  transition={
+                    reduceMotion ? { duration: 0 } : { duration: 0.18, ease: [0.22, 1, 0.36, 1] }
+                  }
                   className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm"
                 >
                   <X className="size-4 shrink-0 text-destructive" aria-hidden />

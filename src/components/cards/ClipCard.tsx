@@ -34,7 +34,7 @@ export function ClipCard({ clipe, priority }: { clipe: Clipe; priority?: boolean
           title={clipe.titulo}
           priority={priority}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className="transition-[transform,filter] duration-500 ease-out group-hover:scale-[1.03] group-hover:brightness-75"
+          className="transition-[filter] duration-200 ease-out group-hover:brightness-75"
         />
 
         {/* Play no hover */}

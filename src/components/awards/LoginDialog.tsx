@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { User } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,12 +20,7 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader className="items-center text-center sm:text-center">
-          <span className="mb-2 flex size-14 items-center justify-center rounded-full bg-muted/70 ring-8 ring-muted/30">
-            <span className="flex size-10 items-center justify-center rounded-full border bg-background shadow-xs">
-              <User className="size-4 text-muted-foreground" aria-hidden />
-            </span>
-          </span>
+        <DialogHeader>
           <DialogTitle className="font-display text-xl font-semibold tracking-tight">
             Entre na sua conta
           </DialogTitle>
@@ -34,7 +28,7 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
             Use sua conta do Discord para registrar seus votos no Rasta Awards e liberar conquistas no perfil.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="mt-2 gap-2 sm:justify-center">
+        <DialogFooter className="mt-2 gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Agora não
           </Button>

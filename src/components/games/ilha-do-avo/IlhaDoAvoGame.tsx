@@ -134,9 +134,9 @@ export function IlhaDoAvoGame() {
     }).then((res) => {
       if (res.success) {
         setSaveState("saved");
-        setSaveMessage(res.message ?? "Pontuação salva no ranking!");
+        setSaveMessage(res.message ?? "Pontuação salva no ranking.");
         if (res.isNewPersonalBest) {
-          toast.success("Novo recorde pessoal no ranking!");
+          toast.success("Novo recorde pessoal no ranking");
         }
         void queryClient.invalidateQueries({
           queryKey: queryKeys.games.leaderboard(GAME_SLUG),
@@ -234,7 +234,7 @@ export function IlhaDoAvoGame() {
             {/* Barra de XP fina no topo absoluto */}
             <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-2 bg-black/60">
               <div
-                className="h-full bg-gradient-to-r from-sky-400 via-emerald-400 to-yellow-300 transition-[width] duration-150"
+                className="h-full bg-emerald-400 transition-[width] duration-150"
                 style={{ width: `${xpPct}%` }}
               />
             </div>
@@ -348,7 +348,7 @@ export function IlhaDoAvoGame() {
                         )}
                       >
                         <Crown className="size-3.5" aria-hidden />
-                        {hud.boss.name.toUpperCase()}
+                        {hud.boss.name}
                       </span>
                       <span className="tabular-nums text-white/80">
                         {hud.boss.hp}/{hud.boss.maxHp}
@@ -358,9 +358,7 @@ export function IlhaDoAvoGame() {
                       <div
                         className={cn(
                           "h-full transition-[width] duration-150",
-                          hud.boss.isFinalBoss
-                            ? "bg-gradient-to-r from-rose-600 via-pink-500 to-rose-400"
-                            : "bg-gradient-to-r from-amber-500 to-yellow-300"
+                          hud.boss.isFinalBoss ? "bg-rose-500" : "bg-amber-400"
                         )}
                         style={{
                           width: `${Math.max(0, Math.min(100, (hud.boss.hp / Math.max(1, hud.boss.maxHp)) * 100))}%`,
@@ -375,10 +373,10 @@ export function IlhaDoAvoGame() {
                   <button
                     type="button"
                     onClick={() => engineRef.current?.advanceToNextMap()}
-                    className="pointer-events-auto inline-flex items-center gap-2 rounded-lg border border-sky-400/70 bg-sky-950/90 px-3.5 py-1.5 text-xs font-semibold text-sky-100 shadow-lg backdrop-blur-md transition hover:bg-sky-900"
+                    className="pointer-events-auto inline-flex items-center gap-2 rounded-lg border border-sky-400/70 bg-sky-950/90 px-3.5 py-1.5 text-xs font-semibold text-sky-100 shadow-lg backdrop-blur-md transition-colors hover:bg-sky-900"
                   >
                     <Compass className="size-4 text-sky-300" aria-hidden />
-                    Portal para {hud.portal.targetMapName} ({hud.portal.distance}m) — Clique ou aperte E
+                    Portal para {hud.portal.targetMapName} ({hud.portal.distance}m), clique ou aperte E
                     <ArrowRight className="size-3.5" aria-hidden />
                   </button>
                 )}
@@ -388,7 +386,7 @@ export function IlhaDoAvoGame() {
                   <div
                     key={hud.banner.id}
                     className={cn(
-                      "rounded-md border px-3 py-1 text-xs font-bold tracking-wide shadow-lg backdrop-blur-md sm:text-sm",
+                      "rounded-md border px-3 py-1 text-xs font-semibold shadow-lg backdrop-blur-md sm:text-sm",
                       hud.banner.tone === "boss" &&
                         "border-rose-400/70 bg-rose-950/85 text-rose-100",
                       hud.banner.tone === "pickup" &&
@@ -421,7 +419,7 @@ export function IlhaDoAvoGame() {
                     type="button"
                     onClick={() => engineRef.current?.toggleMute()}
                     aria-label={hud.muted ? "Ativar som" : "Silenciar som"}
-                    className="flex size-8 items-center justify-center rounded-lg border border-white/15 bg-black/65 text-white backdrop-blur-md transition hover:bg-black/85"
+                    className="flex size-8 items-center justify-center rounded-lg border border-white/15 bg-black/65 text-white backdrop-blur-md transition-colors hover:bg-black/85"
                   >
                     {hud.muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
                   </button>
@@ -430,7 +428,7 @@ export function IlhaDoAvoGame() {
                     type="button"
                     onClick={() => void toggleFullscreen()}
                     aria-label={isFullscreen ? "Sair da tela cheia" : "Tela cheia"}
-                    className="hidden size-8 items-center justify-center rounded-lg border border-white/15 bg-black/65 text-white backdrop-blur-md transition hover:bg-black/85 sm:flex"
+                    className="hidden size-8 items-center justify-center rounded-lg border border-white/15 bg-black/65 text-white backdrop-blur-md transition-colors hover:bg-black/85 sm:flex"
                   >
                     {isFullscreen ? (
                       <Minimize2 className="size-4" />
@@ -443,7 +441,7 @@ export function IlhaDoAvoGame() {
                     type="button"
                     onClick={() => engineRef.current?.togglePause()}
                     aria-label={hud.phase === "paused" ? "Continuar" : "Pausar"}
-                    className="flex size-8 items-center justify-center rounded-lg border border-white/15 bg-black/65 text-white backdrop-blur-md transition hover:bg-black/85"
+                    className="flex size-8 items-center justify-center rounded-lg border border-white/15 bg-black/65 text-white backdrop-blur-md transition-colors hover:bg-black/85"
                   >
                     {hud.phase === "paused" ? (
                       <Play className="size-4" />
@@ -455,7 +453,7 @@ export function IlhaDoAvoGame() {
               </div>
             </div>
 
-            {/* Minimapa Radar no canto inferior direito (essencial em mapas grandes estilo Vampire Survivors!) */}
+            {/* Minimapa Radar no canto inferior direito */}
             {hud.phase === "playing" && (
               <div className="pointer-events-none absolute right-3 bottom-3 z-20 hidden flex-col items-end gap-1 sm:flex">
                 <div className="relative size-28 overflow-hidden rounded-full border border-white/25 bg-black/65 shadow-lg backdrop-blur-md">
@@ -475,9 +473,9 @@ export function IlhaDoAvoGame() {
                       className={cn(
                         "absolute rounded-full",
                         m.kind === "landmark" && "size-1.5 bg-white/45",
-                        m.kind === "redbull" && "size-2 bg-sky-400 shadow-[0_0_6px_#38bdf8]",
-                        m.kind === "boss" && "size-3 animate-pulse bg-rose-500 ring-2 ring-rose-300",
-                        m.kind === "portal" && "size-3 animate-pulse bg-yellow-300 ring-2 ring-sky-400"
+                        m.kind === "redbull" && "size-2 bg-sky-400",
+                        m.kind === "boss" && "size-3 bg-rose-500 ring-2 ring-rose-300",
+                        m.kind === "portal" && "size-3 bg-yellow-300 ring-2 ring-sky-400"
                       )}
                     />
                   ))}
@@ -513,7 +511,7 @@ export function IlhaDoAvoGame() {
             <div className="flex w-full items-center justify-between">
               <span className="inline-flex items-center gap-1.5 rounded-md border border-white/20 bg-black/60 px-2.5 py-1 text-xs font-medium text-white/90 backdrop-blur-md">
                 <MapPin className="size-3.5" aria-hidden />
-                {activeMapDef.subtitle} • {activeMapDef.stateLabel}
+                {activeMapDef.subtitle}, {activeMapDef.stateLabel}
               </span>
               {localBest > 0 && (
                 <span className="rounded-md border border-white/15 bg-black/60 px-2.5 py-1 text-xs font-medium text-white/90 tabular-nums backdrop-blur-md">
@@ -524,7 +522,7 @@ export function IlhaDoAvoGame() {
 
             <div className="w-full max-w-3xl space-y-4">
               <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/75 drop-shadow">
+                <p className="text-xs font-medium text-white/80 drop-shadow">
                   Ovelhera Survivors
                 </p>
                 <h2 className="font-display text-3xl font-bold tracking-tight drop-shadow-[0_4px_18px_rgba(0,0,0,0.9)] sm:text-5xl">
@@ -535,7 +533,7 @@ export function IlhaDoAvoGame() {
                 </p>
               </div>
 
-              {/* Seletor das 5 Fases (troca o mapa 3D ao vivo!) */}
+              {/* Seletor das 5 Fases */}
               <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
                 {MAP_LIST.map((map) => {
                   const active = (hud?.mapId ?? selectedMap) === map.id;
@@ -545,18 +543,18 @@ export function IlhaDoAvoGame() {
                       type="button"
                       onClick={() => handleSelectMap(map.id)}
                       className={cn(
-                        "flex flex-col items-start rounded-lg border px-2.5 py-2 text-left transition backdrop-blur-md",
+                        "flex flex-col items-start rounded-lg border px-2.5 py-2 text-left transition-colors backdrop-blur-md",
                         active
                           ? "border-white bg-white/20 text-white shadow-md"
                           : "border-white/15 bg-black/55 text-white/75 hover:border-white/40 hover:bg-black/75 hover:text-white"
                       )}
                     >
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-white/65">
-                        {map.isFinalStage ? "Fase Final" : `Fase ${map.order}`}
+                      <span className="text-[11px] font-medium text-white/65">
+                        {map.isFinalStage ? "Fase final" : `Fase ${map.order}`}
                       </span>
                       <span className="truncate text-xs font-semibold">{map.name}</span>
                       <span className="truncate text-[10px] text-white/60">
-                        {map.isFinalStage ? "Boss: Morango" : map.stateLabel}
+                        {map.isFinalStage ? "Chefe: Morango" : map.stateLabel}
                       </span>
                     </button>
                   );
@@ -579,15 +577,13 @@ export function IlhaDoAvoGame() {
                   className="h-11 border-white/25 bg-black/55 text-white backdrop-blur-md hover:bg-black/80 hover:text-white"
                 >
                   <Maximize2 className="mr-2 size-4" aria-hidden />
-                  Tela Cheia
+                  Tela cheia
                 </Button>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] text-white/70">
-                <span>WASD / Setas para mover</span>
-                <span>•</span>
-                <span>ESC / P para pausar</span>
-                <span>•</span>
+              <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-[11px] text-white/70">
+                <span>WASD ou setas para mover</span>
+                <span>ESC ou P para pausar</span>
                 <span>Derrote o chefe para abrir o portal da próxima cidade</span>
               </div>
             </div>
@@ -599,11 +595,11 @@ export function IlhaDoAvoGame() {
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
             <div className="w-full max-w-2xl space-y-4">
               <div className="text-center text-white">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/75">
-                  Subiu para o Nível {hud.level}
+                <p className="text-xs font-medium text-white/75 tabular-nums">
+                  Nível {hud.level}
                 </p>
                 <h3 className="font-display text-2xl font-bold sm:text-3xl">
-                  Escolha um Upgrade
+                  Escolha um upgrade
                 </h3>
               </div>
 
@@ -613,7 +609,7 @@ export function IlhaDoAvoGame() {
                     key={`${choice.kind}-${choice.id}`}
                     type="button"
                     onClick={() => engineRef.current?.selectUpgrade(idx)}
-                    className="group relative flex flex-col justify-between gap-3 rounded-xl border border-white/15 bg-zinc-950/90 p-4 text-left text-white transition hover:-translate-y-1 hover:border-white/70 hover:bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    className="group relative flex flex-col justify-between gap-3 rounded-xl border border-white/15 bg-zinc-950/90 p-4 text-left text-white transition-[border-color,background-color] duration-150 ease-out hover:border-white/70 hover:bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                   >
                     <div
                       className="absolute inset-x-0 top-0 h-1 rounded-t-xl"
@@ -621,21 +617,26 @@ export function IlhaDoAvoGame() {
                     />
                     <div className="space-y-2 pt-1">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white/80">
+                        <span className="rounded bg-white/10 px-1.5 py-0.5 text-[11px] font-medium text-white/80">
                           {choice.kind === "weapon" ? "Arma" : "Passiva"}
                         </span>
-                        <span
-                          className={cn(
-                            "rounded px-1.5 py-0.5 text-[11px] font-bold tabular-nums",
-                            choice.isNew
-                              ? "bg-white text-black"
-                              : "bg-emerald-500/25 text-emerald-300"
-                          )}
-                        >
-                          {choice.isNew
-                            ? "NOVO!"
-                            : `Nv.${choice.currentLevel} → ${choice.nextLevel}`}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={cn(
+                              "rounded px-1.5 py-0.5 text-[11px] font-semibold tabular-nums",
+                              choice.isNew
+                                ? "bg-white text-black"
+                                : "bg-emerald-500/25 text-emerald-300"
+                            )}
+                          >
+                            {choice.isNew
+                              ? "Novo"
+                              : `Nv.${choice.currentLevel} → ${choice.nextLevel}`}
+                          </span>
+                          <kbd className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                            {idx + 1}
+                          </kbd>
+                        </div>
                       </div>
 
                       <h4 className="font-display text-lg font-bold leading-tight">
@@ -645,16 +646,12 @@ export function IlhaDoAvoGame() {
                         {choice.description}
                       </p>
                     </div>
-
-                    <div className="flex items-center justify-between border-t border-white/10 pt-2 text-[11px] text-zinc-400">
-                      <span>Clique ou tecla</span>
-                      <kbd className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 font-semibold text-white">
-                        {idx + 1}
-                      </kbd>
-                    </div>
                   </button>
                 ))}
               </div>
+              <p className="text-center text-xs text-white/65">
+                Atalhos: teclas 1, 2 ou 3
+              </p>
             </div>
           </div>
         )}
@@ -664,9 +661,11 @@ export function IlhaDoAvoGame() {
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
             <div className="w-full max-w-sm space-y-5 rounded-xl border border-white/15 bg-zinc-950/95 p-6 text-white shadow-2xl">
               <div className="space-y-1 text-center">
-                <h3 className="font-display text-2xl font-bold">Jogo Pausado</h3>
-                <p className="text-xs text-zinc-400">
-                  {hud.mapName} • Tempo {formatClock(hud.elapsedSeconds)} • Seed #{hud.seed}
+                <h3 className="font-display text-2xl font-bold">Jogo pausado</h3>
+                <p className="flex items-center justify-center gap-3 text-xs text-zinc-400 tabular-nums">
+                  <span>{hud.mapName}</span>
+                  <span>Tempo {formatClock(hud.elapsedSeconds)}</span>
+                  <span>Seed #{hud.seed}</span>
                 </p>
               </div>
 
@@ -709,7 +708,7 @@ export function IlhaDoAvoGame() {
                   className="border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white"
                 >
                   <RotateCcw className="mr-2 size-4" aria-hidden />
-                  Reiniciar Fase
+                  Reiniciar fase
                 </Button>
 
                 <Button
@@ -724,17 +723,17 @@ export function IlhaDoAvoGame() {
           </div>
         )}
 
-        {/* Overlay: Vitória Final (Morango derrotada em São Luís!) */}
+        {/* Overlay: Vitória Final */}
         {hud && hud.phase === "victory" && hud.summary && (
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
             <div className="w-full max-w-md space-y-5 rounded-xl border border-emerald-400/40 bg-zinc-950/95 p-6 text-white shadow-2xl">
               <div className="space-y-1 text-center">
                 <Trophy className="mx-auto size-9 text-yellow-400" aria-hidden />
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">
-                  Campanha Concluída em São Luís!
+                <p className="text-xs font-medium text-emerald-400">
+                  Campanha concluída em São Luís
                 </p>
                 <h3 className="font-display text-3xl font-bold">
-                  Morango Derrotada!
+                  Morango derrotada
                 </h3>
                 <p className="text-sm text-zinc-300">
                   Pontuação atual:{" "}
@@ -758,7 +757,7 @@ export function IlhaDoAvoGame() {
                   onClick={() => engineRef.current?.continueEndlessAfterVictory()}
                 >
                   <Flame className="mr-2 size-4" aria-hidden />
-                  Continuar no Modo Infinito (São Luís)
+                  Continuar no modo infinito
                 </Button>
                 <Button
                   size="lg"
@@ -780,18 +779,18 @@ export function IlhaDoAvoGame() {
               <div className="space-y-1 text-center">
                 <p
                   className={cn(
-                    "text-xs font-bold uppercase tracking-[0.2em]",
+                    "text-xs font-medium",
                     hud.summary.victory ? "text-emerald-400" : "text-rose-400"
                   )}
                 >
-                  {hud.summary.victory ? "Vitória na Campanha" : `Fim de Live • ${hud.summary.mapName}`}
+                  {hud.summary.victory ? "Vitória na campanha" : `Fim de live em ${hud.summary.mapName}`}
                 </p>
                 <h3 className="font-display text-3xl font-bold tabular-nums">
                   {hud.summary.score.toLocaleString("pt-BR")} pts
                 </h3>
                 <p className="text-xs text-zinc-400">
                   {hud.summary.victory ? (
-                    "Você sobreviveu até derrotar a Morango em São Luís!"
+                    "Você chegou até São Luís e derrotou a Morango."
                   ) : (
                     <>
                       Derrotado por{" "}
@@ -856,7 +855,7 @@ export function IlhaDoAvoGame() {
                     <Link href="/sign-in" className="font-semibold text-white underline">
                       Entre na conta
                     </Link>{" "}
-                    para aparecer no Ranking Global!
+                    para aparecer no ranking global.
                   </span>
                 )}
               </div>
@@ -864,7 +863,7 @@ export function IlhaDoAvoGame() {
               <div className="flex gap-2.5">
                 <Button size="lg" onClick={() => handleStart()} className="flex-1 font-semibold">
                   <RotateCcw className="mr-2 size-4" aria-hidden />
-                  Jogar de Novo
+                  Jogar de novo
                 </Button>
                 <Button
                   size="lg"
@@ -884,7 +883,7 @@ export function IlhaDoAvoGame() {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <MapPin className="size-4 text-primary" aria-hidden />
-          <h2 className="font-display text-xl font-semibold">Rota das 5 Fases</h2>
+          <h2 className="font-display text-xl font-semibold">Rota das 5 fases</h2>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {MAP_LIST.map((map) => (
@@ -905,13 +904,13 @@ export function IlhaDoAvoGame() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <Badge variant={map.isFinalStage ? "destructive" : "secondary"} className="text-[10px]">
-                    {map.isFinalStage ? "Boss Final" : `Fase ${map.order}`}
+                    {map.isFinalStage ? "Chefe final" : `Fase ${map.order}`}
                   </Badge>
                   <span className="text-[11px] text-muted-foreground">{map.stateLabel}</span>
                 </div>
                 <h3 className="font-display text-base font-semibold">{map.name}</h3>
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  {map.landmarks.slice(0, 3).join(" • ")}
+                  {map.landmarks.slice(0, 3).join(", ")}
                 </p>
               </div>
               <span className="text-[11px] font-medium text-muted-foreground">
@@ -922,7 +921,7 @@ export function IlhaDoAvoGame() {
         </div>
       </section>
 
-      {/* Guia rápido das Armas & Inimigos */}
+      {/* Guia rápido das Armas e Inimigos */}
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="space-y-3 rounded-xl border bg-card p-5">
           <div className="flex items-center gap-2">
@@ -948,7 +947,7 @@ export function IlhaDoAvoGame() {
         <section className="space-y-3 rounded-xl border bg-card p-5">
           <div className="flex items-center gap-2">
             <ShieldAlert className="size-4 text-primary" aria-hidden />
-            <h2 className="font-display text-lg font-semibold">Inimigos & Boss Final</h2>
+            <h2 className="font-display text-lg font-semibold">Inimigos e chefe final</h2>
           </div>
           <ul className="grid gap-2.5 sm:grid-cols-2">
             {Object.values(ENEMY_ARCHETYPES).map((enemy) => (
@@ -965,7 +964,7 @@ export function IlhaDoAvoGame() {
                     {enemy.name}
                   </span>
                   <Badge variant={enemy.isBoss ? "destructive" : "secondary"} className="text-[10px]">
-                    {enemy.isBoss ? "BOSS FINAL • SÃO LUÍS" : enemy.role}
+                    {enemy.isBoss ? "Chefe final" : enemy.role}
                   </Badge>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -974,14 +973,11 @@ export function IlhaDoAvoGame() {
                   {enemy.id === "evangelion" && "Tanque pesado que rende bastante XP."}
                   {enemy.id === "zkug" && "Mantém distância média e dispara projéteis."}
                   {enemy.id === "morango" &&
-                    "Boss final em São Luís (MA): alterna investida telegrafada e chuva de sementes!"}
+                    "Chefe final em São Luís (MA). Alterna investida telegrafada e chuva de sementes."}
                 </p>
               </li>
             ))}
           </ul>
-          <p className="text-xs text-muted-foreground">
-            Dica: fique de olho nas latinhas de <strong>Red Bull</strong> no minimapa para recuperar vida e ganhar velocidade!
-          </p>
         </section>
       </div>
 

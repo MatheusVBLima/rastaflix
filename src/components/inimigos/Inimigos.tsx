@@ -23,7 +23,7 @@ export const STATUS_OPTIONS = [
 export function StatusBadge({ status }: { status: Inimigo["status"] }) {
   return (
     <Badge variant={status === "vingado" ? "vingado" : "pendente"} className="gap-1.5 px-2 py-0.5">
-      {status === "vingado" ? <Skull /> : <Clock />}
+      {status === "vingado" ? <Skull aria-hidden /> : <Clock aria-hidden />}
       {status === "vingado" ? "Vingado" : "Pendente"}
     </Badge>
   );
@@ -135,7 +135,7 @@ export function Inimigos() {
         getRowId={(r) => r.id}
         noun={["inimigo", "inimigos"]}
         isLoading={isLoading}
-        storageKey="rastaflix:inimigos"
+        allowColumnCustomization={false}
         initialSorting={[{ id: "created_at", desc: true }]}
       />
     </div>

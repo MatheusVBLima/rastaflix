@@ -407,7 +407,7 @@ export class IlhaDoAvoEngine {
 
     this.initDefaultLoadout();
     this.phase = "playing";
-    this.showBanner(`Fase ${mapDef.order}: ${mapDef.name} — Sobreviva!`, "wave", 3.2);
+    this.showBanner(`Fase ${mapDef.order}: ${mapDef.name}`, "wave", 3.2);
 
     // Onda inicial imediata estilo Vampire Survivors
     for (let i = 0; i < 6; i++) {
@@ -445,7 +445,7 @@ export class IlhaDoAvoEngine {
     this.phase = "playing";
     this.showBanner(
       nextDef.isFinalStage
-        ? `FASE FINAL: ${nextDef.name.toUpperCase()} — A MORANGO TE ESPERA!`
+        ? `Fase final: ${nextDef.name}. A Morango te espera.`
         : `Fase ${nextDef.order}: ${nextDef.name} (${nextDef.stateLabel})`,
       nextDef.isFinalStage ? "boss" : "wave",
       3.8
@@ -817,7 +817,7 @@ export class IlhaDoAvoEngine {
     const newWave = Math.floor(this.elapsedSeconds / 30) + 1;
     if (newWave > this.wave) {
       this.wave = newWave;
-      this.showBanner(`Onda ${this.wave} — A horda engrossou!`, "wave", 2.3);
+      this.showBanner(`Onda ${this.wave}: a horda engrossou.`, "wave", 2.3);
     }
 
     if (this.bannerTimer > 0) {
@@ -2330,7 +2330,7 @@ export class IlhaDoAvoEngine {
       this.playerHp = Math.min(this.playerMaxHp, this.playerHp + 25);
       this.score += 250;
       this.audio.play("levelup", this.rng);
-      this.showBanner(`Nível ${this.playerLevel} — Build Máxima (+250 pts)!`, "pickup", 2.0);
+      this.showBanner(`Nível ${this.playerLevel}: build máxima (+250 pts)`, "pickup", 2.0);
       this.emitSnapshot(true);
       return;
     }

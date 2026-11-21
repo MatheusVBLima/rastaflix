@@ -85,8 +85,8 @@ export function CardGridSkeleton({
                 <Skeleton className="h-5 w-4/5" />
                 <Skeleton className="h-4 w-full" />
                 <div className="flex gap-1.5 pt-2">
-                  <Skeleton className="h-5 w-14 rounded-full" />
-                  <Skeleton className="h-5 w-16 rounded-full" />
+                  <Skeleton className="h-5 w-14 rounded-md" />
+                  <Skeleton className="h-5 w-16 rounded-md" />
                 </div>
               </div>
             </div>

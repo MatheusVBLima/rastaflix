@@ -15,7 +15,7 @@ export default function AparenciaPage() {
       <div className="container mx-auto space-y-8 px-4 py-10 md:px-6">
         <PageHeader
           title="Aparência"
-          description="Escolha o modo e a paleta. Muda na hora e fica salvo neste navegador."
+          description="Escolha o modo, a paleta e a fonte."
         />
         <AppearanceSettings />
       </div>

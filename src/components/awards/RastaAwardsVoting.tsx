@@ -100,9 +100,30 @@ export function RastaAwardsVoting({
       toast.error("Nenhuma temporada ativa");
       return;
     }
-    const alreadyVotedHere = userVotes.some((v) => v.category_id === categoryId);
+    const votesKey = queryKeys.rastaAwards.userVotes(userId, activeSeason.id);
+    const previousVotes = queryClient.getQueryData<AwardVote[]>(votesKey) ?? userVotes;
+    const alreadyVotedHere = previousVotes.some((v) => v.category_id === categoryId);
 
+    const optimisticVotes: AwardVote[] = alreadyVotedHere
+      ? previousVotes.map((v) =>
+          v.category_id === categoryId ? { ...v, nominee_id: nomineeId } : v
+        )
+      : [
+          ...previousVotes,
+          {
+            id: `optimistic-${categoryId}`,
+            user_id: userId,
+            season_id: activeSeason.id,
+            category_id: categoryId,
+            nominee_id: nomineeId,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ];
+
+    queryClient.setQueryData<AwardVote[]>(votesKey, optimisticVotes);
     setVotingCategoryId(categoryId);
+
     startTransition(async () => {
       const formData = new FormData();
       formData.append("category_id", categoryId);
@@ -113,19 +134,18 @@ export function RastaAwardsVoting({
 
       if (result.success) {
         toast.success(result.message);
-        await queryClient.invalidateQueries({
-          queryKey: queryKeys.rastaAwards.userVotes(userId, activeSeason.id),
-        });
+        await queryClient.invalidateQueries({ queryKey: votesKey });
         // Último voto que faltava: comemora uma vez.
         if (
           !alreadyVotedHere &&
-          votedCount + 1 === totalCategories &&
+          previousVotes.length + 1 === totalCategories &&
           !celebrated.current
         ) {
           celebrated.current = true;
           void celebrate();
         }
       } else {
+        queryClient.setQueryData<AwardVote[]>(votesKey, previousVotes);
         toast.error(result.message);
       }
       setVotingCategoryId(null);
@@ -160,7 +180,7 @@ export function RastaAwardsVoting({
   const seasonDescription = seasonHeading === season.description ? null : season.description;
 
   return (
-    <div className="max-w-4xl space-y-8">
+    <div className="space-y-8">
       {/* Temporada */}
       <section className="flex flex-col gap-4 rounded-xl border bg-card p-6 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
@@ -176,7 +196,7 @@ export function RastaAwardsVoting({
             </p>
           )}
           <p className="text-sm tabular-nums text-muted-foreground">
-            {formatDate(season.start_date)} – {formatDate(season.end_date)}
+            {formatDate(season.start_date)} a {formatDate(season.end_date)}
           </p>
         </div>
 
@@ -242,7 +262,7 @@ export function RastaAwardsVoting({
                     ) : (
                       userVote && (
                         <Badge variant="outline" className="shrink-0 gap-1 border-primary/40 text-primary">
-                          <Check /> Votado
+                          <Check aria-hidden /> Votado
                         </Badge>
                       )
                     )}
@@ -406,7 +426,12 @@ export function ResultsCategory({ category }: { category: CategoryWithResults })
             <li key={nominee.id} className="space-y-1.5">
               <div className="flex items-baseline justify-between gap-4">
                 <span className={cn("flex items-center gap-2", isWinner ? "font-semibold" : "text-muted-foreground")}>
-                  {isWinner && <Trophy className="size-4 text-primary" aria-label="Vencedor" />}
+                  {isWinner && (
+                    <>
+                      <Trophy className="size-4 text-primary" aria-hidden />
+                      <span className="sr-only">Vencedor: </span>
+                    </>
+                  )}
                   {nominee.title}
                 </span>
                 <span className="shrink-0 text-sm tabular-nums">

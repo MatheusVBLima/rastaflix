@@ -8,8 +8,10 @@ import {
   useState,
 } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 import NumberFlow from "@number-flow/react";
 import { Film, SearchX } from "lucide-react";
+import { useDebouncedQueryState } from "@/hooks/use-debounced-query-state";
 import { fetchClipes } from "@/lib/queries";
 import { queryKeys } from "@/lib/query-keys";
 import type { Clipe } from "@/lib/types";
@@ -25,7 +27,8 @@ import { cn } from "@/lib/utils";
 
 const PAGE = 24;
 
-type Platform = "all" | "twitch" | "kick";
+const PLATFORMS = ["all", "twitch", "kick"] as const;
+type Platform = (typeof PLATFORMS)[number];
 
 const TABS: { value: Platform; label: string }[] = [
   { value: "all", label: "Todos" },
@@ -34,8 +37,17 @@ const TABS: { value: Platform; label: string }[] = [
 ];
 
 export function Clipes() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [platform, setPlatform] = useState<Platform>("all");
+  const [searchTerm, setSearchTerm] = useDebouncedQueryState(
+    "busca",
+    parseAsString.withDefault("").withOptions({ clearOnDefault: true }),
+    300
+  );
+  const [platform, setPlatform] = useQueryState(
+    "plataforma",
+    parseAsStringLiteral(PLATFORMS)
+      .withDefault("all")
+      .withOptions({ clearOnDefault: true })
+  );
   const [limit, setLimit] = useState(PAGE);
 
   const { data: clipes = [], error } = useQuery<Clipe[], Error>({

@@ -5,7 +5,7 @@ import { pageMetadata } from "@/lib/site-metadata";
 
 export const metadata = pageMetadata(
   "Bingo Rastafari",
-  "Bingo Rastafari com os momentos mais icônicos das lives.",
+  "Marque na cartela 4x4 o que acontecer na live.",
   "/bingo"
 );
 

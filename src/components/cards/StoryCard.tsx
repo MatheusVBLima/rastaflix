@@ -29,9 +29,8 @@ export function StoryCard({ story, activeTag, onTagClick, priority }: StoryCardP
           title={story.title}
           priority={priority}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className="transition-[transform,filter] duration-500 ease-out group-hover:scale-[1.03] group-hover:brightness-110"
+          className="transition-[filter] duration-200 ease-out group-hover:brightness-105"
         />
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         <CopyLinkButton
           url={story.url}
           label={`Copiar link de ${story.title}`}

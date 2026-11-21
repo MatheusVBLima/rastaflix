@@ -156,6 +156,8 @@ interface DataTableProps<TData> {
   pageSize?: number;
   /** Ações extras no topo, à direita (ex.: botão "Adicionar"). */
   toolbarActions?: React.ReactNode;
+  /** Permite ocultar/reordenar colunas. Padrão: true. */
+  allowColumnCustomization?: boolean;
   emptyState?: React.ReactNode;
   className?: string;
 }
@@ -170,6 +172,7 @@ export function DataTable<TData>({
   initialSorting = [],
   pageSize = 10,
   toolbarActions,
+  allowColumnCustomization = true,
   emptyState,
   className,
 }: DataTableProps<TData>) {
@@ -308,7 +311,7 @@ export function DataTable<TData>({
           )}
         </div>
         <div className="ml-auto flex items-center gap-2">
-          {hidableColumns.length > 0 && (
+          {allowColumnCustomization && hidableColumns.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" {...columnsIcon.handlers}>
@@ -371,7 +374,11 @@ export function DataTable<TData>({
                     strategy={horizontalListSortingStrategy}
                   >
                     {group.headers.map((header) => (
-                      <SortableHeader key={header.id} header={header} />
+                      <SortableHeader
+                        key={header.id}
+                        header={header}
+                        allowReorder={allowColumnCustomization}
+                      />
                     ))}
                   </SortableContext>
                 </TableRow>
@@ -409,7 +416,11 @@ export function DataTable<TData>({
                 table.getRowModel().rows.map((row) => (
                   <TableRow key={row.id}>
                     {row.getVisibleCells().map((cell) => (
-                      <SortableCell key={cell.id} cell={cell} />
+                      <SortableCell
+                        key={cell.id}
+                        cell={cell}
+                        allowReorder={allowColumnCustomization}
+                      />
                     ))}
                   </TableRow>
                 ))
@@ -439,8 +450,14 @@ export function DataTable<TData>({
 /* Cabeçalho arrastável + ordenação                                     */
 /* ------------------------------------------------------------------ */
 
-function SortableHeader<TData>({ header }: { header: Header<TData, unknown> }) {
-  const fixed = !!header.column.columnDef.meta?.fixed;
+function SortableHeader<TData>({
+  header,
+  allowReorder,
+}: {
+  header: Header<TData, unknown>;
+  allowReorder: boolean;
+}) {
+  const fixed = !allowReorder || !!header.column.columnDef.meta?.fixed;
   const gripIcon = useAnimatedIcon<AnimatedIconHandle>();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: header.column.id, disabled: fixed });
@@ -494,11 +511,11 @@ function SortableHeader<TData>({ header }: { header: Header<TData, unknown> }) {
           >
             {label}
             {sorted === "asc" ? (
-              <ArrowUp className="size-3.5" />
+              <ArrowUp className="size-3.5" aria-hidden />
             ) : sorted === "desc" ? (
-              <ArrowDown className="size-3.5" />
+              <ArrowDown className="size-3.5" aria-hidden />
             ) : (
-              <ChevronsUpDown className="size-3.5 text-muted-foreground/50" />
+              <ChevronsUpDown className="size-3.5 text-muted-foreground/50" aria-hidden />
             )}
           </button>
         ) : (
@@ -509,10 +526,16 @@ function SortableHeader<TData>({ header }: { header: Header<TData, unknown> }) {
   );
 }
 
-function SortableCell<TData>({ cell }: { cell: Cell<TData, unknown> }) {
+function SortableCell<TData>({
+  cell,
+  allowReorder,
+}: {
+  cell: Cell<TData, unknown>;
+  allowReorder: boolean;
+}) {
   const { isDragging, setNodeRef, transform, transition } = useSortable({
     id: cell.column.id,
-    disabled: !!cell.column.columnDef.meta?.fixed,
+    disabled: !allowReorder || !!cell.column.columnDef.meta?.fixed,
   });
 
   return (

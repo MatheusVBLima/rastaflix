@@ -11,7 +11,7 @@ import { GAME_SLUG } from "@/lib/games/ilha-do-avo/types";
 import { pageMetadata } from "@/lib/site-metadata";
 
 export const metadata = pageMetadata(
-  "Ilha do Avô Romeno — Ovelhera Survivors",
+  "Ovelhera Survivors: Ilha do Avô Romeno",
   "Sobreviva às hordas na Ilha do Avô Romeno e dispute o ranking global.",
   "/jogos/ilha-do-avo-romeno"
 );
@@ -33,7 +33,7 @@ export default async function IlhaDoAvoRomenoPage() {
       <div className="container mx-auto space-y-6 px-4 py-8 md:px-6">
         <PageHeader
           title="Ovelhera Survivors"
-          description="5 fases em mapas grandes — da Ilha do Avô Romeno até a batalha final contra a Morango em São Luís."
+          description="5 fases, da Ilha do Avô Romeno até a batalha final contra a Morango em São Luís."
           aside={
             <Button variant="outline" size="sm" asChild>
               <Link href="/jogos">

@@ -75,7 +75,7 @@ export function Esculachos() {
         searchTerm ? (
           <EmptyState
             icon={SearchX}
-            title={`Nenhum esculacho com “${searchTerm}”`}
+            title={`Nenhum esculacho com "${searchTerm}"`}
             action={
               <Button variant="outline" onClick={() => setSearchTerm("")}>
                 Limpar busca
