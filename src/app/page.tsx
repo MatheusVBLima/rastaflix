@@ -6,7 +6,7 @@ import { HomeSections } from "@/components/home/HomeSections";
 
 export default function Home() {
   return (
-    <PageTransition>
+    <PageTransition name="route-home">
       <div>
         {/* Hero */}
         <section className="relative isolate overflow-hidden border-b">

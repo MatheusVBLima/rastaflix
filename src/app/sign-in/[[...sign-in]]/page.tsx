@@ -39,7 +39,7 @@ function SignInFallback() {
 
 export default function SignInPage() {
   return (
-    <PageTransition>
+    <PageTransition name="route-sign-in">
       <div className="flex min-h-[calc(100dvh-4rem)] items-center justify-center bg-muted/40 px-4 py-8">
         <div className="grid w-full max-w-6xl overflow-hidden rounded-3xl border bg-card p-2 shadow-xl lg:grid-cols-2">
           {/* Formulário */}

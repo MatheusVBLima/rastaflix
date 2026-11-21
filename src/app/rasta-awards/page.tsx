@@ -28,12 +28,12 @@ export const metadata = pageMetadata(
 
 export default function RastaAwardsPage() {
   return (
-    <PageTransition>
+    <PageTransition name="route-rasta-awards">
       <div className="container mx-auto space-y-8 px-4 py-10 md:px-6">
         <PageHeader slug="rasta-awards" title="Rasta Awards" />
         <Suspense
           fallback={
-            <SkeletonTransition>
+            <SkeletonTransition name="skeleton-rasta-awards">
               <RastaAwardsSkeleton />
             </SkeletonTransition>
           }

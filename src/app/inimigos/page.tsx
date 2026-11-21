@@ -22,7 +22,7 @@ export const metadata = pageMetadata(
 
 export default function InimigosPage() {
   return (
-    <PageTransition>
+    <PageTransition name="route-inimigos">
       <div className="container mx-auto space-y-8 px-4 py-10 md:px-6">
         <PageHeader
           slug="inimigos"
@@ -31,7 +31,7 @@ export default function InimigosPage() {
         />
         <Suspense
           fallback={
-            <SkeletonTransition>
+            <SkeletonTransition name="skeleton-inimigos">
               <InimigosSkeleton />
             </SkeletonTransition>
           }

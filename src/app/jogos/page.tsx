@@ -15,7 +15,7 @@ export const metadata = pageMetadata(
 
 export default function JogosPage() {
   return (
-    <PageTransition>
+    <PageTransition name="route-jogos">
       <div className="container mx-auto space-y-10 px-4 py-10 md:px-6">
         <PageHeader
           slug="jogos"

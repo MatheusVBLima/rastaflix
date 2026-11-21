@@ -11,7 +11,7 @@ export const metadata = pageMetadata(
 
 export default function OvelheraDlePage() {
   return (
-    <PageTransition>
+    <PageTransition name="route-ovelhera-dle">
       <div className="container mx-auto space-y-8 px-4 py-10 md:px-6">
         <PageHeader slug="ovelhera-dle" title="Ovelhera DLE" />
         <DLE />

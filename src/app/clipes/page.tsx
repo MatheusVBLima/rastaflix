@@ -22,7 +22,7 @@ export const metadata = pageMetadata(
 
 export default function ClipesPage() {
   return (
-    <PageTransition>
+    <PageTransition name="route-clipes">
       <div className="container mx-auto space-y-8 px-4 py-10 md:px-6">
         <PageHeader
           slug="clipes"
@@ -31,7 +31,7 @@ export default function ClipesPage() {
         />
         <Suspense
           fallback={
-            <SkeletonTransition>
+            <SkeletonTransition name="skeleton-clipes">
               <CardGridSkeleton variant="clip" />
             </SkeletonTransition>
           }

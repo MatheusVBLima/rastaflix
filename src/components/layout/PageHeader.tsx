@@ -23,7 +23,7 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   const heading = (
-    <h1 className="font-display text-4xl font-semibold leading-[0.95] tracking-tight sm:text-5xl md:text-6xl">
+    <h1 className="w-fit font-display text-4xl font-semibold leading-[0.95] tracking-tight sm:text-5xl md:text-6xl">
       {title}
     </h1>
   );

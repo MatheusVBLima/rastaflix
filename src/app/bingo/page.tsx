@@ -11,7 +11,7 @@ export const metadata = pageMetadata(
 
 export default function BingoPage() {
   return (
-    <PageTransition>
+    <PageTransition name="route-bingo">
       <div className="container mx-auto max-w-3xl space-y-8 px-4 py-10 md:px-6">
         <PageHeader
           slug="bingo"

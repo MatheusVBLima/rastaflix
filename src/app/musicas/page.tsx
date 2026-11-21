@@ -22,12 +22,12 @@ export const metadata = pageMetadata(
 
 export default function MusicasPage() {
   return (
-    <PageTransition>
+    <PageTransition name="route-musicas">
       <div className="container mx-auto space-y-8 px-4 py-10 md:px-6">
         <PageHeader slug="musicas" title="Músicas" />
         <Suspense
           fallback={
-            <SkeletonTransition>
+            <SkeletonTransition name="skeleton-musicas">
               <CardGridSkeleton variant="music" count={8} />
             </SkeletonTransition>
           }

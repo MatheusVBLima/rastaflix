@@ -22,7 +22,7 @@ export const metadata = pageMetadata(
 
 export default function EsculachosPage() {
   return (
-    <PageTransition>
+    <PageTransition name="route-esculachos">
       <div className="container mx-auto space-y-8 px-4 py-10 md:px-6">
         <PageHeader
           slug="esculachos"
@@ -31,7 +31,7 @@ export default function EsculachosPage() {
         />
         <Suspense
           fallback={
-            <SkeletonTransition>
+            <SkeletonTransition name="skeleton-esculachos">
               <CardGridSkeleton variant="quote" count={4} />
             </SkeletonTransition>
           }

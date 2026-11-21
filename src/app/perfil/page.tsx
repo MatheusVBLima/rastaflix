@@ -24,12 +24,12 @@ export const metadata: Metadata = {
  */
 export default function PerfilPage() {
   return (
-    <PageTransition>
+    <PageTransition name="route-perfil">
       <div className="container mx-auto space-y-8 px-4 py-10 md:px-6">
         <PageHeader title="Meu perfil" />
         <Suspense
           fallback={
-            <SkeletonTransition>
+            <SkeletonTransition name="skeleton-perfil">
               <ProfileSkeleton />
             </SkeletonTransition>
           }

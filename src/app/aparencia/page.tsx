@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function AparenciaPage() {
   return (
-    <PageTransition>
+    <PageTransition name="route-aparencia">
       <div className="container mx-auto space-y-8 px-4 py-10 md:px-6">
         <PageHeader
           title="Aparência"

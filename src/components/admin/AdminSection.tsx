@@ -1,6 +1,10 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { PageTransition } from "@/components/layout/PageTransition";
+import {
+  PageTransition,
+  RevealTransition,
+  SkeletonTransition,
+} from "@/components/layout/PageTransition";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -10,10 +14,28 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
+function toRouteSlug(title: string) {
+  return title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 /** Layout comum das páginas de gestão: breadcrumb completo, título e conteúdo. */
-export function AdminSection({ title, children }: { title: string; children: ReactNode }) {
+export function AdminSection({
+  title,
+  isLoading = false,
+  children,
+}: {
+  title: string;
+  isLoading?: boolean;
+  children: ReactNode;
+}) {
+  const slug = toRouteSlug(title);
   return (
-    <PageTransition>
+    <PageTransition name={`route-admin-${slug}`}>
       <div className="container mx-auto space-y-8 px-4 py-10 md:px-6">
         <header className="space-y-3 border-b pb-6">
           <Breadcrumb>
@@ -43,7 +65,11 @@ export function AdminSection({ title, children }: { title: string; children: Rea
             {title}
           </h1>
         </header>
-        {children}
+        {isLoading ? (
+          <SkeletonTransition name={`skeleton-admin-${slug}`}>{children}</SkeletonTransition>
+        ) : (
+          <RevealTransition>{children}</RevealTransition>
+        )}
       </div>
     </PageTransition>
   );

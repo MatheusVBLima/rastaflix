@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 import { IlhaDoAvoGame } from "@/components/games/ilha-do-avo/IlhaDoAvoGame";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { PageTransition } from "@/components/layout/PageTransition";
+import { PageTransition, RevealTransition } from "@/components/layout/PageTransition";
 import { Button } from "@/components/ui/button";
 import { fetchGameLeaderboard } from "@/lib/queries";
 import { queryKeys } from "@/lib/query-keys";
@@ -29,7 +29,7 @@ export default async function IlhaDoAvoRomenoPage() {
   });
 
   return (
-    <PageTransition>
+    <PageTransition name="route-ilha-do-avo">
       <div className="container mx-auto space-y-6 px-4 py-8 md:px-6">
         <PageHeader
           title="Ovelhera Survivors"
@@ -44,9 +44,11 @@ export default async function IlhaDoAvoRomenoPage() {
           }
         />
 
-        <HydrationBoundary state={dehydrate(queryClient)}>
-          <IlhaDoAvoGame />
-        </HydrationBoundary>
+        <RevealTransition>
+          <HydrationBoundary state={dehydrate(queryClient)}>
+            <IlhaDoAvoGame />
+          </HydrationBoundary>
+        </RevealTransition>
       </div>
     </PageTransition>
   );

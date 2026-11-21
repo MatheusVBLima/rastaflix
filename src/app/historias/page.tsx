@@ -22,7 +22,7 @@ export const metadata = pageMetadata(
 
 export default function HistoriasPage() {
   return (
-    <PageTransition>
+    <PageTransition name="route-historias">
       <div className="container mx-auto space-y-8 px-4 py-10 md:px-6">
         <PageHeader
           slug="historias"
@@ -31,7 +31,7 @@ export default function HistoriasPage() {
         />
         <Suspense
           fallback={
-            <SkeletonTransition>
+            <SkeletonTransition name="skeleton-historias">
               <CardGridSkeleton variant="video" />
             </SkeletonTransition>
           }
