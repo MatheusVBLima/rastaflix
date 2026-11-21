@@ -8,6 +8,8 @@ const PUBLIC_ROUTES = [
   "/esculachos",
   "/inimigos",
   "/clipes",
+  "/jogos",
+  "/jogos/ilha-do-avo-romeno",
   "/rasta-awards",
   "/bingo",
   "/ovelhera-dle",
