@@ -5,7 +5,7 @@ import { pageMetadata } from "@/lib/site-metadata";
 
 export const metadata = pageMetadata(
   "Ovelhera DLE",
-  "Adivinhe o personagem do universo Ovelhera.",
+  "Adivinhe a história do Ovelhera pelos emojis.",
   "/ovelhera-dle"
 );
 

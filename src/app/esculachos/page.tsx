@@ -16,7 +16,7 @@ import { pageMetadata } from "@/lib/site-metadata";
 
 export const metadata = pageMetadata(
   "Esculachos",
-  "Momentos épicos da live - ouça e baixe os melhores trechos.",
+  "Trechos da live para ouvir e baixar.",
   "/esculachos"
 );
 

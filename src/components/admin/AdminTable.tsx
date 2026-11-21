@@ -261,7 +261,7 @@ export function AdminTable<T extends { id: string }>({
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir {noun[0]}?</AlertDialogTitle>
             <AlertDialogDescription>
-              “{toDelete ? getLabel(toDelete) : deleteLabel}” será {g.removed} de vez. Isso não pode ser desfeito.
+              "{toDelete ? getLabel(toDelete) : deleteLabel}" será {g.removed} de vez. Isso não pode ser desfeito.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

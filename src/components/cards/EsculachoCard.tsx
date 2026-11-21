@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { Check, Copy } from "lucide-react";
+import { toast } from "sonner";
 import type { Esculacho } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { ClipAudio } from "@/components/audio/ClipAudio";
 
 const LONG = 420;
@@ -13,17 +16,41 @@ const LONG = 420;
  */
 export function EsculachoCard({ esculacho }: { esculacho: Esculacho }) {
   const [expanded, setExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
   const isLong = esculacho.conteudo.length > LONG;
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(esculacho.conteudo);
+      setCopied(true);
+      toast.success("Texto copiado");
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      toast.error("Não foi possível copiar o texto");
+    }
+  }
 
   return (
     <article className="flex h-full flex-col gap-5 rounded-xl border bg-card p-6 shadow-xs">
-      <header className="space-y-1">
-        <h3 className="font-display text-lg font-semibold leading-tight tracking-tight">
-          {esculacho.titulo}
-        </h3>
-        {esculacho.descricao && (
-          <p className="text-sm text-muted-foreground">{esculacho.descricao}</p>
-        )}
+      <header className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h3 className="font-display text-lg font-semibold leading-tight tracking-tight">
+            {esculacho.titulo}
+          </h3>
+          {esculacho.descricao && (
+            <p className="text-sm text-muted-foreground">{esculacho.descricao}</p>
+          )}
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={handleCopy}
+          aria-label={`Copiar texto de ${esculacho.titulo}`}
+          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+        >
+          {copied ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
+        </Button>
       </header>
 
       <blockquote className="relative flex-1 border-l-2 border-primary pl-4">
@@ -49,7 +76,7 @@ export function EsculachoCard({ esculacho }: { esculacho: Esculacho }) {
         )}
         {esculacho.autor && (
           <footer className="mt-3 text-sm text-muted-foreground">
-            — <cite className="not-italic font-medium text-foreground">{esculacho.autor}</cite>
+            Por <cite className="not-italic font-medium text-foreground">{esculacho.autor}</cite>
           </footer>
         )}
       </blockquote>

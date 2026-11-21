@@ -1,16 +1,17 @@
-/** Paletas de cor do site (TweakCN). As cores ficam em globals.css ([data-palette="id"]). */
+/** Paletas de cor do site. As cores ficam em globals.css ([data-palette="id"]). */
 export const PALETTES = [
-  { id: "vercel", name: "Vercel", description: "Preto e branco minimalista" },
-  { id: "sage-garden", name: "Sage Garden", description: "Verde sálvia sereno" },
-  { id: "violet-bloom", name: "Violet Bloom", description: "Violeta vibrante" },
-  { id: "darkmatter", name: "Darkmatter", description: "Cobre e carvão" },
-  { id: "claude", name: "Claude", description: "Terracota e areia" },
-  { id: "supabase", name: "Supabase", description: "Verde esmeralda" },
+  { id: "rastaflix", name: "Rastaflix", description: "Carvão e ouro quente" },
+  { id: "vercel", name: "Monocromo", description: "Preto e branco" },
+  { id: "sage-garden", name: "Folha", description: "Verde sálvia e papel" },
+  { id: "violet-bloom", name: "Roxo Live", description: "Violeta e grafite" },
+  { id: "darkmatter", name: "Cobre", description: "Cobre e cinza escuro" },
+  { id: "claude", name: "Tijolo", description: "Terracota e areia" },
+  { id: "supabase", name: "Esmeralda", description: "Verde escuro e neutro" },
 ] as const;
 
 export type PaletteId = (typeof PALETTES)[number]["id"];
 
-export const DEFAULT_PALETTE: PaletteId = "vercel";
+export const DEFAULT_PALETTE: PaletteId = "rastaflix";
 export const PALETTE_STORAGE_KEY = "palette";
 
 export function isPaletteId(value: unknown): value is PaletteId {

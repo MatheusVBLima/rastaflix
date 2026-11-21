@@ -82,12 +82,14 @@ export function GameLeaderboard({ currentUserId }: { currentUserId?: string | nu
         <div className="flex items-center gap-2.5">
           <Trophy className="size-5 text-primary" aria-hidden />
           <h2 id="ranking-title" className="font-display text-2xl font-semibold tracking-tight">
-            Ranking Global da Ilha
+            Ranking global
           </h2>
         </div>
-        <Badge variant="secondary" className="tabular-nums">
-          Top {Math.max(entries.length, 15)}
-        </Badge>
+        {entries.length > 0 && (
+          <Badge variant="secondary" className="tabular-nums">
+            Top {entries.length}
+          </Badge>
+        )}
       </div>
 
       <div className="overflow-hidden rounded-xl border bg-card">
@@ -98,7 +100,7 @@ export function GameLeaderboard({ currentUserId }: { currentUserId?: string | nu
             <Trophy className="size-8 text-muted-foreground/60" aria-hidden />
             <p className="font-medium">Nenhum recorde registrado ainda</p>
             <p className="max-w-md text-sm text-muted-foreground">
-              Entre com sua conta e jogue uma partida na Ilha do Avô Romeno para inaugurar o ranking!
+              Entre com sua conta e jogue uma partida para registrar seu primeiro recorde.
             </p>
           </div>
         ) : (
@@ -157,7 +159,7 @@ export function GameLeaderboard({ currentUserId }: { currentUserId?: string | nu
                             </span>
                             {entry.weapons_used.length > 0 && (
                               <span className="block truncate text-xs text-muted-foreground">
-                                {entry.weapons_used.slice(0, 3).join(" • ")}
+                                {entry.weapons_used.slice(0, 3).join(", ")}
                               </span>
                             )}
                           </div>
@@ -182,7 +184,7 @@ export function GameLeaderboard({ currentUserId }: { currentUserId?: string | nu
                         Nv.{entry.level_reached}
                       </td>
                       <td className="hidden px-4 py-3 text-right tabular-nums text-muted-foreground lg:table-cell">
-                        {entry.bosses_defeated > 0 ? `${entry.bosses_defeated}×` : "—"}
+                        {entry.bosses_defeated > 0 ? `${entry.bosses_defeated}×` : "-"}
                       </td>
                     </tr>
                   );

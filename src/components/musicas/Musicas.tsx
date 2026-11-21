@@ -70,7 +70,7 @@ export function Musicas() {
         searchTerm ? (
           <EmptyState
             icon={SearchX}
-            title={`Nenhuma música com “${searchTerm}”`}
+            title={`Nenhuma música com "${searchTerm}"`}
             action={
               <Button variant="outline" onClick={() => setSearchTerm("")}>
                 Limpar busca

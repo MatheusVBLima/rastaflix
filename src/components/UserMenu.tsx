@@ -53,9 +53,13 @@ export function UserMenu({ isAdmin = false, initialUser = null }: UserMenuProps)
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+        <Button
+          variant="ghost"
+          aria-label="Menu da conta"
+          className="relative h-9 w-9 rounded-full"
+        >
           <Avatar className="h-9 w-9">
             <AvatarImage src={resolvedUser.imageUrl} alt={resolvedUser.fullName || "Usuário"} />
             <AvatarFallback>{getInitials(resolvedUser.fullName)}</AvatarFallback>

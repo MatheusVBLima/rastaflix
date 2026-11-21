@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function RastaAwardsSkeleton() {
   return (
-    <div className="max-w-4xl space-y-8" aria-busy="true" aria-label="Carregando">
+    <div className="space-y-8" aria-busy="true" aria-label="Carregando">
       <div className="space-y-3 rounded-xl border bg-card p-6">
         <Skeleton className="h-5 w-28 rounded-full" />
         <Skeleton className="h-8 w-2/3" />

@@ -16,7 +16,7 @@ export default function Loading() {
       >
         <PageHeader
           title="Ovelhera Survivors"
-          description="5 fases em mapas grandes — da Ilha do Avô Romeno até a batalha final contra a Morango em São Luís."
+          description="5 fases, da Ilha do Avô Romeno até a batalha final contra a Morango em São Luís."
           aside={
             <Button variant="outline" size="sm" asChild>
               <Link href="/jogos">

@@ -29,7 +29,13 @@ export function HomeSections() {
             featured
             className="sm:col-span-2 lg:row-span-2"
           />
-          <SectionTile href="/musicas" slug="musicas" title="Músicas" icon={Disc3Icon} />
+          <SectionTile
+            href="/musicas"
+            slug="musicas"
+            title="Músicas"
+            description="Sons e paródias da comunidade."
+            icon={Disc3Icon}
+          />
           <SectionTile
             href="/esculachos"
             slug="esculachos"
@@ -57,7 +63,7 @@ export function HomeSections() {
             href="/jogos"
             slug="jogos"
             title="Jogos"
-            description="Ilha do Avô Romeno e os jogos do universo."
+            description="Ovelhera Survivors e outros jogos."
             icon={Gamepad2Icon}
             featured
             className="sm:col-span-2 lg:col-span-4"

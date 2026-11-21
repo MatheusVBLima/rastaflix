@@ -16,7 +16,7 @@ import { pageMetadata } from "@/lib/site-metadata";
 
 export const metadata = pageMetadata(
   "Músicas",
-  "Descubra e compartilhe as músicas da comunidade.",
+  "Sons e paródias da comunidade.",
   "/musicas"
 );
 
@@ -24,7 +24,11 @@ export default function MusicasPage() {
   return (
     <PageTransition name="route-musicas">
       <div className="container mx-auto space-y-8 px-4 py-10 md:px-6">
-        <PageHeader slug="musicas" title="Músicas" />
+        <PageHeader
+          slug="musicas"
+          title="Músicas"
+          description="Sons e paródias da comunidade."
+        />
         <Suspense
           fallback={
             <SkeletonTransition name="skeleton-musicas">

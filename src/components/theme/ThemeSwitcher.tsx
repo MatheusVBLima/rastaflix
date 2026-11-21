@@ -38,7 +38,7 @@ export function ThemeSwitcher() {
   const swatchMode = resolvedTheme === "light" ? "light" : "dark";
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" aria-label="Aparência" {...icon.handlers}>
           <Icon ref={icon.ref} size={18} aria-hidden />

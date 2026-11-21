@@ -1,24 +1,17 @@
 "use client";
 
-import NumberFlow from "@number-flow/react";
-import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/inimigos/Inimigos";
 import { Thumb } from "@/components/cards/Thumb";
+
+const PREVIEW_PCT = 64;
 
 /**
  * Prévia com componentes reais do site (card, tags, botões, status, busca,
  * placar). Segue a paleta e o modo ativos na página.
  */
 export function AppearancePreview({ label }: { label: string }) {
-  // Um número que muda sozinho, para mostrar o NumberFlow na paleta escolhida.
-  const [pct, setPct] = useState(19);
-  useEffect(() => {
-    const id = setInterval(() => setPct((v) => (v >= 80 ? 19 : v + 13)), 2200);
-    return () => clearInterval(id);
-  }, []);
-
   return (
     <section aria-labelledby="previa" className="overflow-hidden rounded-2xl border bg-card">
       <header className="flex items-center justify-between border-b px-5 py-3">
@@ -39,7 +32,7 @@ export function AppearancePreview({ label }: { label: string }) {
             <Thumb url={null} title="Rastaflix" sizes="320px" />
           </div>
           <div className="space-y-2 p-4">
-            <p className="font-semibold leading-snug">Card de história</p>
+            <p className="font-display font-semibold leading-snug">Card de história</p>
             <p className="text-sm text-muted-foreground">Descrição em texto secundário.</p>
             <div className="flex gap-1.5 pt-1">
               <span className="rounded-md bg-primary px-2 py-0.5 font-mono text-xs text-primary-foreground">#esculacho</span>
@@ -55,12 +48,12 @@ export function AppearancePreview({ label }: { label: string }) {
 
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
-            <NumberFlow value={pct} suffix="%" className="font-medium text-foreground" /> da vingança cumprida
+            <span className="font-medium tabular-nums text-foreground">{PREVIEW_PCT}%</span> da vingança cumprida
           </p>
           <div className="h-2 overflow-hidden rounded-full bg-warning/20">
             <div
-              className="h-full rounded-full bg-success transition-[width] duration-700 ease-out"
-              style={{ width: `${pct}%` }}
+              className="h-full rounded-full bg-success"
+              style={{ width: `${PREVIEW_PCT}%` }}
             />
           </div>
         </div>

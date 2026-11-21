@@ -23,8 +23,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Palette } from "lucide-react";
 import { LiveIndicator } from "./LiveIndicator";
 import { UserMenu } from "./UserMenu";
+import { ThemeSwitcher } from "@/components/theme/ThemeSwitcher";
 import { prefetchRouteData } from "@/lib/prefetch";
 import type { HeaderAuthState, LiveStatus } from "@/lib/types";
 import { useAnimatedIcon, type AnimatedIconHandle } from "@/hooks/use-animated-icon";
@@ -51,14 +53,14 @@ interface NavItem {
 }
 
 const contaAquela: NavItem[] = [
-  { title: "Histórias", href: "/historias", description: "O acervo de histórias", icon: BookTextIcon },
-  { title: "Músicas", href: "/musicas", icon: Disc3Icon },
+  { title: "Histórias", href: "/historias", description: "Relatos que o dog tenta esconder", icon: BookTextIcon },
+  { title: "Músicas", href: "/musicas", description: "Sons e paródias da comunidade", icon: Disc3Icon },
   { title: "Esculachos", href: "/esculachos", description: "Áudios para ouvir e baixar", icon: FlameIcon },
   { title: "Clipes", href: "/clipes", description: "Twitch e Kick", icon: ClapIcon },
 ];
 
 const universoOvelhera: NavItem[] = [
-  { title: "Jogos", href: "/jogos", description: "Roguelike 3D e mais", icon: Gamepad2Icon },
+  { title: "Jogos", href: "/jogos", description: "Ovelhera Survivors e outros jogos", icon: Gamepad2Icon },
   { title: "Rasta Awards", href: "/rasta-awards", description: "Votação anual", icon: SparklesIcon },
   { title: "Ovelhera DLE", href: "/ovelhera-dle", description: "Adivinhe pelos emojis", icon: SmileIcon },
   { title: "Inimigos", href: "/inimigos", description: "O mural da vingança", icon: HandFistIcon },
@@ -160,8 +162,9 @@ export function Header({
           </NavigationMenu>
         </nav>
 
-        <div className="ml-auto flex items-center gap-2 md:ml-0">
+        <div className="ml-auto flex items-center gap-1.5 sm:gap-2 md:ml-0">
           <LiveIndicator initialStatus={initialLiveStatus} />
+          <ThemeSwitcher />
           {signedIn ? (
             <UserMenu isAdmin={initialAuth.isAdmin} initialUser={initialAuth.user} />
           ) : (
@@ -201,7 +204,11 @@ function NavGroup({
   return (
     <NavigationMenuItem>
       <NavigationMenuTrigger
-        className={cn("relative border-0 bg-transparent shadow-none dark:bg-transparent", active && "text-foreground after:absolute after:inset-x-3 after:-bottom-[13px] after:h-0.5 after:rounded-full after:bg-primary")}
+        className={cn(
+          "relative border-0 bg-transparent shadow-none dark:bg-transparent",
+          active &&
+            "text-foreground after:absolute after:inset-x-3 after:-bottom-3 after:h-0.5 after:rounded-full after:bg-primary"
+        )}
       >
         {label}
       </NavigationMenuTrigger>
@@ -311,13 +318,25 @@ function MobileMenu({
           <MenuIcon ref={menu.ref} size={20} aria-hidden />
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-[300px] overflow-y-auto sm:w-[360px]">
+      <SheetContent side="right" className="w-72 overflow-y-auto sm:w-80">
         <SheetHeader>
           <SheetTitle className="text-left font-display">Rastaflix</SheetTitle>
         </SheetHeader>
         <nav aria-label="Principal" className="flex flex-col gap-6 px-2 pb-6">
           {group("Conta aquela", contaAquela)}
           {group("Universo Ovelhera", universoOvelhera)}
+          <div className="border-t pt-4">
+            <SheetClose asChild>
+              <Link
+                href="/aparencia"
+                aria-current={isActive("/aparencia") ? "page" : undefined}
+                className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent aria-[current=page]:bg-accent aria-[current=page]:text-foreground"
+              >
+                <Palette className="size-4.5 text-primary" aria-hidden />
+                Aparência
+              </Link>
+            </SheetClose>
+          </div>
           {!signedIn && (
             <SheetClose asChild>
               <Button asChild variant="outline" className="mx-3">

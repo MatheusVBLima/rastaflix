@@ -45,7 +45,7 @@ export function Thumb({
       <div
         aria-hidden
         className={cn(
-          "absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_30%_20%,color-mix(in_oklch,var(--primary)_25%,transparent),transparent_60%),linear-gradient(135deg,var(--muted),var(--card))] p-6",
+          "absolute inset-0 flex items-center justify-center bg-muted p-6",
           className
         )}
       >
